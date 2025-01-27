@@ -51,10 +51,7 @@ structure Float where
 attribute [extern "lean_float_of_bits"] Float.ofBits
 attribute [extern "lean_float_to_bits"] Float.toBits
 
-set_option trace.compiler.ir.result true
-
 instance : Inhabited Float := ⟨Float.ofBits 0⟩
-instance : Nonempty Float := ⟨Float.ofBits 0⟩
 
 /--
 Returns whether the sign bit of a floating point value is set,
