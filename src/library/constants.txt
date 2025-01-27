@@ -39,7 +39,9 @@ Eq.subst
 Eq.symm
 Eq.trans
 Float
+Float.toBits
 Float32
+Float32.toBits
 FloatArray
 FloatArray.data
 False

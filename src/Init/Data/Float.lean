@@ -7,6 +7,7 @@ prelude
 import Init.Core
 import Init.Data.Int.Basic
 import Init.Data.ToString.Basic
+import Init.Data.UInt.Basic
 
 structure FloatSpec where
   float : Type
@@ -29,42 +30,253 @@ opaque floatSpec : FloatSpec := {
 /-- Native floating point type, corresponding to the IEEE 754 *binary64* format
 (`double` in C or `f64` in Rust). -/
 structure Float where
-  val : floatSpec.float
+  /--
+  Raw transmutation from `UInt64`.
 
-instance : Nonempty Float := ⟨{ val := floatSpec.val }⟩
+  Floats and UInts have the same endianness on all supported platforms.
+  IEEE 754 very precisely specifies the bit layout of floats.
+  -/
+  ofBits ::
+  /--
+  Raw transmutation to `UInt64`.
 
-@[extern "lean_float_add"] opaque Float.add : Float → Float → Float
-@[extern "lean_float_sub"] opaque Float.sub : Float → Float → Float
-@[extern "lean_float_mul"] opaque Float.mul : Float → Float → Float
-@[extern "lean_float_div"] opaque Float.div : Float → Float → Float
-@[extern "lean_float_negate"] opaque Float.neg : Float → Float
+  Floats and UInts have the same endianness on all supported platforms.
+  IEEE 754 very precisely specifies the bit layout of floats.
 
-set_option bootstrap.genMatcherCode false
-def Float.lt : Float → Float → Prop := fun a b =>
-  match a, b with
-  | ⟨a⟩, ⟨b⟩ => floatSpec.lt a b
+  Note that this function is distinct from `Float.toUInt64`, which attempts
+  to preserve the numeric value, and not the bitwise value.
+  -/
+  toBits : UInt64
 
-def Float.le : Float → Float → Prop := fun a b =>
-  floatSpec.le a.val b.val
+attribute [extern "lean_float_of_bits"] Float.ofBits
+attribute [extern "lean_float_to_bits"] Float.toBits
+
+set_option trace.compiler.ir.result true
+
+instance : Inhabited Float := ⟨Float.ofBits 0⟩
+instance : Nonempty Float := ⟨Float.ofBits 0⟩
 
 /--
-Raw transmutation from `UInt64`.
-
-Floats and UInts have the same endianness on all supported platforms.
-IEEE 754 very precisely specifies the bit layout of floats.
+Returns whether the sign bit of a floating point value is set,
+i.e. the value is negative or -0 or a nan value with sign bit set.
 -/
-@[extern "lean_float_of_bits"] opaque Float.ofBits : UInt64 → Float
+@[inline]
+def Float.signBit (x : Float) : Bool :=
+  x.toBits >>> 63 != 0
 
 /--
-Raw transmutation to `UInt64`.
-
-Floats and UInts have the same endianness on all supported platforms.
-IEEE 754 very precisely specifies the bit layout of floats.
-
-Note that this function is distinct from `Float.toUInt64`, which attempts
-to preserve the numeric value, and not the bitwise value.
+Returns the exponent part of the bitwise representation of the floating point
+number (1023 means 2^0, 2047 means nan or infinity).
 -/
-@[extern "lean_float_to_bits"] opaque Float.toBits : Float → UInt64
+@[inline]
+def Float.exponentPart (x : Float) : UInt64 :=
+  (x.toBits >>> 52) &&& 0x7FF
+
+/--
+Returns the mantissa of the given floating point value.
+-/
+@[inline]
+def Float.mantissa (x : Float) : UInt64 :=
+  x.toBits &&& 0x000F_FFFF_FFFF_FFFF
+
+/--
+Converts the parts of a floating point number to a floating point number.
+In particular, `Float.fromParts x.signBit x.exponentPart x.mantissa = x`.
+This function assumes that `exp < 2048` and `mantissa < 2 ^ 52`.
+-/
+def Float.fromParts (sign : Bool) (exp : UInt64) (mantissa : UInt64) : Float :=
+  let bits := (exp <<< 52) ||| mantissa
+  ⟨if sign then bits ||| 0x8000_0000_0000_0000 else bits⟩
+
+/-- Note: this is not reflexive since `NaN != NaN`.-/
+@[extern "lean_float_beq"]
+def Float.beq (a b : Float) : Bool :=
+  if a.exponentPart == 0x7ff && a.mantissa != 0 then false -- a is nan
+  else if b.exponentPart == 0x7ff && b.mantissa != 0 then false -- b is nan
+  else if a.toBits &&& 0x7fff_ffff_ffff_ffff == 0
+    && b.toBits &&& 0x7fff_ffff_ffff_ffff == 0 then true -- a and b are +/- 0
+  else a.toBits == b.toBits
+
+instance : BEq Float := ⟨Float.beq⟩
+
+@[extern "lean_float_isnan"]
+def Float.isNaN (x : Float) : Bool :=
+  x != x
+
+@[extern "lean_float_isfinite"]
+def Float.isFinite (x : Float) : Bool :=
+  x.exponentPart != 0x7ff
+
+@[extern "lean_float_isinf"]
+def Float.isInf (x : Float) : Bool :=
+  x.exponentPart == 0x7ff && x.mantissa == 0
+
+@[extern "lean_float_decLt"]
+def Float.blt (x y : Float) : Bool :=
+  if x.isNaN || y.isNaN then false
+  else if x.toBits &&& 0x7fff_ffff_ffff_ffff == 0
+    && y.toBits &&& 0x7fff_ffff_ffff_ffff == 0 then true -- a and b are +/- 0
+  else
+    match x.signBit, y.signBit with
+    | false, false => x.toBits < y.toBits -- positive < positive
+    | false, true => false                -- positive < negative
+    | true, false => true                 -- negative < positive
+    | true, true => y.toBits < x.toBits   -- negative < negative
+
+@[extern "lean_float_decLe"]
+def Float.ble (x y : Float) :=
+  x.blt y || x == y
+
+def Float.lt (x y : Float) : Prop :=
+  Float.blt x y
+
+def Float.le (x y : Float) : Prop :=
+  Float.ble x y
+
+def Float.toRatParts (x : Float) : Int × Nat :=
+  let sign : Int := if x.signBit then -1 else 1
+  if x.exponentPart == 0 then
+    (x.mantissa.toNat * sign, 1 <<< (1023 + 52 - 1)) -- subnormal
+  else if x.exponentPart < 1023 + 52 then
+    ((x.mantissa.toNat + 0x0010_0000_0000_0000) * sign,
+      1 <<< (1023 + 52 - x.exponentPart.toNat))
+  else
+    (((x.mantissa.toNat + 0x0010_0000_0000_0000)
+      <<< (x.exponentPart.toNat - (1023 + 52))) * sign, 1) -- integer
+
+/--
+Returns `log 2 (x / y)`, i.e. a value `z` such that
+`2 ^ z * y ≤ x` and `x < 2 ^ (z + 1) * y`.
+Assumes that `x` and `y` are not zero.
+Internally used to define floating point operations.
+-/
+def Nat.log2Div (x y : Nat) : Int :=
+  let approx : Int := x.log2 - y.log2
+  -- check if approximation was too high
+  --     x < 2 ^ (x.log2 - y.log2) * y
+  -- <-> x * 2 ^ y.log2 < y * 2 ^ x.log2
+  if x <<< y.log2 < y <<< x.log2 then approx - 1 else approx
+
+/--
+Returns `x / y`, rounded to the nearest integer.
+If two integers are equally far apart from `x / y`, then return the even one.
+Assumes that `y` isn't zero.
+Internally used to define floating point operations.
+-/
+def Nat.roundDivToEven (x y : Nat) : Nat :=
+  let div := 2 * x / y
+  if div % 4 == 1 && div * y = 2 * x then
+    div / 2
+  else
+    (div + 1) / 2
+
+def Float.fromRatParts (sign : Bool) (x y : Nat) : Float :=
+  if x == 0 then Float.fromParts sign 0 0 else
+  let exp := x.log2Div y
+  if exp < -1022 then
+    -- subnormal
+    let mantissa := Nat.roundDivToEven (x <<< (1022 + 52)) y
+    if mantissa == 0x0010_0000_0000_0000 then -- overflow
+      Float.fromParts sign 1 0 -- smallest normal number
+    else
+      Float.fromParts sign 0 mantissa.toUInt64
+  else if exp < 52 then
+    -- normal
+    let mantissa := Nat.roundDivToEven (x <<< (52 - exp).toNat) (y <<< (exp - 52).toNat)
+    if mantissa == 0x0020_0000_0000_0000 then -- overflow
+      Float.fromParts sign (exp + 1024).natAbs.toUInt64 0
+    else
+      Float.fromParts sign (exp + 1023).natAbs.toUInt64
+        (mantissa.toUInt64 &&& 0x000f_ffff_ffff_ffff)
+  else
+    -- infinity
+    Float.fromParts sign 2047 0
+
+/--
+Returns an opaque nan value. Because we can't guarantee that this function actually
+returns a nan value, `Float.makeNan` is instead used in practice.
+-/
+private opaque Float.opaqueMakeNanBits (decl : Lean.Name) (x y : Float) : UInt64 :=
+  0x7ff8000000000000 -- we just define this to make the following functions computable
+
+/--
+Returns true if the given float is a nan value and not one of the canonical nan values.
+This function is mainly used to implement `Float.makeNan`.
+-/
+def Float.isNonCanonicalNan (x : Float) : Bool :=
+  let bits := x.toBits
+  bits &&& 0x7ff0_0000_0000_0000 == 0x7ff0_0000_0000_0000 &&
+    x.mantissa != 0x0008_0000_0000_0000
+
+/--
+Auxiliary function to define the opaque nan behavior of the float functions.
+-/
+def Float.makeNan (decl : Lean.Name) (x y : Float) : Float :=
+  if !x.isNonCanonicalNan && !y.isNonCanonicalNan then
+    -- if both values are either canonical nans or not nans, return a canonical nan
+    -- sign stays opaque
+    ⟨(Float.opaqueMakeNanBits decl x y &&& 0x8000_0000_0000_0000)
+      ||| 0x7ff8_0000_0000_0000⟩
+  else
+    -- otherwise return any arithmetic nan value
+    ⟨Float.opaqueMakeNanBits decl x y ||| 0x7ff8_0000_0000_0000⟩
+
+@[extern "lean_float_negate"] def Float.neg (x : Float) : Float :=
+  ⟨x.toBits ^^^ 0x8000_0000_0000_0000⟩ -- flip the sign bit
+
+@[extern "lean_float_add"]
+def Float.add (x y : Float) : Float :=
+  if x.isNaN || y.isNaN then Float.makeNan `Float.add x y
+  else if x.isInf then
+    if y.isInf && (x.signBit != y.signBit) then Float.makeNan `Float.add x y
+    else x
+  else if y.isInf then y
+  -- special case -0 + -0 = -0
+  else if x.toBits == 0x8000_0000_0000_0000 && y.toBits == 0x8000_0000_0000_0000 then x
+  else
+    let (a₁, b₁) := x.toRatParts
+    let (a₂, b₂) := y.toRatParts
+    -- naive rational number addition
+    let a := a₁ * b₂ + a₂ * b₁
+    let b := b₁ * b₂
+    Float.fromRatParts (a < 0) a.natAbs b
+
+@[extern "lean_float_sub"]
+def Float.sub (x y : Float) : Float :=
+  x.add y.neg
+
+@[extern "lean_float_mul"]
+def Float.mul (x y : Float) : Float :=
+  if x.isNaN || y.isNaN then Float.makeNan `Float.mul x y
+  else if x.isInf then
+    if y == ⟨0⟩ then Float.makeNan `Float.mul x y
+    else Float.fromParts (x.signBit ^^ y.signBit) 2047 0
+  else if y.isInf then
+    if x == ⟨0⟩ then Float.makeNan `Float.mul x y
+    else Float.fromParts (x.signBit ^^ y.signBit) 2047 0
+  else
+    let (a₁, b₁) := x.toRatParts
+    let (a₂, b₂) := y.toRatParts
+    let a := a₁ * a₂
+    let b := b₁ * b₂
+    Float.fromRatParts (x.signBit ^^ y.signBit) a.natAbs b
+
+@[extern "lean_float_div"]
+def Float.div (x y : Float) : Float :=
+  if x.isNaN || y.isNaN then Float.makeNan `Float.div x y
+  else if x.isInf then
+    if y.isInf then Float.makeNan `Float.div x y
+    else Float.fromParts (x.signBit ^^ y.signBit) 2047 0
+  else if y.isInf then Float.fromParts (x.signBit ^^ y.signBit) 0 0
+  else if y == ⟨0⟩ then
+    if x == ⟨0⟩ then Float.makeNan `Float.div x y
+    else Float.fromParts (x.signBit ^^ y.signBit) 0 0
+  else
+    let (a₁, b₁) := x.toRatParts
+    let (a₂, b₂) := y.toRatParts
+    let a := a₁ * b₂
+    let b := b₁ * a₂
+    Float.fromRatParts (x.signBit ^^ y.signBit) a.natAbs b.natAbs
 
 instance : Add Float := ⟨Float.add⟩
 instance : Sub Float := ⟨Float.sub⟩
@@ -74,21 +286,11 @@ instance : Neg Float := ⟨Float.neg⟩
 instance : LT Float  := ⟨Float.lt⟩
 instance : LE Float  := ⟨Float.le⟩
 
-/-- Note: this is not reflexive since `NaN != NaN`.-/
-@[extern "lean_float_beq"] opaque Float.beq (a b : Float) : Bool
+@[extern "lean_float_decLt"] instance Float.decLt (a b : Float) : Decidable (a < b) :=
+  inferInstanceAs (Decidable (_ = true))
 
-instance : BEq Float := ⟨Float.beq⟩
-
-@[extern "lean_float_decLt"] opaque Float.decLt (a b : Float) : Decidable (a < b) :=
-  match a, b with
-  | ⟨a⟩, ⟨b⟩ => floatSpec.decLt a b
-
-@[extern "lean_float_decLe"] opaque Float.decLe (a b : Float) : Decidable (a ≤ b) :=
-  match a, b with
-  | ⟨a⟩, ⟨b⟩ => floatSpec.decLe a b
-
-instance floatDecLt (a b : Float) : Decidable (a < b) := Float.decLt a b
-instance floatDecLe (a b : Float) : Decidable (a ≤ b) := Float.decLe a b
+@[extern "lean_float_decLe"] instance Float.decLe (a b : Float) : Decidable (a ≤ b) :=
+  inferInstanceAs (Decidable (_ = true))
 
 @[extern "lean_float_to_string"] opaque Float.toString : Float → String
 /-- If the given float is non-negative, truncates the value to the nearest non-negative integer.
@@ -122,9 +324,6 @@ If larger than the maximum value for `USize` (including Inf), returns the maximu
 -/
 @[extern "lean_float_to_usize"] opaque Float.toUSize : Float → USize
 
-@[extern "lean_float_isnan"] opaque Float.isNaN : Float → Bool
-@[extern "lean_float_isfinite"] opaque Float.isFinite : Float → Bool
-@[extern "lean_float_isinf"] opaque Float.isInf : Float → Bool
 /-- Splits the given float `x` into a significand/exponent pair `(s, i)`
 such that `x = s * 2^i` where `s ∈ (-1;-0.5] ∪ [0.5; 1)`.
 Returns an undefined value if `x` is not finite.
@@ -168,7 +367,10 @@ instance : ReprAtom Float  := ⟨⟩
 @[extern "ceil"] opaque Float.ceil : Float → Float
 @[extern "floor"] opaque Float.floor : Float → Float
 @[extern "round"] opaque Float.round : Float → Float
-@[extern "fabs"] opaque Float.abs : Float → Float
+
+@[extern "fabs"]
+def Float.abs (x : Float) : Float :=
+  ⟨x.toBits &&& 0x7fff_ffff_ffff_ffff⟩
 
 instance : HomogeneousPow Float := ⟨Float.pow⟩
 
@@ -180,4 +382,14 @@ instance : Max Float := maxOfLe
 Efficiently computes `x * 2^i`.
 -/
 @[extern "lean_float_scaleb"]
-opaque Float.scaleB (x : Float) (i : @& Int) : Float
+def Float.scaleB (x : Float) (i : @& Int) : Float :=
+  if x.isNaN then Float.makeNan `Float.scaleB x x else
+  let sign := x.signBit
+  let mantissa := x.mantissa
+  let newExponent := x.exponentPart.toNat + i
+  if newExponent ≥ 2047 then Float.fromParts sign 2047 0 -- infinity
+  else if newExponent < 0 then
+    -- just calculate directly
+    Float.fromRatParts sign mantissa.toNat (1 <<< (1022 + 52 - newExponent).natAbs)
+  else
+    Float.fromParts sign newExponent.toNat.toUInt64 mantissa
