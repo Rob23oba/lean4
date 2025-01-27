@@ -111,8 +111,7 @@ def Float.isInf (x : Float) : Bool :=
 @[extern "lean_float_decLt"]
 def Float.blt (x y : Float) : Bool :=
   if x.isNaN || y.isNaN then false
-  else if x.toBits &&& 0x7fff_ffff_ffff_ffff == 0
-    && y.toBits &&& 0x7fff_ffff_ffff_ffff == 0 then true -- a and b are +/- 0
+  else if x == ⟨0⟩ && y == ⟨0⟩ then false -- a and b are +/- 0
   else
     match x.signBit, y.signBit with
     | false, false => x.toBits < y.toBits -- positive < positive
@@ -267,7 +266,7 @@ def Float.div (x y : Float) : Float :=
   else if y.isInf then Float.fromParts (x.signBit ^^ y.signBit) 0 0
   else if y == ⟨0⟩ then
     if x == ⟨0⟩ then Float.makeNan `Float.div x y
-    else Float.fromParts (x.signBit ^^ y.signBit) 0 0
+    else Float.fromParts (x.signBit ^^ y.signBit) 2047 0
   else
     let (a₁, b₁) := x.toRatParts
     let (a₂, b₂) := y.toRatParts
