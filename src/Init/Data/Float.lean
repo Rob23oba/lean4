@@ -176,7 +176,7 @@ def Float.fromRatParts (sign : Bool) (x y : Nat) : Float :=
       Float.fromParts sign 1 0 -- smallest normal number
     else
       Float.fromParts sign 0 mantissa.toUInt64
-  else if exp < 52 then
+  else if exp < 1024 then
     -- normal
     let mantissa := Nat.roundDivToEven (x <<< (52 - exp).toNat) (y <<< (exp - 52).toNat)
     if mantissa == 0x0020_0000_0000_0000 then -- overflow
@@ -294,31 +294,60 @@ If negative or NaN, returns `0`.
 If larger than the maximum value for `UInt8` (including Inf), returns the maximum value of `UInt8`
 (i.e. `UInt8.size - 1`).
 -/
-@[extern "lean_float_to_uint8"] opaque Float.toUInt8 : Float → UInt8
+@[extern "lean_float_to_uint8"]
+def Float.toUInt8 (x : Float) : UInt8 :=
+  if x.isNaN || x < ⟨0⟩ then 0
+  else
+    let (a, b) := x.toRatParts
+    if a / b < UInt8.size then (a / b).toNat.toUInt8 else (UInt8.size - 1).toUInt8
+
 /-- If the given float is non-negative, truncates the value to the nearest non-negative integer.
 If negative or NaN, returns `0`.
 If larger than the maximum value for `UInt16` (including Inf), returns the maximum value of `UInt16`
 (i.e. `UInt16.size - 1`).
 -/
-@[extern "lean_float_to_uint16"] opaque Float.toUInt16 : Float → UInt16
+@[extern "lean_float_to_uint16"]
+def Float.toUInt16 (x : Float) : UInt16 :=
+  if x.isNaN || x < ⟨0⟩ then 0
+  else
+    let (a, b) := x.toRatParts
+    if a / b < UInt16.size then (a / b).toNat.toUInt16 else (UInt8.size - 1).toUInt16
+
 /-- If the given float is non-negative, truncates the value to the nearest non-negative integer.
 If negative or NaN, returns `0`.
 If larger than the maximum value for `UInt32` (including Inf), returns the maximum value of `UInt32`
 (i.e. `UInt32.size - 1`).
 -/
-@[extern "lean_float_to_uint32"] opaque Float.toUInt32 : Float → UInt32
+@[extern "lean_float_to_uint32"]
+def Float.toUInt32 (x : Float) : UInt32 :=
+  if x.isNaN || x < ⟨0⟩ then 0
+  else
+    let (a, b) := x.toRatParts
+    if a / b < UInt32.size then (a / b).toNat.toUInt32 else (UInt8.size - 1).toUInt32
+
 /-- If the given float is non-negative, truncates the value to the nearest non-negative integer.
 If negative or NaN, returns `0`.
 If larger than the maximum value for `UInt64` (including Inf), returns the maximum value of `UInt64`
 (i.e. `UInt64.size - 1`).
 -/
-@[extern "lean_float_to_uint64"] opaque Float.toUInt64 : Float → UInt64
+@[extern "lean_float_to_uint64"]
+def Float.toUInt64 (x : Float) : UInt64 :=
+  if x.isNaN || x < ⟨0⟩ then 0
+  else
+    let (a, b) := x.toRatParts
+    if a / b < UInt64.size then (a / b).toNat.toUInt64 else (UInt8.size - 1).toUInt64
+
 /-- If the given float is non-negative, truncates the value to the nearest non-negative integer.
 If negative or NaN, returns `0`.
 If larger than the maximum value for `USize` (including Inf), returns the maximum value of `USize`
 (i.e. `USize.size - 1`). This value is platform dependent).
 -/
-@[extern "lean_float_to_usize"] opaque Float.toUSize : Float → USize
+@[extern "lean_float_to_usize"]
+def Float.toUSize (x : Float) : USize :=
+  if x.isNaN || x < ⟨0⟩ then 0
+  else
+    let (a, b) := x.toRatParts
+    if a / b < USize.size then (a / b).toNat.toUSize else (USize.size - 1).toUSize
 
 /-- Splits the given float `x` into a significand/exponent pair `(s, i)`
 such that `x = s * 2^i` where `s ∈ (-1;-0.5] ∪ [0.5; 1)`.
@@ -329,10 +358,9 @@ Returns an undefined value if `x` is not finite.
 instance : ToString Float where
   toString := Float.toString
 
-@[extern "lean_uint64_to_float"] opaque UInt64.toFloat (n : UInt64) : Float
-
-instance : Inhabited Float where
-  default := UInt64.toFloat 0
+@[extern "lean_uint64_to_float"]
+def UInt64.toFloat (n : UInt64) : Float :=
+  Float.fromRatParts false n.toNat 1
 
 instance : Repr Float where
   reprPrec n prec := if n < UInt64.toFloat 0 then Repr.addAppParen (toString n) prec else toString n
