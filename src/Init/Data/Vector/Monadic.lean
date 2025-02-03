@@ -19,12 +19,6 @@ open Nat
 
 /-! ## Monadic operations -/
 
-theorem map_toArray_inj [Monad m] [LawfulMonad m] [Nonempty α]
-    {v₁ : m (Vector α n)} {v₂ : m (Vector α n)} (w : toArray <$> v₁ = toArray <$> v₂) :
-    v₁ = v₂ := by
-  apply map_inj_of_inj ?_ w
-  simp
-
 /-! ### mapM -/
 
 @[congr] theorem mapM_congr [Monad m] {as bs : Vector α n} (w : as = bs)
@@ -39,11 +33,10 @@ theorem map_toArray_inj [Monad m] [LawfulMonad m] [Nonempty α]
   unfold mapM.go
   simp
 
--- The `[Nonempty β]` hypothesis should be avoidable by unfolding `mapM` directly.
-@[simp] theorem mapM_append [Monad m] [LawfulMonad m] [Nonempty β]
+@[simp] theorem mapM_append [Monad m] [LawfulMonad m]
     (f : α → m β) {l₁ : Vector α n} {l₂ : Vector α n'} :
     (l₁ ++ l₂).mapM f = (return (← l₁.mapM f) ++ (← l₂.mapM f)) := by
-  apply map_toArray_inj
+  rw [← map_inj_of_inj fun _ _ => toArray_inj.mp]
   suffices toArray <$> (l₁ ++ l₂).mapM f = (return (← toArray <$> l₁.mapM f) ++ (← toArray <$> l₂.mapM f)) by
     rw [this]
     simp only [bind_pure_comp, Functor.map_map, bind_map_left, map_bind, toArray_append]
