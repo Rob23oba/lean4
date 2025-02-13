@@ -4,8 +4,7 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Author: Leonardo de Moura
 -/
 prelude
-import Init.Data.Array.Basic
-import Init.Data.Array.Subarray
+import Init.Data.Array.Lemmas
 import Init.Data.UInt.Basic
 import Init.Data.Option.Basic
 universe u
@@ -95,6 +94,56 @@ protected def append (a : ByteArray) (b : ByteArray) : ByteArray :=
   b.copySlice 0 a a.size b.size false
 
 instance : Append ByteArray := ⟨ByteArray.append⟩
+
+/--
+Grow or shrink the byte array to the provided size.
+New grown parts are filled with zeroes.
+-/
+@[extern "lean_byte_array_set_size"]
+def setSize (a : ByteArray) (newSize : @& Nat) (exact : Bool := true) : ByteArray :=
+  ⟨a.data.take newSize ++ Array.mkArray (newSize - a.size) 0⟩
+
+theorem size_setSize (a : ByteArray) (newSize : Nat) : (a.setSize newSize).size = newSize := by
+  simp only [size, setSize, Array.take_eq_extract, Array.size_append, Array.size_extract,
+    Nat.sub_zero, Array.size_mkArray]
+  by_cases h : a.data.size ≤ newSize
+  · rw [Nat.min_eq_right h, Nat.add_sub_cancel' h]
+  · replace h := Nat.le_of_not_le h
+    rw [Nat.min_eq_left h, Nat.sub_eq_zero_of_le h, Nat.add_zero]
+
+/-- Returns whether the two slices of the byte arrays are equal. -/
+@[extern "lean_byte_array_slice_eq_unchecked"]
+def sliceEq' (a1 : @& ByteArray) (off1 : @& Nat) (a2 : @& ByteArray) (off2 : @& Nat) (len : @& Nat)
+    (h1 : off1 + len ≤ a1.size) (h1 : off2 + len ≤ a2.size) : Bool :=
+  (a1.extract off1 (off1 + len)).data == (a2.extract off2 (off2 + len)).data
+
+def sliceEq (a1 : ByteArray) (off1 : Nat) (a2 : ByteArray) (off2 : Nat) (len : Nat) : Bool :=
+  if h : off1 + len ≤ a1.size ∧ off2 + len ≤ a2.size then
+    sliceEq' a1 off1 a2 off2 len h.1 h.2
+  else
+    false
+
+def beq (as bs : ByteArray) : Bool :=
+  if h : as.size = bs.size then
+    sliceEq' as 0 bs 0 as.size
+      (Nat.zero_add _ ▸ Nat.le_refl _)
+      (h ▸ Nat.zero_add _ ▸ Nat.le_refl _)
+  else
+    false
+
+instance : BEq ByteArray := ⟨beq⟩
+
+/-- Fills the specified region of the byte array with the specified byte. -/
+@[extern "lean_byte_array_fill_unchecked"]
+def fill' (a : ByteArray) (off : @& Nat) (len : @& Nat) (val : UInt8) (h : off + len ≤ a.size) : ByteArray :=
+  (ByteArray.mk (Array.mkArray len val)).copySlice 0 a off len
+
+def fill (a : ByteArray) (off : @& Nat) (len : @& Nat) (val : UInt8) : ByteArray :=
+  if h : off + len ≤ a.size then
+    fill' a off len val h
+  else
+    let a := a.setSize (off + len)
+    fill' a off len val (Nat.le_of_eq (size_setSize ..).symm)
 
 def toList (bs : ByteArray) : List UInt8 :=
   let rec loop (i : Nat) (r : List UInt8) :=

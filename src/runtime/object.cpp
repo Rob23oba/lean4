@@ -2332,7 +2332,31 @@ extern "C" LEAN_EXPORT obj_res lean_byte_array_push(obj_arg a, uint8 b) {
     return r;
 }
 
-    extern "C" LEAN_EXPORT obj_res lean_byte_array_copy_slice(b_obj_arg src, obj_arg o_src_off, obj_arg dest, obj_arg o_dest_off, obj_arg o_len, bool exact) {
+extern "C" LEAN_EXPORT obj_res lean_byte_array_set_size(obj_arg a, b_obj_arg n, uint8 exact) {
+    if (!lean_is_scalar(n)) {
+        lean_internal_panic_out_of_memory();
+    }
+    size_t new_size = lean_unbox(n);
+    object * r = lean_sarray_ensure_exclusive(lean_sarray_ensure_capacity(a, new_size, exact));
+    size_t old_size = lean_sarray_size(r);
+    if (old_size < new_size) {
+        memset(lean_sarray_cptr(r) + old_size, 0, new_size - old_size);
+    }
+    lean_to_sarray(r)->m_size = new_size;
+    return r;
+}
+
+extern "C" LEAN_EXPORT uint8_t lean_byte_array_slice_eq_unchecked(b_obj_arg a1, b_obj_arg i1, b_obj_arg a2, b_obj_arg i2, b_obj_arg len) {
+    return memcmp(lean_sarray_cptr(a1) + lean_unbox(i1), lean_sarray_cptr(a2) + lean_unbox(i2), lean_unbox(len)) == 0;
+}
+
+extern "C" LEAN_EXPORT obj_res lean_byte_array_fill_unchecked(obj_arg a, b_obj_arg i, b_obj_arg n, uint8 b) {
+    object * r = lean_sarray_ensure_exclusive(a);
+    memset(lean_sarray_cptr(r) + lean_unbox(i), b, lean_unbox(n));
+    return r;
+}
+
+extern "C" LEAN_EXPORT obj_res lean_byte_array_copy_slice(b_obj_arg src, obj_arg o_src_off, obj_arg dest, obj_arg o_dest_off, obj_arg o_len, bool exact) {
     size_t ssz = lean_sarray_size(src);
     size_t dsz = lean_sarray_size(dest);
     size_t src_off = lean_nat_to_size_t(o_src_off);

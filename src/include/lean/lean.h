@@ -40,6 +40,8 @@ extern "C" {
 
 #ifdef NDEBUG
 #define LEAN_ALWAYS_INLINE __attribute__((always_inline))
+#define LEAN_PURE __attribute__((pure))
+#define LEAN_ALWAYS_TRUE(x) if (!(x)) {__builtin_unreachable();}
 #else
 // We have observed stack frame increases from forced inlining overflowing the stack in debug builds,
 // let's leave the decision to the compiler in that case
@@ -50,6 +52,8 @@ extern "C" {
 #define LEAN_UNLIKELY(x) (x)
 #define LEAN_LIKELY(x) (x)
 #define LEAN_ALWAYS_INLINE
+#define LEAN_PURE
+#define LEAN_ALWAYS_TRUE(x)
 #endif
 
 #ifndef assert
@@ -302,7 +306,7 @@ typedef struct {
 
 static inline LEAN_ALWAYS_INLINE bool lean_is_scalar(lean_object * o) { return ((size_t)(o) & 1) == 1; }
 static inline lean_object * lean_box(size_t n) { return (lean_object*)(((size_t)(n) << 1) | 1); }
-static inline size_t lean_unbox(lean_object * o) { return (size_t)(o) >> 1; }
+static inline size_t lean_unbox(lean_object * o) { LEAN_ALWAYS_TRUE(lean_is_scalar(o)); return (size_t)(o) >> 1; }
 
 LEAN_EXPORT void lean_set_exit_on_panic(bool flag);
 /* Enable/disable panic messages */
@@ -932,6 +936,12 @@ static inline uint8_t lean_byte_array_fget(b_lean_obj_arg a, b_lean_obj_arg i) {
 
 LEAN_EXPORT lean_obj_res lean_byte_array_push(lean_obj_arg a, uint8_t b);
 
+LEAN_EXPORT lean_obj_res lean_byte_array_set_size(lean_obj_arg a, b_lean_obj_arg n, uint8_t exact);
+
+LEAN_EXPORT uint8_t lean_byte_array_slice_eq_unchecked(b_lean_obj_arg a1, b_lean_obj_arg i1, b_lean_obj_arg a2, b_lean_obj_arg i2, b_lean_obj_arg len);
+
+LEAN_EXPORT lean_obj_res lean_byte_array_fill_unchecked(lean_obj_arg a, b_lean_obj_arg i, b_lean_obj_arg n, uint8_t b);
+
 static inline lean_object * lean_byte_array_uset(lean_obj_arg a, size_t i, uint8_t v) {
     lean_obj_res r;
     if (lean_is_exclusive(a)) r = a;
@@ -1201,28 +1211,31 @@ static inline lean_object * lean_set_external_data(lean_object * o, void * data)
 
 #define LEAN_MAX_SMALL_NAT (SIZE_MAX >> 1)
 
-LEAN_EXPORT lean_object * lean_nat_big_succ(lean_object * a);
-LEAN_EXPORT lean_object * lean_nat_big_add(lean_object * a1, lean_object * a2);
-LEAN_EXPORT lean_object * lean_nat_big_sub(lean_object * a1, lean_object * a2);
-LEAN_EXPORT lean_object * lean_nat_big_mul(lean_object * a1, lean_object * a2);
-LEAN_EXPORT lean_object * lean_nat_overflow_mul(size_t a1, size_t a2);
-LEAN_EXPORT lean_object * lean_nat_big_div(lean_object * a1, lean_object * a2);
-LEAN_EXPORT lean_object * lean_nat_big_mod(lean_object * a1, lean_object * a2);
-LEAN_EXPORT bool lean_nat_big_eq(lean_object * a1, lean_object * a2);
-LEAN_EXPORT bool lean_nat_big_le(lean_object * a1, lean_object * a2);
-LEAN_EXPORT bool lean_nat_big_lt(lean_object * a1, lean_object * a2);
-LEAN_EXPORT lean_object * lean_nat_big_land(lean_object * a1, lean_object * a2);
-LEAN_EXPORT lean_object * lean_nat_big_lor(lean_object * a1, lean_object * a2);
-LEAN_EXPORT lean_object * lean_nat_big_xor(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE lean_object * lean_nat_big_succ(lean_object * a);
+LEAN_EXPORT LEAN_PURE lean_object * lean_nat_big_add(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE lean_object * lean_nat_big_sub(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE lean_object * lean_nat_big_mul(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE lean_object * lean_nat_overflow_mul(size_t a1, size_t a2);
+LEAN_EXPORT LEAN_PURE lean_object * lean_nat_big_div(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE lean_object * lean_nat_big_mod(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE bool lean_nat_big_eq(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE bool lean_nat_big_le(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE bool lean_nat_big_lt(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE lean_object * lean_nat_big_land(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE lean_object * lean_nat_big_lor(lean_object * a1, lean_object * a2);
+LEAN_EXPORT LEAN_PURE lean_object * lean_nat_big_xor(lean_object * a1, lean_object * a2);
 
-LEAN_EXPORT lean_obj_res lean_cstr_to_nat(char const * n);
-LEAN_EXPORT lean_obj_res lean_big_usize_to_nat(size_t n);
-LEAN_EXPORT lean_obj_res lean_big_uint64_to_nat(uint64_t n);
+LEAN_EXPORT LEAN_PURE lean_obj_res lean_cstr_to_nat(char const * n);
+LEAN_EXPORT LEAN_PURE lean_obj_res lean_big_usize_to_nat(size_t n);
+LEAN_EXPORT LEAN_PURE lean_obj_res lean_big_uint64_to_nat(uint64_t n);
 static inline lean_obj_res lean_usize_to_nat(size_t n) {
     if (LEAN_LIKELY(n <= LEAN_MAX_SMALL_NAT))
         return lean_box(n);
-    else
-        return lean_big_usize_to_nat(n);
+    else {
+        lean_object* res = lean_big_usize_to_nat(n);
+        LEAN_ALWAYS_TRUE(!lean_is_scalar(res));
+        return res;
+    }
 }
 static inline lean_obj_res lean_unsigned_to_nat(unsigned n) {
     return lean_usize_to_nat(n);
@@ -1230,22 +1243,31 @@ static inline lean_obj_res lean_unsigned_to_nat(unsigned n) {
 static inline lean_obj_res lean_uint64_to_nat(uint64_t n) {
     if (LEAN_LIKELY(n <= LEAN_MAX_SMALL_NAT))
         return lean_box(n);
-    else
-        return lean_big_uint64_to_nat(n);
+    else {
+        lean_object* res = lean_big_usize_to_nat(n);
+        LEAN_ALWAYS_TRUE(!lean_is_scalar(res));
+        return res;
+    }
 }
 
 static inline lean_obj_res lean_nat_succ(b_lean_obj_arg a) {
     if (LEAN_LIKELY(lean_is_scalar(a)))
         return lean_usize_to_nat(lean_unbox(a) + 1);
-    else
-        return lean_nat_big_succ(a);
+    else {
+        lean_object* res = lean_nat_big_succ(a);
+        LEAN_ALWAYS_TRUE(!lean_is_scalar(res));
+        return res;
+    }
 }
 
 static inline LEAN_ALWAYS_INLINE lean_obj_res lean_nat_add(b_lean_obj_arg a1, b_lean_obj_arg a2) {
     if (LEAN_LIKELY(lean_is_scalar(a1) && lean_is_scalar(a2)))
         return lean_usize_to_nat(lean_unbox(a1) + lean_unbox(a2));
-    else
-        return lean_nat_big_add(a1, a2);
+    else {
+        lean_object* res = lean_nat_big_add(a1, a2);
+        LEAN_ALWAYS_TRUE(!lean_is_scalar(res));
+        return res;
+    }
 }
 
 static inline LEAN_ALWAYS_INLINE lean_obj_res lean_nat_sub(b_lean_obj_arg a1, b_lean_obj_arg a2) {
