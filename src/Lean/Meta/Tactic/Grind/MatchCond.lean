@@ -6,10 +6,18 @@ Authors: Leonardo de Moura
 prelude
 import Init.Grind
 import Init.Simproc
+import Lean.Meta.Tactic.Contradiction
 import Lean.Meta.Tactic.Simp.Simproc
+import Lean.Meta.Tactic.Grind.ProveEq
 import Lean.Meta.Tactic.Grind.PropagatorAttr
 
 namespace Lean.Meta.Grind
+/-
+Remark: the `simp` module has some support for `MatchCond`, but it is
+called `isEqnThmHypothesis` there. This is actually a better name.
+TODO: rename this module and functions to `EqThmHyp`.
+-/
+
 /-!
 Support for `match`-expressions with overlapping patterns.
 Recall that when a `match`-expression has overlapping patterns, some of its equation theorems are
@@ -267,7 +275,7 @@ private partial def isStatisfied (e : Expr) : GoalM Bool := do
   repeat
     let .forallE _ d b _ := e | break
     if (← isMatchCondFalseHyp d) then
-      trace[grind.debug.matchCond] "satifised{indentExpr e}\nthe following equality is false{indentExpr d}"
+      trace_goal[grind.debug.matchCond] "satifised{indentExpr e}\nthe following equality is false{indentExpr d}"
       return true
     e := b
   return false
@@ -279,17 +287,22 @@ private partial def mkMatchCondProof? (e : Expr) : GoalM (Option Expr) := do
     for x in xs do
       let type ← inferType x
       if (← isMatchCondFalseHyp type) then
-        trace[grind.debug.matchCond] ">>> {type}"
+        trace_goal[grind.debug.matchCond] ">>> {type}"
         let some h ← go? x | pure ()
         return some (← mkLambdaFVars xs h)
     return none
 where
   go? (h : Expr) : GoalM (Option Expr) := do
-    trace[grind.debug.matchCond] "go?: {← inferType h}"
+    trace_goal[grind.debug.matchCond] "go?: {← inferType h}"
     let some (α?, lhs, rhs) := isEqHEq? (← inferType h)
       | return none
     let target ← (← get).mvarId.getType
-    let root ← getRootENode lhs
+    -- We use `shareCommon` here because we may accessing a new expression
+    -- created when we infer the type of the `noConfusion` term below
+    let lhs ← shareCommon lhs
+    let some root ← getRootENode? lhs
+      | reportIssue! "found term that has not been internalized{indentExpr lhs}\nwhile trying to construct a proof for `MatchCond`{indentExpr e}"
+        return none
     let isHEq := α?.isSome
     let h ← if isHEq then
       mkEqOfHEq (← mkHEqTrans (← mkHEqProof root.self lhs) h)
@@ -298,6 +311,7 @@ where
     if root.ctor then
       let some ctorLhs ← isConstructorApp? root.self | return none
       let some ctorRhs ← isConstructorApp? rhs | return none
+      -- See comment on `shareCommon` above.
       let h ← mkNoConfusion target h
       if ctorLhs.name ≠ ctorRhs.name then
         return some h
@@ -318,13 +332,112 @@ where
     else
       return none
 
+/--
+Given a `match`-expression condition `e` that is known to be equal to `True`,
+try to close the goal by proving `False`. We use the following to example to illustrate
+the purpose of this function.
+```
+def f : List Nat → List Nat → Nat
+  | _, 1 :: _ :: _ => 1
+  | _, _ :: _ => 2
+  | _, _  => 0
+
+example : z = a :: as → y = z → f x y > 0 := by
+  grind [f.eq_def]
+```
+After `grind` unfolds `f`, it case splits on the `match`-expression producing
+three subgoals. The first two are easily closed by it. In the third one,
+we have the following two `match`-expression conditions stating that we
+are **not** in the first and second cases.
+```
+Lean.Grind.MatchCond (∀ (head : Nat) (tail : List Nat), x✝² = 1 :: head :: tail → False)
+Lean.Grind.MatchCond (∀ (head : Nat) (tail : List Nat), x✝² = head :: tail → False)
+```
+Moreover, we have the following equivalence class.
+```
+{z, y, x✝², a :: as}
+```
+Thus, we can close the goal by using the second `match`-expression condition,
+we just have to instantiate `head` and `tail` with `a` and `as` respectively,
+and use the fact that `x✝²` is equal to `a :: as`.
+-/
+partial def tryToProveFalse (e : Expr) : GoalM Unit := do
+  trace_goal[grind.debug.matchCond.proveFalse] "{e}"
+  let_expr Grind.MatchCond body ← e | return ()
+  let proof? ← withNewMCtxDepth do
+    let (args, _, _) ← forallMetaTelescope body
+    let mask := mkGenDiseqMask body
+    for arg in args, target in mask do
+      if target then
+        let some (α?, lhs, rhs) := isEqHEq? (← inferType arg)
+          | return none
+        let lhs' ← go lhs
+        trace[grind.debug.matchCond.proveFalse] "{lhs'} =?= {rhs}"
+        unless (← withDefault <| isDefEq lhs' rhs) do
+          return none
+        let isHEq := α?.isSome
+        let some lhsEqLhs' ← if isHEq then proveHEq? lhs lhs' else proveEq? lhs lhs'
+          | return none
+        unless (← isDefEq arg lhsEqLhs') do
+          return none
+    let he := mkOfEqTrueCore e (← mkEqTrueProof e)
+    let falseProof ← instantiateMVars (mkAppN he args)
+    if (← hasAssignableMVar falseProof) then
+      return none
+    trace[grind.debug.matchCond.proveFalse] "{falseProof} : {← inferType falseProof}"
+    return some falseProof
+  let some proof := proof? | return ()
+  closeGoal proof
+where
+  /--
+  Returns a term that is equal to `e`, but containing constructor applications
+  and literal values. `e` is the left-hand side of the equations in a `match`-expression
+  condition.
+  Remark: we could use the right-hand side to interrupt the recursion. For example,
+  suppose the equation is `x = ?head :: ?tail`. We only need to show that `x` is equal to
+  some term of the form `a :: as` to satisfy it. This function may return `a₁ :: b :: bs`,
+  which still allows us to satisfy the equation, but may have a bigger proof (e.g.,
+  a proof that `as` is equal to `b::bs`)
+  -/
+  go (e : Expr) : GoalM Expr := do
+    let root ← getRootENode e
+    if root.ctor then
+      let ctor := root.self
+      let some ctorInfo ← isConstructorApp? ctor | return ctor
+      let mut ctorArgs := ctor.getAppArgs
+      let mut modified := false
+      for i in [ctorInfo.numParams : ctorInfo.numParams + ctorInfo.numFields] do
+        let arg  := ctorArgs[i]!
+        let arg' ← go arg
+        unless isSameExpr arg arg' do
+          ctorArgs := ctorArgs.set! i arg'
+          modified := true
+      if modified then
+        shareCommon <| mkAppN ctor.getAppFn ctorArgs
+      else
+        return root.self
+    else if root.interpreted then
+      return root.self
+    else
+      return e
+
 /-- Propagates `MatchCond` upwards -/
-builtin_grind_propagator propagateMatchCond ↑Grind.MatchCond := fun e => do
-  trace[grind.debug.matchCond] "visiting{indentExpr e}"
-  if !(← isStatisfied e) then return ()
-  let some h ← mkMatchCondProof? e
-     | reportIssue m!"failed to construct proof for{indentExpr e}"; return ()
-  trace[grind.debug.matchCond] "{← inferType h}"
-  pushEqTrue e <| mkEqTrueCore e h
+builtin_grind_propagator propagateMatchCondUp ↑Grind.MatchCond := fun e => do
+  trace_goal[grind.debug.matchCond] "visiting{indentExpr e}"
+  if (← isEqTrue e) then
+    unless (← isStatisfied e) do
+      tryToProveFalse e
+  else
+    if !(← isStatisfied e) then return ()
+    let some h ← mkMatchCondProof? e
+       | reportIssue! "failed to construct proof for{indentExpr e}"; return ()
+    trace_goal[grind.debug.matchCond] "{← inferType h}"
+    pushEqTrue e <| mkEqTrueCore e h
+
+/-- Propagates `MatchCond` downwards -/
+builtin_grind_propagator propagateMatchCondDown ↓Grind.MatchCond := fun e => do
+  if (← isEqTrue e) then
+    unless (← isStatisfied e) do
+      tryToProveFalse e
 
 end Lean.Meta.Grind
