@@ -190,7 +190,7 @@ void initialize_constants() {
     mark_persistent(g_eq_symm->raw());
     g_eq_trans = new name{"Eq", "trans"};
     mark_persistent(g_eq_trans->raw());
-    g_float = new name{"Float"};
+    g_float = new name{"HardwareFloat"};
     mark_persistent(g_float->raw());
     g_float32 = new name{"Float32"};
     mark_persistent(g_float32->raw());

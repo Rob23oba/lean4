@@ -38,10 +38,10 @@ Eq.refl
 Eq.subst
 Eq.symm
 Eq.trans
-Float
-Float.toBits
-Float32
-Float32.toBits
+HardwareFloat
+HardwareFloat.toBits
+HardwareFloat32
+HardwareFloat32.toBits
 FloatArray
 FloatArray.data
 False

@@ -192,13 +192,13 @@ void initialize_constants() {
     mark_persistent(g_eq_symm->raw());
     g_eq_trans = new name{"Eq", "trans"};
     mark_persistent(g_eq_trans->raw());
-    g_float = new name{"Float"};
+    g_float = new name{"HardwareFloat"};
     mark_persistent(g_float->raw());
-    g_float_to_bits = new name{"Float", "toBits"};
+    g_float_to_bits = new name{"HardwareFloat", "toBits"};
     mark_persistent(g_float_to_bits->raw());
-    g_float32 = new name{"Float32"};
+    g_float32 = new name{"HardwareFloat32"};
     mark_persistent(g_float32->raw());
-    g_float32_to_bits = new name{"Float32", "toBits"};
+    g_float32_to_bits = new name{"HardwareFloat32", "toBits"};
     mark_persistent(g_float32_to_bits->raw());
     g_float_array = new name{"FloatArray"};
     mark_persistent(g_float_array->raw());

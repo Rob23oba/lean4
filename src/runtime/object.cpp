@@ -1695,7 +1695,7 @@ extern "C" LEAN_EXPORT double lean_float_scaleb(double a, b_lean_obj_arg b) {
    if (lean_is_scalar(b)) {
      return scalbn(a, lean_scalar_to_int(b));
    } else if (a == 0 || mpz_value(b).is_neg()) {
-     return 0;
+     return a * 0;
    } else {
      return a * (1.0 / 0.0);
    }
@@ -1712,24 +1712,23 @@ extern "C" LEAN_EXPORT obj_res lean_float_frexp(double a) {
     return r;
 }
 
+/*
 extern "C" LEAN_EXPORT double lean_float_of_bits(uint64_t u)
 {
     static_assert(sizeof(double) == sizeof(u), "`double` unexpected size.");
     double ret;
     std::memcpy(&ret, &u, sizeof(double));
-    if (isnan(ret))
-        ret = std::numeric_limits<double>::quiet_NaN();
     return ret;
 }
 
 extern "C" LEAN_EXPORT uint64_t lean_float_to_bits(double d)
 {
+    static_assert(sizeof(double) == sizeof(u), "`double` unexpected size.");
     uint64_t ret;
-    if (isnan(d))
-        d = std::numeric_limits<double>::quiet_NaN();
     std::memcpy(&ret, &d, sizeof(double));
     return ret;
 }
+*/
 
 // =======================================
 // Float32
@@ -1747,7 +1746,7 @@ extern "C" LEAN_EXPORT float lean_float32_scaleb(float a, b_lean_obj_arg b) {
    if (lean_is_scalar(b)) {
      return scalbn(a, lean_scalar_to_int(b));
    } else if (a == 0 || mpz_value(b).is_neg()) {
-     return 0;
+     return a * 0;
    } else {
      return a * (1.0 / 0.0);
    }
