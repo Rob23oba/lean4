@@ -3260,7 +3260,7 @@ theorem getKey!_alterKey [Inhabited α] {k k' : α} {f : Option (β k) → Optio
   · next heq =>
     rfl
 
-theorem getKey_alterKey [Inhabited α] {k k' : α} {f : Option (β k) → Option (β k)}
+theorem getKey_alterKey {k k' : α} {f : Option (β k) → Option (β k)}
     (l : List ((a : α) × β a)) (hl : DistinctKeys l) (hc : containsKey k' (alterKey k f l)) :
     getKey k' (alterKey k f l) hc =
       if heq : k == k' then
@@ -3533,7 +3533,7 @@ theorem getKey!_alterKey [EquivBEq α] [Inhabited α] {k k' : α} {f : Option β
         getKey! k' l := by
   simp [hl, getKey!_eq_getKey?, getKey?_alterKey, apply_ite Option.get!]
 
-theorem getKey_alterKey [EquivBEq α] [Inhabited α] {k k' : α} {f : Option β → Option β}
+theorem getKey_alterKey [EquivBEq α] {k k' : α} {f : Option β → Option β}
     (l : List ((_ : α) × β)) (hl : DistinctKeys l) (hc : containsKey k' (alterKey k f l)) :
     getKey k' (alterKey k f l) hc =
       if heq : k == k' then
@@ -3719,7 +3719,7 @@ theorem getKey!_modifyKey_self [BEq α] [LawfulBEq α] [Inhabited α] {k : α} {
     getKey! k (modifyKey k f l) = if containsKey k l then k else default := by
   simp [getKey!_modifyKey, hl]
 
-theorem getKey_modifyKey [BEq α] [LawfulBEq α] [Inhabited α] {k k' : α} {f : β k → β k}
+theorem getKey_modifyKey [BEq α] [LawfulBEq α] {k k' : α} {f : β k → β k}
     (l : List ((a : α) × β a)) (hl : DistinctKeys l) (h : containsKey k' (modifyKey k f l)) :
     getKey k' (modifyKey k f l) h =
       if k == k' then
@@ -3730,7 +3730,7 @@ theorem getKey_modifyKey [BEq α] [LawfulBEq α] [Inhabited α] {k k' : α} {f :
   simp [modifyKey_eq_alterKey, getKey_alterKey, hl, ← dite_eq_ite]
 
 @[simp]
-theorem getKey_modifyKey_self [BEq α] [LawfulBEq α] [Inhabited α] {k : α} {f : β k → β k}
+theorem getKey_modifyKey_self [BEq α] [LawfulBEq α] {k : α} {f : β k → β k}
     (l : List ((a : α) × β a)) (hl : DistinctKeys l) (h : containsKey k (modifyKey k f l)) :
     getKey k (modifyKey k f l) h = k := by
   simp [getKey_modifyKey, hl]
@@ -3744,7 +3744,7 @@ theorem getKeyD_modifyKey [BEq α] [LawfulBEq α] {k k' fallback : α} {f : β k
         getKeyD k' l fallback := by
   simp [modifyKey_eq_alterKey, getKeyD_alterKey, containsKey_eq_isSome_getValueCast?, hl]
 
-theorem getKeyD_modifyKey_self [BEq α] [LawfulBEq α] [Inhabited α] {k fallback : α} {f : β k → β k}
+theorem getKeyD_modifyKey_self [BEq α] [LawfulBEq α] {k fallback : α} {f : β k → β k}
     (l : List ((a : α) × β a)) (hl : DistinctKeys l) :
     getKeyD k (modifyKey k f l) fallback = if containsKey k l then k else fallback := by
   simp [getKeyD_modifyKey, hl]
@@ -3884,7 +3884,7 @@ theorem getKey!_modifyKey_self [EquivBEq α] [Inhabited α] {k : α} {f : β →
     getKey! k (modifyKey k f l) = if containsKey k l then k else default := by
   simp [getKey!_modifyKey, hl]
 
-theorem getKey_modifyKey [EquivBEq α] [Inhabited α] {k k' : α} {f : β → β} (l : List ((_ : α) × β))
+theorem getKey_modifyKey [EquivBEq α] {k k' : α} {f : β → β} (l : List ((_ : α) × β))
     (hl : DistinctKeys l) (h : containsKey k' (modifyKey k f l)) :
     getKey k' (modifyKey k f l) h =
       if k == k' then
@@ -3896,7 +3896,7 @@ theorem getKey_modifyKey [EquivBEq α] [Inhabited α] {k k' : α} {f : β → β
   rfl
 
 @[simp]
-theorem getKey_modifyKey_self [EquivBEq α] [Inhabited α] {k : α} {f : β → β}
+theorem getKey_modifyKey_self [EquivBEq α] {k : α} {f : β → β}
     (l : List ((_ : α) × β)) (hl : DistinctKeys l) (h : containsKey k (modifyKey k f l)) :
     getKey k (modifyKey k f l) h = k := by
   simp [getKey_modifyKey, hl]
@@ -3910,7 +3910,7 @@ theorem getKeyD_modifyKey [EquivBEq α] {k k' fallback : α} {f : β → β} (l 
         getKeyD k' l fallback := by
   simp [modifyKey_eq_alterKey, getKeyD_alterKey, containsKey_eq_isSome_getValue?, hl]
 
-theorem getKeyD_modifyKey_self [EquivBEq α] [Inhabited α] {k fallback : α} {f : β → β}
+theorem getKeyD_modifyKey_self [EquivBEq α] {k fallback : α} {f : β → β}
     (l : List ((_ : α) × β)) (hl : DistinctKeys l) :
     getKeyD k (modifyKey k f l) fallback = if containsKey k l then k else fallback := by
   simp [getKeyD_modifyKey, hl]
@@ -3924,5 +3924,26 @@ theorem constModifyKey_eq_modifyKey {β : Type v} [BEq α] [LawfulBEq α] {k : �
   cases getValueCast? k l <;> rfl
 
 end Modify
+
+section Filters
+
+theorem containsKey_filter_iff [BEq α] [LawfulBEq α] {k : α} {f : ((a : α) × β a) → Bool}
+    {l : List ((a : α) × β a)} (hl : DistinctKeys l) :
+    containsKey k (l.filter f) ↔ ∃ h : containsKey k l, f ⟨k, getValueCast k l h⟩ := by
+  induction l using assoc_induction with
+  | nil => simp
+  | cons k' v t ih =>
+    simp only [List.filter_cons]
+    simp only [distinctKeys_cons_iff] at hl
+    specialize ih hl.1
+    split
+    · simp only [containsKey_cons, getValueCast_cons, Bool.or_eq_true, beq_iff_eq]
+      constructor
+      · rintro (rfl | h)
+        simp only [hl.2, reduceCtorEq] at ih
+        simp at ih
+        simpa only [true_or, exists_true_left] using ih
+
+end Filter
 
 end Std.Internal.List

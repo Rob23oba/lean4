@@ -75,6 +75,7 @@ scoped macro "wf_trivial" : tactic => `(tactic|
     | apply Raw₀.Const.wfImp_insertMany | apply Raw₀.Const.wfImp_insertManyIfNewUnit
     | apply Raw₀.wfImp_alter | apply Raw₀.wfImp_modify
     | apply Raw₀.Const.wfImp_alter | apply Raw₀.Const.wfImp_modify
+    | apply Raw₀.wfImp_filter | apply Raw₀.wfImp_map | apply Raw₀.wfImp_filterMap
     | apply Raw₀.wfImp_erase | apply Raw.WF.out | assumption | apply Raw₀.wfImp_empty
     | apply Raw.WFImp.distinct | apply Raw.WF.empty₀))
 
@@ -106,7 +107,10 @@ private def modifyMap : Std.DHashMap Name (fun _ => Name) :=
      ⟨`alter, ``toListModel_alter⟩,
      ⟨`modify, ``toListModel_modify⟩,
      ⟨`Const.alter, ``Const.toListModel_alter⟩,
-     ⟨`Const.modify, ``Const.toListModel_modify⟩]
+     ⟨`Const.modify, ``Const.toListModel_modify⟩,
+     ⟨`filter, ``toListModel_filter⟩,
+     ⟨`map, ``toListModel_map⟩,
+     ⟨`filterMap, ``toListModel_filterMap⟩]
 
 private def congrNames : MacroM (Array (TSyntax `term)) := do
   return #[← `(_root_.List.Perm.isEmpty_eq), ← `(containsKey_of_perm),
@@ -2420,7 +2424,7 @@ theorem getKey!_modify_self (h : m.1.WF) [Inhabited α] {k : α} {f : β → β}
     (Const.modify m k f).getKey! k = if m.contains k then k else default := by
   simp_to_model [Const.modify] using List.Const.getKey!_modifyKey_self
 
-theorem getKey_modify (h : m.1.WF) [Inhabited α] {k k' : α} {f : β → β}
+theorem getKey_modify (h : m.1.WF) {k k' : α} {f : β → β}
     (hc : (Const.modify m k f).contains k') :
     (Const.modify m k f).getKey k' hc =
       if heq : k == k' then
@@ -2431,7 +2435,7 @@ theorem getKey_modify (h : m.1.WF) [Inhabited α] {k k' : α} {f : β → β}
   simp_to_model [Const.modify] using List.Const.getKey_modifyKey
 
 @[simp]
-theorem getKey_modify_self (h : m.1.WF) [Inhabited α] {k : α} {f : β → β}
+theorem getKey_modify_self (h : m.1.WF) {k : α} {f : β → β}
     (hc : (Const.modify m k f).contains k) : (Const.modify m k f).getKey k hc = k := by
   simp_to_model [Const.modify] using List.Const.getKey_modifyKey_self
 
@@ -2443,13 +2447,34 @@ theorem getKeyD_modify (h : m.1.WF) {k k' fallback : α} {f : β → β} :
         m.getKeyD k' fallback := by
   simp_to_model [Const.modify] using List.Const.getKeyD_modifyKey
 
-theorem getKeyD_modify_self (h : m.1.WF) [Inhabited α] {k fallback : α} {f : β → β} :
+theorem getKeyD_modify_self (h : m.1.WF) {k fallback : α} {f : β → β} :
     (Const.modify m k f).getKeyD k fallback = if m.contains k then k else fallback := by
   simp_to_model [Const.modify] using List.Const.getKeyD_modifyKey_self
 
 end Const
 
 end Modify
+
+section Filter
+
+variable [LawfulBEq α]
+
+theorem contains_filter (h : m.1.WF) {k : α} {f : (a : α) → β a → Bool} :
+    (m.filter f).contains k ↔ ∃ h : m.contains k, f k (m.get k h) := by
+  simp_to_model [filter]
+
+namespace Const
+
+variable {β : Type v} [EquivBEq α] [LawfulHashable α] (m : Raw₀ α (fun _ => β))
+omit [LawfulBEq α]
+
+theorem contains_filter (h : m.1.WF) {k : α} {f : α → β → Bool} :
+    (m.filter f).contains k ↔ ∃ h : m.contains k, f (m.getKey k h) (Const.get m k h) := by
+  simp_to_model [filter]
+
+end Const
+
+end Filter
 
 end Raw₀
 
