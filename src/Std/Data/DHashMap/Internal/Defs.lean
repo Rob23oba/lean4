@@ -535,6 +535,11 @@ structure WFImp [BEq α] [Hashable α] (m : Raw α β) : Prop where
   /-- Internal implementation detail of the hash map -/
   distinct : List.DistinctKeys (toListModel m.buckets)
 
+/-- Internal implementation detail of the hash map -/
+structure Equiv (m₁ m₂ : Raw α β) : Prop where
+  /-- Internal implementation detail of the hash map -/
+  perm_toListModel : (toListModel m₁.buckets).Perm (toListModel m₂.buckets)
+
 end Raw
 
 end Std.DHashMap.Internal

@@ -202,6 +202,10 @@ theorem forIn_eq_forIn_toListModel {δ : Type w} {l : Raw α β} {m : Type w →
       · simp
       · simpa using ih'
 
+theorem equiv_iff_perm_toListModel {m₁ m₂ : Raw α β} :
+    Equiv m₁ m₂ ↔ (toListModel m₁.buckets).Perm (toListModel m₂.buckets) :=
+  ⟨Equiv.perm_toListModel, Equiv.mk⟩
+
 end Raw
 
 namespace Raw₀
