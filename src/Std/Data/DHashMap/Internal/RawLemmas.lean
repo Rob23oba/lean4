@@ -20,6 +20,7 @@ set_option autoImplicit false
 open Std.Internal.List
 open Std.Internal
 
+set_option Elab.async false
 
 universe u v w
 
@@ -79,14 +80,18 @@ private theorem _root_.List.Perm.congr_right
 variable [BEq α] [Hashable α]
 
 /-- Internal implementation detail of the hash map -/
-scoped macro "wf_trivial" : tactic => `(tactic|
-  repeat (first
-    | apply Raw₀.wfImp_insert | apply Raw₀.wfImp_insertIfNew | apply Raw₀.wfImp_insertMany
-    | apply Raw₀.Const.wfImp_insertMany | apply Raw₀.Const.wfImp_insertManyIfNewUnit
-    | apply Raw₀.wfImp_alter | apply Raw₀.wfImp_modify
-    | apply Raw₀.Const.wfImp_alter | apply Raw₀.Const.wfImp_modify
-    | apply Raw₀.wfImp_erase | apply Raw.WF.out | assumption | apply Raw₀.wfImp_empty
-    | apply Raw.WFImp.distinct | apply Raw.WF.empty₀))
+scoped syntax "wf_trivial" : tactic
+
+macro_rules
+| `(tactic| wf_trivial) => `(tactic|
+    (first
+      | assumption | apply Raw.WFImp.distinct
+      | apply Raw₀.wfImp_insertMany | apply Raw₀.Const.wfImp_insertMany
+      | apply Raw₀.Const.wfImp_insertManyIfNewUnit | apply Raw.WF.out
+      | apply Raw.WF.insert₀ | apply Raw.WF.insertIfNew₀ | apply Raw.WF.erase₀
+      | apply Raw.WF.alter₀ | apply Raw.WF.modify₀
+      | apply Raw.WF.constAlter₀ | apply Raw.WF.constModify₀
+      | apply Raw.WF.empty₀) <;> wf_trivial)
 
 /-- Internal implementation detail of the hash map -/
 scoped macro "empty" : tactic => `(tactic| { intros; simp_all [List.isEmpty_iff] } )
@@ -103,7 +108,7 @@ private def queryNames : Array Name :=
     ``Raw.Const.toList_eq_toListModel_map, ``Raw.foldM_eq_foldlM_toListModel,
     ``Raw.fold_eq_foldl_toListModel, ``Raw.foldRevM_eq_foldrM_toListModel,
     ``Raw.foldRev_eq_foldr_toListModel, ``Raw.forIn_eq_forIn_toListModel,
-    ``Raw.forM_eq_forM_toListModel, ``Raw.equiv_iff_perm_toListModel]
+    ``Raw.forM_eq_forM_toListModel]
 
 private def modifyMap : Std.DHashMap Name (fun _ => Name) :=
   .ofList
@@ -143,9 +148,7 @@ private def queryMap : Std.DHashMap Name (fun _ => Name × Array (MacroM (TSynta
      ⟨`foldRevM, (``Raw.foldRevM_eq_foldrM_toListModel, #[])⟩,
      ⟨`foldRev, (``Raw.foldRev_eq_foldr_toListModel, #[])⟩,
      ⟨`forIn, (``Raw.forIn_eq_forIn_toListModel, #[])⟩,
-     ⟨`forM, (``Raw.forM_eq_forM_toListModel, #[])⟩,
-     ⟨`Equiv, (``Raw.equiv_iff_perm_toListModel,
-      #[`(_root_.List.Perm.congr_left), `(_root_.List.Perm.congr_right)])⟩]
+     ⟨`forM, (``Raw.forM_eq_forM_toListModel, #[])⟩]
 
 private def congrNames : MacroM (Array (TSyntax `term)) := do
   return #[← `(_root_.List.Perm.isEmpty_eq), ← `(containsKey_of_perm),
@@ -160,14 +163,19 @@ scoped syntax "simp_to_model" (" [" (ident,*) "]")? ("using" term)? : tactic
 
 macro_rules
 | `(tactic| simp_to_model $[[$names,*]]? $[using $using?]?) => do
-  let mut queryNames : Array Name := queryNames
-  let mut congrNames : Array Term ← congrNames
-  /-if let some names := names then
+  let mut queryNames : Array Name := #[]
+  let mut congrNames : Array Term := #[]
+  if let some names := names then
     for query in names.getElems do
       let some (query, congr) := queryMap.get? query.getId | continue
       queryNames := queryNames.push query
       for c in congr do
-        congrNames := congrNames.push (← c)-/
+        congrNames := congrNames.push (← c)
+  if queryNames.isEmpty then
+    for (q, c) in queryMap.valuesArray do
+      queryNames := queryNames.push q
+      for c' in c do
+        congrNames := congrNames.push (← c')
   let mut congrModify : Array (TSyntax `term) := #[]
   if let some modifyNames := names then
     for modify in modifyNames.getElems.flatMap
@@ -175,10 +183,12 @@ macro_rules
       for congr in congrNames do
         congrModify := congrModify.push (← `($congr:term ($(mkIdent modify) ..)))
   `(tactic|
-    (simp (discharger := wf_trivial) only
+    (simp (discharger := with_reducible wf_trivial) only
       [$[$(Array.map Lean.mkIdent queryNames ++ congrModify):term],*]
      $[apply $(using?.toArray):term];*)
-    <;> wf_trivial)
+    <;> with_reducible try wf_trivial)
+
+#eval IO.getNumHeartbeats
 
 @[simp]
 theorem isEmpty_empty {c} : (empty c : Raw₀ α β).1.isEmpty := by
@@ -2519,6 +2529,7 @@ end Const
 
 end Modify
 
+/-
 section Equiv
 
 variable {m₁ m₂ : Raw₀ α β}
@@ -2595,7 +2606,7 @@ theorem getD_of_equiv (h₁ : m₁.1.WF) (h₂ : m₂.1.WF) (h : Raw.Equiv m₁.
 end Const
 
 end Equiv
-
+-/
 end Raw₀
 
 end Std.DHashMap.Internal
