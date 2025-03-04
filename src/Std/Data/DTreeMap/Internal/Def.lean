@@ -53,8 +53,17 @@ def size : Impl α β → Nat
   | inner sz _ _ _ _ => sz
   | leaf => 0
 
+/-- The actual size of the tree. -/
+def fullSize : Impl α β → Nat
+  | inner _ _ _ l r => l.fullSize + 1 + r.fullSize
+  | leaf => 0
+
 @[Std.Internal.tree_tac] theorem size_leaf : (Impl.leaf : Impl α β).size = 0 := rfl
 @[Std.Internal.tree_tac] theorem size_inner {sz k v l r} : (Impl.inner sz k v l r : Impl α β).size = sz := rfl
+
+@[Std.Internal.tree_tac] theorem fullSize_leaf : (Impl.leaf : Impl α β).fullSize = 0 := rfl
+@[Std.Internal.tree_tac] theorem fullSize_inner {sz k v l r} :
+    (Impl.inner sz k v l r : Impl α β).fullSize = l.fullSize + 1 + r.fullSize := rfl
 
 /-!
 ## `toListModel`

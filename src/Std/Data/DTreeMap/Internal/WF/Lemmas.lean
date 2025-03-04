@@ -39,16 +39,34 @@ open Std.Internal
 -/
 
 @[simp]
+theorem toListModel_rotateL {k : α} {v : β k} {l : Impl α β} {rk : α}
+    {rv : β rk} {rl rr : Impl α β} :
+    (rotateL k v l rk rv rl rr).toListModel =
+      l.toListModel ++ ⟨k, v⟩ :: (rl.toListModel ++ ⟨rk, rv⟩ :: rr.toListModel) := by
+  unfold rotateL
+  repeat' split
+  all_goals simp only [singleL, doubleL, bin, toListModel_inner,
+    List.cons_append, List.append_assoc]
+
+@[simp]
+theorem toListModel_rotateR {k : α} {v : β k} {lk : α} {lv : β lk}
+    {ll lr r : Impl α β} :
+    (rotateR k v lk lv ll lr r).toListModel =
+      ll.toListModel ++ ⟨lk, lv⟩ :: lr.toListModel ++ ⟨k, v⟩ :: r.toListModel := by
+  unfold rotateR
+  repeat' split
+  all_goals simp only [singleR, doubleR, bin, toListModel_inner,
+    List.cons_append, List.append_assoc]
+
+@[simp]
 theorem toListModel_balance {k : α} {v : β k} {l r : Impl α β} {hlb hrb hlr} :
     (balance k v l r hlb hrb hlr).toListModel = l.toListModel ++ ⟨k, v⟩ :: r.toListModel := by
-  rw [balance.eq_def]
-  repeat' (split; try dsimp only)
-  all_goals
-    try contradiction
-    try simp; done
-  all_goals
-    rename_i l r _ _ _
-    cases l <;> cases r <;> (try simp; done) <;> (exfalso; tree_tac)
+  rw [balance_eq_balance!, balance!_eq_balanceₘ hlb hrb hlr, balanceₘ]
+  repeat' split
+  all_goals try contradiction
+  all_goals try simp only [bin, toListModel_inner]
+  exact toListModel_rotateL
+  exact toListModel_rotateR
 
 @[simp]
 theorem toListModel_balanceL {k : α} {v : β k} {l r : Impl α β} {hlb hrb hlr} :

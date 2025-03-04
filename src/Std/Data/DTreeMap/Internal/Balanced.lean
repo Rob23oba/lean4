@@ -107,4 +107,11 @@ theorem BalancedAtRoot.symm {l r : Nat} (h : BalancedAtRoot l r) : BalancedAtRoo
   · next h => exact Or.inl <| Nat.add_comm _ _ ▸ h
   · next h => exact Or.inr h.symm
 
+theorem Balanced.size_eq_fullSize {t : Impl α β} (h : Balanced t) : t.size = t.fullSize := by
+  match t, h with
+  | .leaf, _ => rfl
+  | .inner sz _ _ l r, .inner hl hr _ h =>
+    rw [h, size_eq_fullSize hl, size_eq_fullSize hr]
+    rfl
+
 end Std.DTreeMap.Internal.Impl
