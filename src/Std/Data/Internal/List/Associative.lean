@@ -4011,38 +4011,36 @@ end Modify
 section FilterMap
 
 theorem getEntry?_filterMap_eq_getEntry?_bind [BEq α] [EquivBEq α]
-    {f : (a : α) → β a → Option (γ a)}
+    {f : ((a : α) × β a) → Option (((a : α) × γ a))}
+    (hf : ∀ p, (f p).all (·.1 == p.1))
     {l : List ((a : α) × β a)} {k : α} (hl : DistinctKeys l) :
-    containsKey k (l.filterMap fun p => (f p.1 p.2).map (⟨p.1, ·⟩)) =
-      (getEntry? k l).any (fun x => (f x.1 x.2).isSome) := by
+    getEntry? k (l.filterMap f) = (getEntry? k l).bind f := by
   induction l using assoc_induction with
   | nil => rfl
   | cons k' v l ih =>
     simp only [getEntry?, cond_eq_if]
     simp only [distinctKeys_cons_iff] at hl
     specialize ih hl.1
+    specialize hf ⟨k', v⟩
     split
     · rename_i h
-      simp only [List.filterMap_cons, Option.any_some]
+      simp only [List.filterMap_cons, Option.some_bind]
       simp only [containsKey_congr h] at hl
-      match h' : f k' v with
-      | none =>
-        simp only [ih, ‹f _ _ = _›, Option.map_none', getEntry?_eq_none.mpr hl.2]
-        rfl
-      | some b =>
-        simp only [Option.map_some', containsKey_cons, h, ‹f _ _ = _›]
-        rfl
+      split
+      · simp only [ih, ‹f _ = _›, Option.none_bind, getEntry?_eq_none.mpr hl.2]
+      · rw [‹f _ = _›, Option.all_some, BEq.congr_right h] at hf
+        rw [getEntry?_cons, hf, ‹f _ = _›, cond_true]
     · simp only [List.filterMap_cons]
-      match h' : f k' v with
-      | none => exact ih
-      | some b =>
-        simp only [Option.map_some', containsKey_cons, ‹¬_ == _›, Bool.false_or, ih]
+      split
+      · exact ih
+      · rw [‹f _ = _›, Option.all_some] at hf
+        rw [getEntry?_cons, BEq.congr_left hf, (Bool.not_eq_true (_ == _)).mp ‹_›, ih, cond_false]
 
 theorem containsKey_filterMap_iff_any_getEntry [BEq α] [EquivBEq α]
-    {f : (a : α) → β a → Option (γ a)}
+    {f : ((a : α) × β a) → Option (((a : α) × γ a))}
+    (hf : ∀ p, (f p).all (·.1 == p.1))
     {l : List ((a : α) × β a)} {k : α} (hl : DistinctKeys l) :
-    containsKey k (l.filterMap fun p => (f p.1 p.2).map (⟨p.1, ·⟩)) =
-      (getEntry? k l).any (fun x => (f x.1 x.2).isSome) := by
+    containsKey k (l.filterMap f) = (getEntry? k l).any (fun x => (f x).isSome) := by
   induction l using assoc_induction with
   | nil => rfl
   | cons k' v l ih =>
