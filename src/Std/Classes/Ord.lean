@@ -391,6 +391,151 @@ theorem lawfulBEq_of_lawfulEqOrd [Ord α] [LawfulEqOrd α] : LawfulBEq α where
   eq_of_beq hbeq := by simp_all
   rfl := by simp
 
+theorem transOrd_of_lt_trans_of_lt_iff {α : Type u} [LT α]
+    [trans : @Trans α α α (· < ·) (· < ·) (· < ·)] [DecidableLT α] [DecidableEq α]
+    (h : ∀ x y : α, x < y ↔ ¬y < x ∧ x ≠ y) :
+    TransCmp (fun x y : α => compareOfLessAndEq x y) where
+  eq_swap {x y} := by
+    simp only [compare, compareOfLessAndEq]
+    split
+    · rename_i h'
+      rw [h] at h'
+      simp only [h'.1, h'.2.symm, reduceIte, Ordering.swap_gt]
+    · split
+      · rename_i h'
+        have : ¬y < y := by
+          rw [h]
+          exact fun h => h.2 rfl
+        simp only [h', this, reduceIte, Ordering.swap_eq]
+      · rename_i h' h''
+        replace h' := (h y x).mpr ⟨h', Ne.symm h''⟩
+        simp only [h', Ne.symm h'', reduceIte, Ordering.swap_lt]
+  isLE_trans {x y z} h₁ h₂ := by
+    simp only [compare, compareOfLessAndEq, apply_ite Ordering.isLE,
+      Ordering.isLE_lt, Ordering.isLE_eq, Ordering.isLE_gt] at h₁ h₂ ⊢
+    simp only [Bool.if_true_left, Bool.or_false, Bool.or_eq_true, decide_eq_true_eq] at h₁ h₂ ⊢
+    rcases h₁ with (h₁ | rfl)
+    · rcases h₂ with (h₂ | rfl)
+      · exact .inl (Trans.trans h₁ h₂)
+      · exact .inl h₁
+    · exact h₂
+
+theorem transOrd_of_refl_of_antisymm_of_trans_of_total_of_not_le
+    {α : Type u} [LT α] [LE α] [DecidableLT α] [DecidableLE α] [DecidableEq α]
+    (refl : ∀ (x : α), x ≤ x) (antisymm : ∀ {x y : α}, x ≤ y → y ≤ x → x = y)
+    (trans : ∀ {x y z : α}, x ≤ y → y ≤ z → x ≤ z) (total : ∀ (x y : α), x ≤ y ∨ y ≤ x)
+    (not_le : ∀ {x y : α}, ¬x ≤ y ↔ y < x) :
+    TransCmp (fun x y : α => compareOfLessAndEq x y) := by
+  refine transOrd_of_lt_trans_of_lt_iff (trans := ⟨?_⟩) ?_
+  · intro a b c
+    simp only [← not_le]
+    intro h₁ h₂ h₃
+    replace h₁ := (total _ _).resolve_left h₁
+    exact h₂ (trans h₃ h₁)
+  · intro x y
+    simp only [← not_le, Decidable.not_not]
+    constructor
+    · intro h
+      exact ⟨(total _ _).resolve_left h, fun h' => (h' ▸ h) (refl _)⟩
+    · intro ⟨h₁, h₂⟩ h₃
+      exact h₂ (antisymm h₁ h₃)
+
+theorem lawfulEqOrd_of_lt_irrefl {α : Type u} [LT α] [DecidableLT α] [DecidableEq α]
+    (h : ∀ x : α, ¬x < x) : LawfulEqCmp (fun x y : α => compareOfLessAndEq x y) := by
+  simp only [compareOfLessAndEq]
+  refine LawfulEqCmp.mk (toReflCmp := ⟨?_⟩) ?_
+  · simp only [h, reduceIte, implies_true]
+  · intro a b h'
+    simp only [apply_ite (· = Ordering.eq), reduceCtorEq, if_false_right, if_false_left] at h'
+    exact h'.2.1
+
 end Internal
+
+open Internal
+
+instance : TransOrd Bool where
+  eq_swap {x y} := by cases x <;> cases y <;> rfl
+  isLE_trans {x y z} h₁ h₂ := by cases x <;> cases y <;> cases z <;> trivial
+
+instance : TransOrd Nat :=
+  transOrd_of_refl_of_antisymm_of_trans_of_total_of_not_le
+    Nat.le_refl Nat.le_antisymm Nat.le_trans Nat.le_total Nat.not_le
+
+instance : TransOrd Int :=
+  transOrd_of_refl_of_antisymm_of_trans_of_total_of_not_le
+    Int.le_refl Int.le_antisymm Int.le_trans Int.le_total Int.not_le
+
+instance : TransOrd String :=
+  transOrd_of_refl_of_antisymm_of_trans_of_total_of_not_le
+    String.le_refl String.le_antisymm String.le_trans String.le_total String.not_le
+
+instance {n : Nat} : TransOrd (Fin n) where
+  eq_swap := OrientedCmp.eq_swap (self := inferInstanceAs (OrientedOrd Nat))
+  isLE_trans := TransCmp.isLE_trans (self := inferInstanceAs (TransOrd Nat))
+
+instance : TransOrd UInt8 :=
+  transOrd_of_refl_of_antisymm_of_trans_of_total_of_not_le
+    UInt8.le_refl UInt8.le_antisymm UInt8.le_trans UInt8.le_total UInt8.not_le
+
+instance : TransOrd UInt16 :=
+  transOrd_of_refl_of_antisymm_of_trans_of_total_of_not_le
+    UInt16.le_refl UInt16.le_antisymm UInt16.le_trans UInt16.le_total UInt16.not_le
+
+instance : TransOrd UInt32 :=
+  transOrd_of_refl_of_antisymm_of_trans_of_total_of_not_le
+    UInt32.le_refl UInt32.le_antisymm UInt32.le_trans UInt32.le_total UInt32.not_le
+
+instance : TransOrd UInt64 :=
+  transOrd_of_refl_of_antisymm_of_trans_of_total_of_not_le
+    UInt64.le_refl UInt64.le_antisymm UInt64.le_trans UInt64.le_total UInt64.not_le
+
+instance : TransOrd USize :=
+  transOrd_of_refl_of_antisymm_of_trans_of_total_of_not_le
+    USize.le_refl USize.le_antisymm USize.le_trans USize.le_total USize.not_le
+
+instance : TransOrd Char :=
+  transOrd_of_refl_of_antisymm_of_trans_of_total_of_not_le
+    Char.le_refl Char.le_antisymm Char.le_trans Char.le_total Char.not_le
+
+instance {α} [Ord α] [inst : ReflOrd α] : ReflOrd (Option α) where
+  compare_self {a} := by cases a; rfl; exact inst.compare_self
+
+instance {α} [Ord α] [inst : OrientedOrd α] : OrientedOrd (Option α) where
+  eq_swap {a b} := by
+    cases a <;> cases b <;> try rfl
+    exact inst.eq_swap
+
+instance {α} [Ord α] [inst : TransOrd α] : TransOrd (Option α) where
+  isLE_trans {a b c} h₁ h₂ := by
+    cases a <;> cases b <;> cases c <;> try trivial
+    exact inst.isLE_trans h₁ h₂
+
+instance : LawfulEqOrd Bool where
+  eq_of_compare {a b} h := by cases a <;> cases b <;> trivial
+
+instance : LawfulEqOrd Nat := lawfulEqOrd_of_lt_irrefl Nat.lt_irrefl
+instance : LawfulEqOrd Int := lawfulEqOrd_of_lt_irrefl Int.lt_irrefl
+instance : LawfulEqOrd String := lawfulEqOrd_of_lt_irrefl String.lt_irrefl
+
+instance {n : Nat} : LawfulEqOrd (Fin n) where
+  eq_of_compare h := Fin.val_inj.mp
+    (LawfulEqCmp.eq_of_compare (self := inferInstanceAs (LawfulEqOrd Nat)) h)
+
+instance : LawfulEqOrd UInt8 := lawfulEqOrd_of_lt_irrefl UInt8.lt_irrefl
+instance : LawfulEqOrd UInt16 := lawfulEqOrd_of_lt_irrefl UInt16.lt_irrefl
+instance : LawfulEqOrd UInt32 := lawfulEqOrd_of_lt_irrefl UInt32.lt_irrefl
+instance : LawfulEqOrd UInt64 := lawfulEqOrd_of_lt_irrefl UInt64.lt_irrefl
+instance : LawfulEqOrd USize := lawfulEqOrd_of_lt_irrefl USize.lt_irrefl
+instance : LawfulEqOrd Char := lawfulEqOrd_of_lt_irrefl Char.lt_irrefl
+
+instance {α} [Ord α] [inst : LawfulEqOrd α] : LawfulEqOrd (Option α) where
+  eq_of_compare {a b} h := by
+    cases a <;> cases b <;> try trivial
+    rw [inst.eq_of_compare h]
+
+instance {α} [BEq α] [Ord α] [inst : LawfulBEqOrd α] : LawfulBEqOrd (Option α) where
+  compare_eq_iff_beq {a b} := by
+    cases a <;> cases b <;> try exact ⟨fun _ => by trivial, fun _ => by trivial⟩
+    exact inst.compare_eq_iff_beq
 
 end Std
