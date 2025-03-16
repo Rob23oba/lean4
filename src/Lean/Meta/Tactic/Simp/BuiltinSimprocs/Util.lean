@@ -10,7 +10,7 @@ namespace Lean.Meta.Simp
 
 /--
 Let `result` be the result of evaluating proposition `p`, return a `.done` step where
-the resulting expression is `True`(`False`) if `result is `true`(`false`), and the
+the resulting expression is `True`(`False`) if `result is true`(`false`), and the
 proof is uses `Decidable p` and the auxiliary theorems `eq_true_of_decide`/`eq_false_of_decide`.
 -/
 def evalPropStep (p : Expr) (result : Bool) : SimpM Step := do

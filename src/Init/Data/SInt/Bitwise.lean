@@ -32,6 +32,53 @@ declare_bitwise_int_theorems Int32 32
 declare_bitwise_int_theorems Int64 64
 declare_bitwise_int_theorems ISize System.Platform.numBits
 
+@[simp] theorem Int64.toISize_add (x y : Int64) : (x + y).toISize = x.toISize + y.toISize := by
+  apply ISize.toBitVec.inj
+  simp only [toBitVec_toISize, Int64.toBitVec_add, System.Platform.numBits_le,
+    BitVec.signExtend_eq_setWidth_of_le, BitVec.setWidth_add, ISize.toBitVec_add]
+
+@[simp] theorem Int64.toISize_sub (x y : Int64) : (x - y).toISize = x.toISize - y.toISize := by
+  apply ISize.toBitVec.inj
+  simp [BitVec.signExtend_eq_setWidth_of_le, BitVec.setWidth_sub]
+
+@[simp] theorem Int64.toISize_mul (x y : Int64) : (x * y).toISize = x.toISize * y.toISize := by
+  apply ISize.toBitVec.inj
+  simp [BitVec.signExtend_eq_setWidth_of_le, BitVec.setWidth_mul]
+
+@[simp] theorem Int64.toISize_and (x y : Int64) : (x &&& y).toISize = x.toISize &&& y.toISize := by
+  apply ISize.toBitVec.inj
+  simp [BitVec.signExtend_eq_setWidth_of_le, BitVec.setWidth_and]
+
+@[simp] theorem Int64.toISize_or (x y : Int64) : (x ||| y).toISize = x.toISize ||| y.toISize := by
+  apply ISize.toBitVec.inj
+  simp [BitVec.signExtend_eq_setWidth_of_le, BitVec.setWidth_or]
+
+@[simp] theorem Int64.toISize_xor (x y : Int64) : (x ^^^ y).toISize = x.toISize ^^^ y.toISize := by
+  apply ISize.toBitVec.inj
+  simp [BitVec.signExtend_eq_setWidth_of_le, BitVec.setWidth_xor]
+
+theorem ISize.ofInt_add (x y : Int) : ofInt (x + y) = ofInt x + ofInt y := by
+  apply ISize.toBitVec.inj
+  simp only [ISize.toBitVec_ofInt, ISize.toBitVec_add, BitVec.ofInt_add]
+
+theorem ISize.ofInt_mul (x y : Int) : ofInt (x * y) = ofInt x * ofInt y := by
+  apply ISize.toBitVec.inj
+  simp only [ISize.toBitVec_ofInt, ISize.toBitVec_mul, BitVec.ofInt_mul]
+
+theorem ISize.ofInt_neg (x : Int) : ofInt (-x) = -ofInt x := by
+  apply ISize.toBitVec.inj
+  simp only [ISize.toBitVec_ofInt, ISize.toBitVec_neg, BitVec.ofInt_neg]
+
+theorem ISize.ofInt_sub (x y : Int) : ofInt (x - y) = ofInt x - ofInt y := by
+  apply ISize.toBitVec.inj
+  simp only [ISize.toBitVec_ofInt, ISize.toBitVec_sub, ← BitVec.add_neg_eq_sub,
+    Int.sub_eq_add_neg, BitVec.ofInt_add, BitVec.ofInt_neg]
+
+theorem ISize.ofInt_and (x y : Int) : ofInt (x - y) = ofInt x - ofInt y := by
+  apply ISize.toBitVec.inj
+  simp only [ISize.toBitVec_ofInt, ISize.toBitVec_sub, ← BitVec.add_neg_eq_sub,
+    Int.sub_eq_add_neg, BitVec.ofInt_add, BitVec.ofInt_neg]
+
 @[simp, int_toBitVec]
 theorem Bool.toBitVec_toInt8 {b : Bool} : b.toInt8.toBitVec = (BitVec.ofBool b).setWidth 8 := by
   cases b <;> simp [toInt8]

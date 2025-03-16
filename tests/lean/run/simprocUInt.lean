@@ -22,6 +22,11 @@ variable (x : UInt8)
 #check_simp x = 2 - 3 ~> x = 255
 #check_simp x = 4 / 3 ~> x = 1
 #check_simp x = 5 % 3 ~> x = 2
+#check_simp x = 129 &&& 5 ~> x = 1
+#check_simp x = 12 ||| 64 ~> x = 76
+#check_simp x = 17 ^^^ 5 ~> x = 20
+#check_simp x = (2 : UInt8) <<< 5 ~> x = 64
+#check_simp x = (30 : UInt8) >>> 2 ~> x = 7
 #check_simp True = ((3 : UInt8) < 3) ~> False
 #check_simp True = ((3 : UInt8) ≤ 2) ~> False
 #check_simp True = ((3 : UInt8) > 3) ~> False
@@ -45,6 +50,11 @@ variable (x : UInt16)
 #check_simp x = 2 - 3 ~> x = 65535
 #check_simp x = 4 / 3 ~> x = 1
 #check_simp x = 5 % 3 ~> x = 2
+#check_simp x = 129 &&& 5 ~> x = 1
+#check_simp x = 12 ||| 64 ~> x = 76
+#check_simp x = 17 ^^^ 5 ~> x = 20
+#check_simp x = (2 : UInt16) <<< 5 ~> x = 64
+#check_simp x = (30 : UInt16) >>> 2 ~> x = 7
 #check_simp True = ((3 : UInt16) < 3) ~> False
 #check_simp True = ((3 : UInt16) ≤ 2) ~> False
 #check_simp True = ((3 : UInt16) > 3) ~> False
@@ -68,6 +78,11 @@ variable (x : UInt32)
 #check_simp x = 2 - 3 ~> x = 4294967295
 #check_simp x = 4 / 3 ~> x = 1
 #check_simp x = 5 % 3 ~> x = 2
+#check_simp x = 129 &&& 5 ~> x = 1
+#check_simp x = 12 ||| 64 ~> x = 76
+#check_simp x = 17 ^^^ 5 ~> x = 20
+#check_simp x = (2 : UInt32) <<< 5 ~> x = 64
+#check_simp x = (30 : UInt32) >>> 2 ~> x = 7
 #check_simp True = ((3 : UInt32) < 3) ~> False
 #check_simp True = ((3 : UInt32) ≤ 2) ~> False
 #check_simp True = ((3 : UInt32) > 3) ~> False
@@ -91,6 +106,11 @@ variable (x : UInt64)
 #check_simp x = 2 - 3 ~> x = 18446744073709551615
 #check_simp x = 4 / 3 ~> x = 1
 #check_simp x = 5 % 3 ~> x = 2
+#check_simp x = 129 &&& 5 ~> x = 1
+#check_simp x = 12 ||| 64 ~> x = 76
+#check_simp x = 17 ^^^ 5 ~> x = 20
+#check_simp x = (2 : UInt64) <<< 5 ~> x = 64
+#check_simp x = (30 : UInt64) >>> 2 ~> x = 7
 #check_simp True = ((3 : UInt64) < 3) ~> False
 #check_simp True = ((3 : UInt64) ≤ 2) ~> False
 #check_simp True = ((3 : UInt64) > 3) ~> False

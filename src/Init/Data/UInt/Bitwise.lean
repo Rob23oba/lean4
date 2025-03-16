@@ -7,6 +7,7 @@ prelude
 import Init.Data.UInt.Lemmas
 import Init.Data.Fin.Bitwise
 import Init.Data.BitVec.Lemmas
+import Init.System.Platform
 
 set_option hygiene false in
 macro "declare_bitwise_uint_theorems" typeName:ident bits:term:arg : command =>
@@ -42,6 +43,30 @@ declare_bitwise_uint_theorems UInt16 16
 declare_bitwise_uint_theorems UInt32 32
 declare_bitwise_uint_theorems UInt64 64
 declare_bitwise_uint_theorems USize System.Platform.numBits
+
+@[simp] theorem UInt64.toUSize_add (x y : UInt64) : (x + y).toUSize = x.toUSize + y.toUSize := by
+  rw [← USize.toBitVec_inj]
+  simp [BitVec.signExtend_eq_setWidth_of_le, BitVec.setWidth_add]
+
+@[simp] theorem UInt64.toUSize_sub (x y : UInt64) : (x - y).toUSize = x.toUSize - y.toUSize := by
+  rw [← USize.toBitVec_inj]
+  simp [BitVec.signExtend_eq_setWidth_of_le, BitVec.setWidth_sub]
+
+@[simp] theorem UInt64.toUSize_mul (x y : UInt64) : (x * y).toUSize = x.toUSize * y.toUSize := by
+  rw [← USize.toBitVec_inj]
+  simp [BitVec.signExtend_eq_setWidth_of_le, BitVec.setWidth_mul]
+
+@[simp] theorem UInt64.toUSize_and (x y : UInt64) : (x &&& y).toUSize = x.toUSize &&& y.toUSize := by
+  rw [← USize.toBitVec_inj]
+  simp [BitVec.setWidth_and]
+
+@[simp] theorem UInt64.toUSize_or (x y : UInt64) : (x ||| y).toUSize = x.toUSize ||| y.toUSize := by
+  rw [← USize.toBitVec_inj]
+  simp [BitVec.setWidth_or]
+
+@[simp] theorem UInt64.toUSize_xor (x y : UInt64) : (x ^^^ y).toUSize = x.toUSize ^^^ y.toUSize := by
+  rw [← USize.toBitVec_inj]
+  simp [BitVec.setWidth_xor]
 
 @[simp, int_toBitVec]
 theorem Bool.toBitVec_toUInt8 {b : Bool} :

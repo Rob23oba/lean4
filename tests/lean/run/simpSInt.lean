@@ -51,6 +51,18 @@
 #check_simp (-64 : ISize).toInt16 ~> -64
 #check_simp (-64 : ISize).toInt32 ~> -64
 
+#check_simp (64 : Int8).toUInt8 ~> 64
+#check_simp (64 : Int16).toUInt16 ~> 64
+#check_simp (64 : Int32).toUInt32 ~> 64
+#check_simp (64 : Int64).toUInt64 ~> 64
+#check_simp (64 : ISize).toUSize ~> 64
+
+#check_simp (64 : UInt8).toInt8 ~> 64
+#check_simp (64 : UInt16).toInt16 ~> 64
+#check_simp (64 : UInt32).toInt32 ~> 64
+#check_simp (64 : UInt64).toInt64 ~> 64
+#check_simp (64 : USize).toISize ~> 64
+
 -- This could be fixed with some additional work
 #check_simp (-64 : ISize).toInt64 !~>
 

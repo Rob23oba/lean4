@@ -48,6 +48,12 @@ example : Int8.toInt (-8) + 8 = 0 := by simp +ground only
 #check_simp x = 2 - -3 ~> x = 5
 #check_simp x = 4 / -3 ~> x = -1
 #check_simp x = -5 % 3 ~> x = -2
+#check_simp x = 129 &&& 5 ~> x = 1
+#check_simp x = 12 ||| (-64) ~> x = -52
+#check_simp x = (-1) ^^^ (-2) ~> x = 1
+#check_simp x = (2 : Int8) <<< 5 ~> x = 64
+#check_simp x = (30 : Int8) >>> 2 ~> x = 7
+#check_simp x = (-30 : Int8) >>> 2 ~> x = -8
 #check_simp True = ((3 : Int8) < -3) ~> False
 #check_simp True = ((3 : Int8) ≤ -2) ~> False
 #check_simp True = ((-3 : Int8) > 3) ~> False
@@ -91,6 +97,12 @@ example : Int16.toInt (-16) + 16 = 0 := by simp +ground only
 #check_simp x = 2 - -3 ~> x = 5
 #check_simp x = 4 / -3 ~> x = -1
 #check_simp x = -5 % 3 ~> x = -2
+#check_simp x = 129 &&& 5 ~> x = 1
+#check_simp x = 12 ||| (-64) ~> x = -52
+#check_simp x = (-1) ^^^ (-2) ~> x = 1
+#check_simp x = (2 : Int16) <<< 5 ~> x = 64
+#check_simp x = (30 : Int16) >>> 2 ~> x = 7
+#check_simp x = (-30 : Int16) >>> 2 ~> x = -8
 #check_simp True = ((3 : Int16) < -3) ~> False
 #check_simp True = ((3 : Int16) ≤ -2) ~> False
 #check_simp True = ((-3 : Int16) > 3) ~> False
@@ -129,6 +141,12 @@ example : Int32.toInt (-32) + 32 = 0 := by simp +ground only
 #check_simp x = 2 - -3 ~> x = 5
 #check_simp x = 4 / -3 ~> x = -1
 #check_simp x = -5 % 3 ~> x = -2
+#check_simp x = 129 &&& 5 ~> x = 1
+#check_simp x = 12 ||| (-64) ~> x = -52
+#check_simp x = (-1) ^^^ (-2) ~> x = 1
+#check_simp x = (2 : Int32) <<< 5 ~> x = 64
+#check_simp x = (30 : Int32) >>> 2 ~> x = 7
+#check_simp x = (-30 : Int32) >>> 2 ~> x = -8
 #check_simp True = ((3 : Int32) < -3) ~> False
 #check_simp True = ((3 : Int32) ≤ -2) ~> False
 #check_simp True = ((-3 : Int32) > 3) ~> False
@@ -167,14 +185,20 @@ example : Int64.toInt (-64) + 64 = 0 := by simp +ground only
 #check_simp x = 2 - -3 ~> x = 5
 #check_simp x = 4 / -3 ~> x = -1
 #check_simp x = -5 % 3 ~> x = -2
-#check_simp True = ((3 : Int32) < -3) ~> False
-#check_simp True = ((3 : Int32) ≤ -2) ~> False
-#check_simp True = ((-3 : Int32) > 3) ~> False
-#check_simp True = ((-3 : Int32) ≥ 4) ~> False
-#check_simp True = ((3 : Int32) = -3) ~> False
-#check_simp True = ((-3 : Int32) ≠ -3) ~> False
-#check_simp True = ((3 : Int32) == -3) ~> False
-#check_simp True = ((-3 : Int32) != -3) ~> False
+#check_simp x = 129 &&& 5 ~> x = 1
+#check_simp x = 12 ||| (-64) ~> x = -52
+#check_simp x = (-1) ^^^ (-2) ~> x = 1
+#check_simp x = (2 : Int64) <<< 5 ~> x = 64
+#check_simp x = (30 : Int64) >>> 2 ~> x = 7
+#check_simp x = (-30 : Int64) >>> 2 ~> x = -8
+#check_simp True = ((3 : Int64) < -3) ~> False
+#check_simp True = ((3 : Int64) ≤ -2) ~> False
+#check_simp True = ((-3 : Int64) > 3) ~> False
+#check_simp True = ((-3 : Int64) ≥ 4) ~> False
+#check_simp True = ((3 : Int64) = -3) ~> False
+#check_simp True = ((-3 : Int64) ≠ -3) ~> False
+#check_simp True = ((3 : Int64) == -3) ~> False
+#check_simp True = ((-3 : Int64) != -3) ~> False
 #check_simp x = Int64.ofIntLE 5 (by decide) (by decide) ~> x = 5
 #check_simp x = Int64.ofIntLE (-5) (by decide) (by decide) ~> x = -5
 #check_simp x = Int64.ofNat 5 ~> x = 5

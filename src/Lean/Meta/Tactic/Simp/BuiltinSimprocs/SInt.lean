@@ -28,6 +28,11 @@ def $fromExpr (e : Expr) : SimpM (Option $typeName) := do
   let some (n, _) ← getOfNatValue? a $(quote typeName.getId) | return none
   return some ($(mkIdent ofInt) (- n))
 
+@[inline] def reduceUnary (declName : Name) (arity : Nat) (op : $typeName → $typeName) (e : Expr) : SimpM DStep := do
+  unless e.isAppOfArity declName arity do return .continue
+  let some n ← ($fromExpr e.appArg!) | return .continue
+  return .done <| toExpr (op n)
+
 @[inline] def reduceBin (declName : Name) (arity : Nat) (op : $typeName → $typeName → $typeName) (e : Expr) : SimpM DStep := do
   unless e.isAppOfArity declName arity do return .continue
   let some n ← ($fromExpr e.appFn!.appArg!) | return .continue
@@ -46,7 +51,7 @@ def $fromExpr (e : Expr) : SimpM (Option $typeName) := do
   let some m ← ($fromExpr e.appArg!) | return .continue
   return .done <| toExpr (op n m)
 
-builtin_dsimproc [simp, seval] reduceNeg ((- _ : $typeName)) := fun e => do
+builtin_dsimproc [simp, seval] $(mkIdent `reduceNeg):ident ((- _ : $typeName)) := fun e => do
   let_expr Neg.neg _ _ arg ← e | return .continue
   if arg.isAppOfArity ``OfNat.ofNat 3 then
     -- We return .done to ensure `Neg.neg` is not unfolded even when `ground := true`.
@@ -61,14 +66,23 @@ builtin_dsimproc [simp, seval] $(mkIdent `reduceSub):ident ((_ - _ : $typeName))
 builtin_dsimproc [simp, seval] $(mkIdent `reduceDiv):ident ((_ / _ : $typeName)) := reduceBin ``HDiv.hDiv 6 (· / ·)
 builtin_dsimproc [simp, seval] $(mkIdent `reduceMod):ident ((_ % _ : $typeName)) := reduceBin ``HMod.hMod 6 (· % ·)
 
+builtin_dsimproc [simp, seval] $(mkIdent `reduceAnd):ident ((_ &&& _ : $typeName)) := reduceBin ``HAnd.hAnd 6 (· &&& ·)
+builtin_dsimproc [simp, seval] $(mkIdent `reduceOr):ident ((_ ||| _ : $typeName)) := reduceBin ``HOr.hOr 6 (· ||| ·)
+builtin_dsimproc [simp, seval] $(mkIdent `reduceXor):ident ((_ ^^^ _ : $typeName)) := reduceBin ``HXor.hXor 6 (· ^^^ ·)
+
+builtin_dsimproc [simp, seval] $(mkIdent `reduceShiftLeft):ident ((_ <<< _ : $typeName)) := reduceBin ``HShiftLeft.hShiftLeft 6 (· <<< ·)
+builtin_dsimproc [simp, seval] $(mkIdent `reduceShiftRight):ident ((_ >>> _ : $typeName)) := reduceBin ``HShiftRight.hShiftRight 6 (· >>> ·)
+
+builtin_dsimproc [simp, seval] $(mkIdent `reduceComplement):ident ((~~~ _ : $typeName)) := reduceUnary ``Complement.complement 6 (~~~ ·)
+
 builtin_simproc [simp, seval] $(mkIdent `reduceLT):ident  (( _ : $typeName) < _)  := reduceBinPred ``LT.lt 4 (. < .)
 builtin_simproc [simp, seval] $(mkIdent `reduceLE):ident  (( _ : $typeName) ≤ _)  := reduceBinPred ``LE.le 4 (. ≤ .)
 builtin_simproc [simp, seval] $(mkIdent `reduceGT):ident  (( _ : $typeName) > _)  := reduceBinPred ``GT.gt 4 (. > .)
 builtin_simproc [simp, seval] $(mkIdent `reduceGE):ident  (( _ : $typeName) ≥ _)  := reduceBinPred ``GE.ge 4 (. ≥ .)
-builtin_simproc [simp, seval] reduceEq  (( _ : $typeName) = _)  := reduceBinPred ``Eq 3 (. = .)
-builtin_simproc [simp, seval] reduceNe  (( _ : $typeName) ≠ _)  := reduceBinPred ``Ne 3 (. ≠ .)
-builtin_dsimproc [simp, seval] reduceBEq  (( _ : $typeName) == _)  := reduceBoolPred ``BEq.beq 4 (. == .)
-builtin_dsimproc [simp, seval] reduceBNe  (( _ : $typeName) != _)  := reduceBoolPred ``bne 4 (. != .)
+builtin_simproc [simp, seval] $(mkIdent `reduceEq):ident  (( _ : $typeName) = _)  := reduceBinPred ``Eq 3 (. = .)
+builtin_simproc [simp, seval] $(mkIdent `reduceNe):ident  (( _ : $typeName) ≠ _)  := reduceBinPred ``Ne 3 (. ≠ .)
+builtin_dsimproc [simp, seval] $(mkIdent `reduceBEq):ident  (( _ : $typeName) == _)  := reduceBoolPred ``BEq.beq 4 (. == .)
+builtin_dsimproc [simp, seval] $(mkIdent `reduceBNe):ident  (( _ : $typeName) != _)  := reduceBoolPred ``bne 4 (. != .)
 
 builtin_dsimproc [simp, seval] $(mkIdent `reduceOfIntLE):ident ($ofIntLE _ _ _) := fun e => do
   unless e.isAppOfArity $(quote ofIntLE.getId) 3 do return .continue
@@ -152,3 +166,54 @@ builtin_simproc [simp, seval] reduceToInt (ISize.toInt _) := fun e => do
   let p ← mkDecideProof (← mkLE e (mkNatLit (2 ^ 31)))
   let p := mkApp2 (mkConst ``ISize.toInt_neg_ofNat_of_le) e p
   return .done { expr := toExpr (-n : Int), proof? := p }
+
+/--
+Reduce a predicate (`<`, `≤`, `=`, `≠`) by trying to convert both sides into an `Int`
+using `reduceToInt` and using the helper lemma `lemma` of the form
+`x.toInt r y.toInt ↔ x r y` (inv = false) or `x r y ↔ x.toInt r y.toInt` (inv = true).
+
+-/
+private def reduceBinPredToInt (declName : Name) (arity : Nat) (op : Int → Int → Bool)
+    (lemma : Name) (inv : Bool) (intPred : Expr) (e : Expr) : SimpM Step := do
+  unless e.isAppOfArity declName arity do return .continue
+  let toIntLhs : Expr := .app (mkConst ``ISize.toInt) e.appFn!.appArg!
+  let toIntRhs : Expr := .app (mkConst ``ISize.toInt) e.appArg!
+  let .done { expr := lhs, proof? := some hlhs } ← reduceToInt toIntLhs | return .continue
+  let .done { expr := rhs, proof? := some hrhs } ← reduceToInt toIntRhs | return .continue
+  let some lhsValue ← Int.fromExpr? lhs | return .continue
+  let some rhsValue ← Int.fromExpr? rhs | return .continue
+  let toIntRel := mkApp2 intPred toIntLhs toIntRhs
+  let intRel := mkApp2 intPred lhs rhs
+  let .done { expr := result, proof? := some hresult } ←
+    evalPropStep intRel (op lhsValue rhsValue) | return .continue
+  let intToProp ← mkArrow Int.mkType (.sort 0)
+  let lemmaExpr := mkApp2 (mkConst lemma) e.appFn!.appArg! e.appArg!
+  let lemmaExpr := if inv then mkApp3 (mkConst ``Iff.symm) intRel e lemmaExpr else lemmaExpr
+  let propext := mkApp3 (mkConst ``propext) e toIntRel lemmaExpr
+  let congrArg := mkApp6 (mkConst ``congrArg [1, 1]) Int.mkType intToProp toIntLhs lhs intPred hlhs
+  let congr := mkApp8 (mkConst ``congr [1, 1]) Int.mkType (.sort 0)
+    (.app intPred toIntLhs) (.app intPred lhs) toIntRhs rhs congrArg hrhs
+  let trans1 := mkApp6 (mkConst ``Eq.trans [1]) (.sort 0) e toIntRel intRel propext congr
+  let proof := mkApp6 (mkConst ``Eq.trans [1]) (.sort 0) e intRel result trans1 hresult
+  logInfo m!"the proof {proof}"
+  return .done { expr := result, proof? := proof }
+
+def theex (r : ISize → ISize → Prop) (r' : Int → Int → Prop) (x y : ISize)
+    (hlhs : x.toInt = lhsValue) (hrhs : y.toInt = rhsValue)
+    (hresult : r' lhsValue rhsValue = result)
+    (lemma : r x y ↔ r' x.toInt y.toInt) : r x y = result := by
+  exact ((propext lemma).trans (congr (congrArg r' hlhs) hrhs)).trans hresult
+
+#print theex
+
+simproc [simp, seval] reduceEq ((_ : ISize) = _) :=
+  reduceBinPredToInt ``Eq 3 (· = ·) ``toInt_inj true
+    (.app (mkConst ``Eq [1]) Int.mkType)
+
+simproc [simp, seval] reduceLT ((_ : ISize) < _) :=
+  reduceBinPredToInt ``LT.lt 4 (· < ·) ``lt_iff_toInt_lt false
+    (mkApp2 (mkConst ``LT.lt [1]) Int.mkType Int.mkInstLT)
+
+simproc [simp, seval] reduceLE ((_ : ISize) ≤ _) :=
+  reduceBinPredToInt ``LE.le 4 (· ≤ ·) ``le_iff_toInt_le false
+    (mkApp2 (mkConst ``LE.le [1]) Int.mkType Int.mkInstLE)

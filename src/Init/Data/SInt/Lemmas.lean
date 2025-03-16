@@ -182,6 +182,8 @@ theorem Int64.toInt_neg_ofNat_of_le {n : Nat} (h : n ≤ 2^63) : toInt (-ofNat n
   rw [← ofInt_eq_ofNat, neg_ofInt, toInt_ofInt_of_le (by omega) (by omega)]
 theorem ISize.toInt_neg_ofNat_of_le {n : Nat} (h : n ≤ 2 ^ 31) : toInt (-ofNat n) = -n := by
   rw [← ofInt_eq_ofNat, neg_ofInt, toInt_ofInt_of_le (by omega) (by omega)]
+theorem ISize.toInt_neg_ofNat_of_le_of_numBits_eq {n : Nat} (h : n ≤ 2 ^ 31) : toInt (-ofNat n) = -n := by
+  rw [← ofInt_eq_ofNat, neg_ofInt, toInt_ofInt_of_le (by omega) (by omega)]
 
 theorem Int8.toInt_zero : toInt 0 = 0 := by simp
 theorem Int16.toInt_zero : toInt 0 = 0 := by simp
@@ -733,6 +735,18 @@ theorem Int32.le_iff_toInt_le {x y : Int32} : x ≤ y ↔ x.toInt ≤ y.toInt :=
 theorem Int64.le_iff_toInt_le {x y : Int64} : x ≤ y ↔ x.toInt ≤ y.toInt := BitVec.sle_iff_toInt_le
 theorem ISize.le_iff_toInt_le {x y : ISize} : x ≤ y ↔ x.toInt ≤ y.toInt := BitVec.sle_iff_toInt_le
 
+theorem Int8.lt_iff_toInt_lt {x y : Int8} : x < y ↔ x.toInt < y.toInt := BitVec.slt_iff_toInt_lt
+theorem Int16.lt_iff_toInt_lt {x y : Int16} : x < y ↔ x.toInt < y.toInt := BitVec.slt_iff_toInt_lt
+theorem Int32.lt_iff_toInt_lt {x y : Int32} : x < y ↔ x.toInt < y.toInt := BitVec.slt_iff_toInt_lt
+theorem Int64.lt_iff_toInt_lt {x y : Int64} : x < y ↔ x.toInt < y.toInt := BitVec.slt_iff_toInt_lt
+theorem ISize.lt_iff_toInt_lt {x y : ISize} : x < y ↔ x.toInt < y.toInt := BitVec.slt_iff_toInt_lt
+
+theorem Int8.ne_iff_toInt_ne {x y : Int8} : x ≠ y ↔ x.toInt ≠ y.toInt := not_congr toInt_inj.symm
+theorem Int16.ne_iff_toInt_ne {x y : Int16} : x ≠ y ↔ x.toInt ≠ y.toInt := not_congr toInt_inj.symm
+theorem Int32.ne_iff_toInt_ne {x y : Int32} : x ≠ y ↔ x.toInt ≠ y.toInt := not_congr toInt_inj.symm
+theorem Int64.ne_iff_toInt_ne {x y : Int64} : x ≠ y ↔ x.toInt ≠ y.toInt := not_congr toInt_inj.symm
+theorem ISize.ne_iff_toInt_ne {x y : ISize} : x ≠ y ↔ x.toInt ≠ y.toInt := not_congr toInt_inj.symm
+
 theorem Int8.cast_toNatClampNeg (x : Int8) (hx : 0 ≤ x) : x.toNatClampNeg = x.toInt := by
   rw [toNatClampNeg, toInt, Int.toNat_of_nonneg (by simpa using le_iff_toInt_le.1 hx)]
 theorem Int16.cast_toNatClampNeg (x : Int16) (hx : 0 ≤ x) : x.toNatClampNeg = x.toInt := by
@@ -1062,11 +1076,11 @@ theorem ISize.toNatClampNeg_ofIntTruncate_of_lt {n : Int} (h₁ : n < 2 ^ 31) :
 @[simp] theorem Int64.toUInt64_ofNat' {n} : (Int64.ofNat n).toUInt64 = UInt64.ofNat n := rfl
 @[simp] theorem ISize.toUSize_ofNat' {n} : (ISize.ofNat n).toUSize = USize.ofNat n := rfl
 
-@[simp] theorem Int8.toUInt8_ofNat {n} : toUInt8 (OfNat.ofNat n) = OfNat.ofNat n := rfl
-@[simp] theorem Int16.toUInt16_ofNat {n} : toUInt16 (OfNat.ofNat n) = OfNat.ofNat n := rfl
-@[simp] theorem Int32.toUInt32_ofNat {n} : toUInt32 (OfNat.ofNat n) = OfNat.ofNat n := rfl
-@[simp] theorem Int64.toUInt64_ofNat {n} : toUInt64 (OfNat.ofNat n) = OfNat.ofNat n := rfl
-@[simp] theorem ISize.toUISize_ofNat {n} : toUSize (OfNat.ofNat n) = OfNat.ofNat n := rfl
+@[simp] theorem Int8.toUInt8_ofNat {n} : toUInt8 (no_index (OfNat.ofNat n)) = OfNat.ofNat n := rfl
+@[simp] theorem Int16.toUInt16_ofNat {n} : toUInt16 (no_index (OfNat.ofNat n)) = OfNat.ofNat n := rfl
+@[simp] theorem Int32.toUInt32_ofNat {n} : toUInt32 (no_index (OfNat.ofNat n)) = OfNat.ofNat n := rfl
+@[simp] theorem Int64.toUInt64_ofNat {n} : toUInt64 (no_index (OfNat.ofNat n)) = OfNat.ofNat n := rfl
+@[simp] theorem ISize.toUISize_ofNat {n} : toUSize (no_index (OfNat.ofNat n)) = OfNat.ofNat n := rfl
 
 theorem Int16.toInt8_ofIntLE {n} (h₁ h₂) : (Int16.ofIntLE n h₁ h₂).toInt8 = Int8.ofInt n := Int8.toInt.inj (by simp)
 theorem Int32.toInt8_ofIntLE {n} (h₁ h₂) : (Int32.ofIntLE n h₁ h₂).toInt8 = Int8.ofInt n := Int8.toInt.inj (by simp)
@@ -1266,9 +1280,15 @@ theorem Int64.toISize_ofIntTruncate {n : Int} (h₁ : -2 ^ 63 ≤ n) (h₂ : n <
   Int64.toBitVec.inj (BitVec.signExtend_neg_of_ne_intMin _ (fun h => hx (Int16.toBitVec.inj h)))
 @[simp] theorem Int32.toInt64_neg_of_ne {x : Int32} (hx : x ≠ -2147483648) : (-x).toInt64 = -x.toInt64 :=
   Int64.toBitVec.inj (BitVec.signExtend_neg_of_ne_intMin _  (fun h => hx (Int32.toBitVec.inj h)))
-@[simp] theorem ISize.toInt64_neg_of_ne {x : ISize} (hx : x ≠ minValue) : (-x).toInt64 = -x.toInt64 :=
+theorem ISize.toInt64_neg_of_ne {x : ISize} (hx : x ≠ minValue) : (-x).toInt64 = -x.toInt64 :=
   Int64.toBitVec.inj (BitVec.signExtend_neg_of_ne_intMin _
     (fun h => hx (ISize.toBitVec.inj (h.trans toBitVec_minValue.symm))))
+@[simp] theorem ISize.toInt64_neg_of_int32MinValue_lt {x : ISize} (hx : -2147483648 < x) : (-x).toInt64 = -x.toInt64 := by
+  apply ISize.toInt64_neg_of_ne
+  rw [ne_eq, ← ISize.toInt_inj]
+  apply Int.ne_of_gt
+  apply Int.lt_of_le_of_lt ISize.toInt_minValue_le
+  simpa [ISize.lt_iff_toInt_lt] using hx
 
 theorem Int8.toInt16_ofIntLE {n : Int} (h₁ h₂) :
     (Int8.ofIntLE n h₁ h₂).toInt16 = Int16.ofIntLE n (Int.le_trans (by decide) h₁) (Int.le_trans h₂ (by decide)) :=

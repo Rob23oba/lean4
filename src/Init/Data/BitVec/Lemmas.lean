@@ -716,6 +716,9 @@ theorem slt_zero_eq_msb {w : Nat} {x : BitVec  w} : x.slt 0#w = x.msb := by
 theorem sle_iff_toInt_le {w : Nat} {b b' : BitVec w} : b.sle b' ↔ b.toInt ≤ b'.toInt :=
   decide_eq_true_iff
 
+theorem slt_iff_toInt_lt {w : Nat} {b b' : BitVec w} : b.slt b' ↔ b.toInt < b'.toInt :=
+  decide_eq_true_iff
+
 /-! ### setWidth, zeroExtend and truncate -/
 
 @[simp]
@@ -2627,7 +2630,7 @@ theorem extractLsb'_append_eq_ite {v w} {xhi : BitVec v} {xlo : BitVec w} {start
   · simp only [hstart, ↓reduceDIte]
     ext i hi
     simp [getElem_extractLsb', getLsbD_append,
-      show ¬start + i < w by omega, ↓reduceIte, 
+      show ¬start + i < w by omega, ↓reduceIte,
       show start + i - w = start - w + i by omega]
 
 /-- Extracting bits `[start..start+len)` from `(xhi ++ xlo)` equals extracting
@@ -3168,6 +3171,22 @@ theorem add_neg_eq_sub {x y : BitVec w} : x + - y = (x - y) := by
   apply eq_of_toInt_eq
   simp [toInt_neg, Int.sub_eq_add_neg]
 
+theorem setWidth_allOnes_of_le (h : i ≤ w) :
+    (allOnes w).setWidth i = allOnes i := by
+  ext k hk
+  simp only [getElem_setWidth, getLsbD_allOnes, getElem_allOnes, decide_eq_true_eq]
+  exact Nat.lt_of_lt_of_le hk h
+
+theorem setWidth_neg_of_le (x : BitVec w) (h : i ≤ w) :
+    (-x).setWidth i = -x.setWidth i := by
+  rw [← not_not (b := - _), setWidth_not h, not_neg, setWidth_add _ _ h,
+    negOne_eq_allOnes, setWidth_allOnes_of_le h,
+    ← not_not (b := - _), not_neg, negOne_eq_allOnes]
+
+theorem setWidth_sub (x y : BitVec w) (h : i ≤ w) :
+    (x - y).setWidth i = x.setWidth i - y.setWidth i := by
+  rw [← add_neg_eq_sub, ← add_neg_eq_sub, setWidth_add _ _ h, setWidth_neg_of_le _ h]
+
 /- ### add/sub injectivity -/
 
 @[simp]
@@ -3310,6 +3329,12 @@ theorem mul_two {x : BitVec w} : x * 2#w = x + x := by
   simp [this, mul_succ]
 
 theorem two_mul {x : BitVec w} : 2#w * x = x + x := by rw [BitVec.mul_comm, mul_two]
+
+theorem setWidth_mul (h : i ≤ w) (x y : BitVec w) :
+    (x * y).setWidth i = x.setWidth i * y.setWidth i := by
+  have dvd : 2^i ∣ 2^w := Nat.pow_dvd_pow _ h
+  simp only [bitvec_to_nat, h, Nat.mod_mod_of_dvd _ dvd]
+  rw [Nat.mul_mod]
 
 @[simp, bitvec_to_nat] theorem toInt_mul (x y : BitVec w) :
   (x * y).toInt = (x.toInt * y.toInt).bmod (2^w) := by
