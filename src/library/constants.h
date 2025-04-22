@@ -29,6 +29,7 @@ name const & get_cast_name();
 name const & get_char_name();
 name const & get_congr_arg_name();
 name const & get_decidable_name();
+name const & get_decidable_intro_name();
 name const & get_decidable_is_true_name();
 name const & get_decidable_is_false_name();
 name const & get_decidable_decide_name();

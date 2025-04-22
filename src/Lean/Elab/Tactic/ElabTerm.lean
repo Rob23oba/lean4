@@ -366,26 +366,26 @@ private def preprocessPropToDecide (expectedType : Expr) : TermElabM Expr := do
   return expectedType
 
 /--
-Given the decidable instance `inst`, reduces it and returns a decidable instance expression
-in whnf that can be regarded as the reason for the failure of `inst` to fully reduce.
+Given the boolean `decP`, reduces it and returns a boolean expression in whnf that
+can be regarded as the reason for the failure of `decP` to fully reduce.
 -/
-private partial def blameDecideReductionFailure (inst : Expr) : MetaM Expr := withIncRecDepth do
-  let inst ← whnf inst
-  -- If it's the Decidable recursor, then blame the major premise.
-  if inst.isAppOfArity ``Decidable.rec 5 then
-    return ← blameDecideReductionFailure inst.appArg!
+private partial def blameDecideReductionFailure (decP : Expr) : MetaM Expr := withIncRecDepth do
+  let decP ← whnf decP
+  -- If it's the Bool recursor, then blame the major premise.
+  if decP.isAppOfArity ``Bool.rec 5 then
+    return ← blameDecideReductionFailure decP.appArg!
   -- If it is a matcher, look for a discriminant that's a Decidable instance to blame.
-  if let .const c _ := inst.getAppFn then
+  if let .const c _ := decP.getAppFn then
     if let some info ← getMatcherInfo? c then
-      if inst.getAppNumArgs == info.arity then
-        let args := inst.getAppArgs
+      if decP.getAppNumArgs == info.arity then
+        let args := decP.getAppArgs
         for i in [0:info.numDiscrs] do
-          let inst' := args[info.numParams + 1 + i]!
-          if (← Meta.isClass? (← inferType inst')) == ``Decidable then
-            let inst'' ← whnf inst'
-            if !(inst''.isAppOf ``isTrue || inst''.isAppOf ``isFalse) then
+          let decP' := args[info.numParams + 1 + i]!
+          if ← Meta.isDefEq (← inferType decP') (mkConst ``Bool) then
+            let inst'' ← whnf decP'
+            if !(inst''.isConstOf ``Bool.true || inst''.isConstOf ``Bool.false) then
               return ← blameDecideReductionFailure inst''
-  return inst
+  return decP
 
 private unsafe def elabNativeDecideCoreUnsafe (tacticName : Name) (expectedType : Expr) : TacticM Expr := do
   let d ← mkDecide expectedType
@@ -451,23 +451,25 @@ def evalDecideCore (tacticName : Name) (cfg : Parser.Tactic.DecideConfig) : Tact
       doElab expectedType
 where
   doElab (expectedType : Expr) : TacticM Expr := do
-    let pf ← mkDecideProof expectedType
-    -- Get instance from `pf`
-    let s := pf.appFn!.appArg!
-    let r ← withAtLeastTransparency .default <| whnf s
-    if r.isAppOf ``isTrue then
+    let decP ← mkDecide expectedType
+    -- Get instance from `decP`
+    let s := decP.appArg!
+    let r ← withAtLeastTransparency .default <| whnf decP
+    if r.isConstOf ``Bool.true then
       -- Success!
       -- While we have a proof from reduction, we do not embed it in the proof term,
       -- and instead we let the kernel recompute it during type checking from the following more
       -- efficient term. The kernel handles the unification `e =?= true` specially.
-      return pf
+      let decEqTrue := mkApp3 (mkConst ``Eq [1]) (mkConst ``Bool) decP (mkConst ``Bool.true)
+      let h         := mkApp2 (mkConst ``id [0]) decEqTrue reflBoolTrue
+      return mkApp3 (mkConst ``of_decide_eq_true) expectedType s h
     else
       diagnose expectedType s r
   doKernel (expectedType : Expr) : TacticM Expr := do
     let pf ← mkDecideProof expectedType
     -- Get instance from `pf`
     let s := pf.appFn!.appArg!
-    -- Reduce the decidable instance to (hopefully!) `isTrue` by passing `pf` to the kernel.
+    -- Reduce `decide p` to (hopefully!) `true` by passing `pf` to the kernel.
     -- The `mkAuxLemma` function caches the result in two ways:
     -- 1. First, the function makes use of a `type`-indexed cache per module.
     -- 2. Second, once the proof is added to the environment, the kernel doesn't need to check the proof again.
@@ -483,12 +485,13 @@ where
   diagnose {α : Type} (expectedType s : Expr) (r? : Option Expr) : TacticM α :=
     -- Diagnose the failure, lazily so that there is no performance impact if `decide` isn't being used interactively.
     throwError MessageData.ofLazyM (es := #[expectedType]) do
-      let r ← r?.getDM (withAtLeastTransparency .default <| whnf s)
-      if r.isAppOf ``isTrue then
+      let decP := mkApp2 (mkConst ``Decidable.decide) expectedType s
+      let r ← r?.getDM (withAtLeastTransparency .default <| whnf decP)
+      if r.isAppOf ``Bool.true then
         return m!"\
-          tactic '{tacticName}' failed. internal error: the elaborator is able to reduce the \
-          '{.ofConstName ``Decidable}' instance, but the kernel is not able to"
-      else if r.isAppOf ``isFalse then
+          tactic '{tacticName}' failed. internal error: the elaborator is able to reduce \
+          '{decP}' to 'true', but the kernel is not able to"
+      else if r.isAppOf ``Bool.false then
         return m!"\
           tactic '{tacticName}' proved that the proposition\
           {indentExpr expectedType}\n\
@@ -496,7 +499,7 @@ where
       -- Re-reduce the instance and collect diagnostics, to get all unfolded Decidable instances
       let (reason, unfoldedInsts) ← withoutModifyingState <| withOptions (fun opt => diagnostics.set opt true) do
         modifyDiag (fun _ => {})
-        let reason ← withAtLeastTransparency .default <| blameDecideReductionFailure s
+        let reason ← withAtLeastTransparency .default <| blameDecideReductionFailure decP
         let unfolded := (← get).diag.unfoldCounter.foldl (init := #[]) fun cs n _ => cs.push n
         let unfoldedInsts ← unfolded |>.qsort Name.lt |>.filterMapM fun n => do
           let e ← mkConstWithLevelParams n
@@ -532,11 +535,9 @@ where
         else
           MessageData.nil
       return m!"\
-        tactic '{tacticName}' failed for proposition\
-        {indentExpr expectedType}\n\
-        since its '{.ofConstName ``Decidable}' instance\
-        {indentExpr s}\n\
-        did not reduce to '{.ofConstName ``isTrue}' or '{.ofConstName ``isFalse}'.\n\n\
+        tactic '{tacticName}' failed since\
+        {indentExpr decP}\n\
+        did not reduce to '{.ofConstName ``true}' or '{.ofConstName ``false}'.\n\n\
         {stuckMsg}{hint}"
 
 declare_config_elab elabDecideConfig Parser.Tactic.DecideConfig

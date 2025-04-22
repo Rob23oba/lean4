@@ -40,6 +40,16 @@ def stdRange := (1, 2147483562)
 instance : Repr StdGen where
   reprPrec | ⟨s1, s2⟩, _ => Std.Format.bracket "⟨" (repr s1 ++ ", " ++ repr s2) "⟩"
 
+set_option trace.compiler.ir.result true in
+
+def test (x : Nat) : Nat :=
+  if x < 4 then 27
+  else if x < 10 then 3
+  else 19
+
+set_option compiler.enableNew true
+set_option trace.compiler true in
+set_option trace.Compiler true in
 /--
 The next value from a `StdGen`, paired with an updated generator state.
 -/

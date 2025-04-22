@@ -253,17 +253,13 @@ class erase_irrelevant_fn {
     }
 
     expr decidable_to_bool_cases(buffer<expr> const & args) {
-        lean_always_assert(args.size() == 5);
-        expr const & major  = args[2];
-        expr minor1 = args[3];
-        expr minor2 = args[4];
-        minor1 = visit_minor(minor1);
-        minor2 = visit_minor(minor2);
-        lean_always_assert(is_lambda(minor1));
-        lean_always_assert(is_lambda(minor2));
-        minor1 = instantiate(binding_body(minor1), mk_enf_neutral());
-        minor2 = instantiate(binding_body(minor2), mk_enf_neutral());
-        return mk_app(mk_constant(get_bool_cases_on_name()), major, minor1, minor2);
+        lean_always_assert(args.size() == 4);
+        expr const & major = args[2];
+        expr minor = visit_minor(args[3]);
+        lean_always_assert(is_lambda(minor));
+        minor = instantiate(binding_body(minor), major);
+        lean_always_assert(is_lambda(minor));
+	return instantiate(binding_body(minor), mk_enf_neutral());
     }
 
     /* Remark: we only keep major and minor premises. */
@@ -282,7 +278,7 @@ class erase_irrelevant_fn {
         } else if (I_name == get_byte_array_name()) {
             return elim_byte_array_cases(args);
         } else if (I_name == get_uint8_name() || I_name == get_uint16_name() || I_name == get_uint32_name() || I_name == get_uint64_name() || I_name == get_usize_name()) {
-          return elim_uint_cases(I_name, args);
+            return elim_uint_cases(I_name, args);
         } else if (I_name == get_decidable_name()) {
             return decidable_to_bool_cases(args);
         } else {
@@ -391,10 +387,10 @@ class erase_irrelevant_fn {
                 } else {
                     f = mk_const(*n, const_levels(f));
                 }
-            } else if (fn == get_decidable_is_true_name()) {
-                return mk_constant(get_bool_true_name());
-            } else if (fn == get_decidable_is_false_name()) {
-                return mk_constant(get_bool_false_name());
+            } else if (fn == get_decidable_intro_name() && args.size() == 3) {
+                /* Decidable.intro is the "identify" function since Decidable and Bool have
+                   the same runtime representation. */
+                return args[1];
             } else if (is_constructor(env(), fn)) {
                 return visit_constructor(f, args);
             } else if (is_cases_on_recursor(env(), fn)) {

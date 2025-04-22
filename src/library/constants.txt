@@ -22,6 +22,7 @@ cast
 Char
 congrArg
 Decidable
+Decidable.intro
 Decidable.isTrue
 Decidable.isFalse
 Decidable.decide

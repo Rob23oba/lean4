@@ -27,6 +27,7 @@ name const * g_cast = nullptr;
 name const * g_char = nullptr;
 name const * g_congr_arg = nullptr;
 name const * g_decidable = nullptr;
+name const * g_decidable_intro = nullptr;
 name const * g_decidable_is_true = nullptr;
 name const * g_decidable_is_false = nullptr;
 name const * g_decidable_decide = nullptr;
@@ -158,6 +159,8 @@ void initialize_constants() {
     mark_persistent(g_congr_arg->raw());
     g_decidable = new name{"Decidable"};
     mark_persistent(g_decidable->raw());
+    g_decidable_intro = new name{"Decidable", "intro"};
+    mark_persistent(g_decidable_intro->raw());
     g_decidable_is_true = new name{"Decidable", "isTrue"};
     mark_persistent(g_decidable_is_true->raw());
     g_decidable_is_false = new name{"Decidable", "isFalse"};
@@ -348,6 +351,7 @@ void finalize_constants() {
     delete g_char;
     delete g_congr_arg;
     delete g_decidable;
+    delete g_decidable_intro;
     delete g_decidable_is_true;
     delete g_decidable_is_false;
     delete g_decidable_decide;
@@ -455,6 +459,7 @@ name const & get_cast_name() { return *g_cast; }
 name const & get_char_name() { return *g_char; }
 name const & get_congr_arg_name() { return *g_congr_arg; }
 name const & get_decidable_name() { return *g_decidable; }
+name const & get_decidable_intro_name() { return *g_decidable_intro; }
 name const & get_decidable_is_true_name() { return *g_decidable_is_true; }
 name const & get_decidable_is_false_name() { return *g_decidable_is_false; }
 name const & get_decidable_decide_name() { return *g_decidable_decide; }
