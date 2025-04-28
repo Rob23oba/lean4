@@ -10,6 +10,7 @@ import Lean.Elab.PreDefinition.Basic
 import Lean.Elab.PreDefinition.Eqns
 import Lean.Meta.ArgsPacker.Basic
 import Lean.Elab.PreDefinition.WF.Unfold
+import Lean.Elab.PreDefinition.FixedParams
 import Init.Data.Array.Basic
 
 namespace Lean.Elab.WF
@@ -19,14 +20,13 @@ open Eqns
 structure EqnInfo extends EqnInfoCore where
   declNames       : Array Name
   declNameNonRec  : Name
-  fixedPrefixSize : Nat
   argsPacker      : ArgsPacker
+  fixedParamPerms : FixedParamPerms
   deriving Inhabited
-
 
 builtin_initialize eqnInfoExt : MapDeclarationExtension EqnInfo ← mkMapDeclarationExtension
 
-def registerEqnsInfo (preDefs : Array PreDefinition) (declNameNonRec : Name) (fixedPrefixSize : Nat)
+def registerEqnsInfo (preDefs : Array PreDefinition) (declNameNonRec : Name) (fixedParamPerms : FixedParamPerms)
     (argsPacker : ArgsPacker) : MetaM Unit := do
   preDefs.forM fun preDef => ensureEqnReservedNamesAvailable preDef.declName
   /-
@@ -40,7 +40,7 @@ def registerEqnsInfo (preDefs : Array PreDefinition) (declNameNonRec : Name) (fi
       modifyEnv fun env =>
         preDefs.foldl (init := env) fun env preDef =>
           eqnInfoExt.insert env preDef.declName { preDef with
-            declNames, declNameNonRec, fixedPrefixSize, argsPacker }
+            declNames, declNameNonRec, argsPacker, fixedParamPerms }
 
 def getEqnsFor? (declName : Name) : MetaM (Option (Array Name)) := do
   if let some info := eqnInfoExt.find? (← getEnv) declName then

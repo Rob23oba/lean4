@@ -5,6 +5,8 @@ Authors: Leonardo de Moura, Mario Carneiro
 
 Notation for operators defined at Prelude.lean
 -/
+module
+
 prelude
 import Init.Prelude
 import Init.Coe
@@ -756,6 +758,13 @@ This is mostly useful for debugging info trees.
 syntax (name := infoTreesCmd)
   "#info_trees" " in" ppLine command : command
 
+/--
+Specify a premise selection engine.
+Note that Lean does not ship a default premise selection engine,
+so this is only useful in conjunction with a downstream package which provides one.
+-/
+syntax (name := setPremiseSelectorCmd)
+  "set_premise_selector" term : command
 
 namespace Parser
 

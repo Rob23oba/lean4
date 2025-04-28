@@ -29,7 +29,7 @@ instance : Hashable Module where hash m := hash m.keyName
 instance : BEq Module where beq m n := m.keyName == n.keyName
 
 abbrev ModuleSet := Std.HashSet Module
-@[inline] def ModuleSet.empty : ModuleSet := Std.HashSet.empty
+@[inline] def ModuleSet.empty : ModuleSet := ∅
 
 abbrev OrdModuleSet := OrdHashSet Module
 @[inline] def OrdModuleSet.empty : OrdModuleSet := OrdHashSet.empty
@@ -44,7 +44,13 @@ Locate the named, buildable module in the library
 def LeanLib.findModule? (mod : Name) (self : LeanLib) : Option Module :=
   if self.isBuildableModule mod then some {lib := self, name := mod} else none
 
-/--  Locate the named, buildable, importable, local module in the package.  -/
+/-- Returns the buildable module in the library whose source file is `path`.  -/
+def LeanLib.findModuleBySrc? (path : FilePath) (self : LeanLib) : Option Module := do
+  let modPath ← path.toString.dropPrefix? self.srcDir.toString
+  let modPath := (modPath.drop 1).toString -- remove leading `/`
+  self.findModule? (modOfFilePath modPath)
+
+/-- Locate the named, buildable, importable, local module in the package.  -/
 def Package.findModule? (mod : Name) (self : Package) : Option Module :=
   self.leanLibs.findSomeRev? (·.findModule? mod)
 
@@ -113,11 +119,16 @@ def bcFile? (self : Module) : Option FilePath :=
 def dynlibSuffix := "-1"
 
 @[inline] def dynlibName (self : Module) : String :=
-  -- NOTE: file name MUST be unique on Windows
-  self.name.toStringWithSep "-" (escape := true) ++ dynlibSuffix
+  /-
+  * File name MUST be unique on Windows
+  * Uses the mangled module name so the library name matches the
+    name used for the module's initialization function, thus enabling it
+    to be loaded as a plugin.
+  -/
+  self.name.mangle ""
 
 @[inline] def dynlibFile (self : Module) : FilePath :=
-  self.pkg.nativeLibDir / nameToSharedLib self.dynlibName
+  self.pkg.leanLibDir / s!"{self.dynlibName}.{sharedLibExt}"
 
 @[inline] def serverOptions (self : Module) : Array LeanOption :=
   self.lib.serverOptions
@@ -127,6 +138,12 @@ def dynlibSuffix := "-1"
 
 @[inline] def backend (self : Module) : Backend :=
   self.lib.backend
+
+@[inline] def dynlibs (self : Module) : TargetArray Dynlib :=
+  self.lib.dynlibs
+
+@[inline] def plugins (self : Module) : TargetArray Dynlib :=
+  self.lib.plugins
 
 @[inline] def leanArgs (self : Module) : Array String :=
   self.lib.leanArgs
@@ -145,6 +162,9 @@ def dynlibSuffix := "-1"
 
 @[inline] def weakLinkArgs (self : Module) : Array String :=
   self.lib.weakLinkArgs
+
+@[inline] def leanIncludeDir? (self : Module) : Option FilePath :=
+  if self.pkg.bootstrap then some <| self.pkg.buildDir / "include" else none
 
 @[inline] def platformIndependent (self : Module) : Option Bool :=
   self.lib.platformIndependent

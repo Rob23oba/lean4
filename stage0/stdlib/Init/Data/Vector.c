@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Init.Data.Vector
-// Imports: Init.Data.Vector.Basic Init.Data.Vector.Lemmas Init.Data.Vector.Lex Init.Data.Vector.MapIdx Init.Data.Vector.Count Init.Data.Vector.DecidableEq Init.Data.Vector.Zip Init.Data.Vector.OfFn Init.Data.Vector.Range Init.Data.Vector.Erase Init.Data.Vector.Monadic Init.Data.Vector.InsertIdx
+// Imports: Init.Data.Vector.Basic Init.Data.Vector.Lemmas Init.Data.Vector.Lex Init.Data.Vector.MapIdx Init.Data.Vector.Count Init.Data.Vector.DecidableEq Init.Data.Vector.Zip Init.Data.Vector.OfFn Init.Data.Vector.Range Init.Data.Vector.Erase Init.Data.Vector.Monadic Init.Data.Vector.InsertIdx Init.Data.Vector.FinRange Init.Data.Vector.Extract Init.Data.Vector.Perm Init.Data.Vector.Find
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -25,6 +25,10 @@ lean_object* initialize_Init_Data_Vector_Range(uint8_t builtin, lean_object*);
 lean_object* initialize_Init_Data_Vector_Erase(uint8_t builtin, lean_object*);
 lean_object* initialize_Init_Data_Vector_Monadic(uint8_t builtin, lean_object*);
 lean_object* initialize_Init_Data_Vector_InsertIdx(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Data_Vector_FinRange(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Data_Vector_Extract(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Data_Vector_Perm(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Data_Vector_Find(uint8_t builtin, lean_object*);
 static bool _G_initialized = false;
 LEAN_EXPORT lean_object* initialize_Init_Data_Vector(uint8_t builtin, lean_object* w) {
 lean_object * res;
@@ -64,6 +68,18 @@ res = initialize_Init_Data_Vector_Monadic(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 res = initialize_Init_Data_Vector_InsertIdx(builtin, lean_io_mk_world());
+if (lean_io_result_is_error(res)) return res;
+lean_dec_ref(res);
+res = initialize_Init_Data_Vector_FinRange(builtin, lean_io_mk_world());
+if (lean_io_result_is_error(res)) return res;
+lean_dec_ref(res);
+res = initialize_Init_Data_Vector_Extract(builtin, lean_io_mk_world());
+if (lean_io_result_is_error(res)) return res;
+lean_dec_ref(res);
+res = initialize_Init_Data_Vector_Perm(builtin, lean_io_mk_world());
+if (lean_io_result_is_error(res)) return res;
+lean_dec_ref(res);
+res = initialize_Init_Data_Vector_Find(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 return lean_io_result_mk_ok(lean_box(0));

@@ -6,6 +6,7 @@ Authors: Leonardo de Moura
 prelude
 import Lean.Elab.PreDefinition.Basic
 import Lean.Elab.PreDefinition.Eqns
+import Lean.Meta.Tactic.Apply
 
 namespace Lean.Elab.WF
 open Meta
@@ -37,67 +38,100 @@ private def rwFixEq (mvarId : MVarId) : MetaM MVarId := mvarId.withContext do
   mvarId.assign (← mkEqTrans h mvarNew)
   return mvarNew.mvarId!
 
-private partial def mkUnfoldProof (declName declNameNonRec : Name) (type : Expr) : MetaM Expr := do
-  trace[Elab.definition.wf.eqns] "proving: {type}"
-  withNewMCtxDepth do
-    let main ← mkFreshExprSyntheticOpaqueMVar type
-    let (_, mvarId) ← main.mvarId!.intros
-    let rec go (mvarId : MVarId) : MetaM Unit := do
-      trace[Elab.definition.wf.eqns] "step\n{MessageData.ofGoal mvarId}"
-      if ← withAtLeastTransparency .all (tryURefl mvarId) then
-        trace[Elab.definition.wf.eqns] "refl!"
-        return ()
-      else if (← tryContradiction mvarId) then
-        trace[Elab.definition.wf.eqns] "contradiction!"
-        return ()
-      else if let some mvarId ← simpMatch? mvarId then
-        trace[Elab.definition.wf.eqns] "simpMatch!"
-        go mvarId
-      else if let some mvarId ← simpIf? mvarId then
-        trace[Elab.definition.wf.eqns] "simpIf!"
-        go mvarId
-      else if let some mvarId ← whnfReducibleLHS? mvarId then
-        trace[Elab.definition.wf.eqns] "whnfReducibleLHS!"
-        go mvarId
+private partial def mkUnfoldProof (declName : Name) (mvarId : MVarId) : MetaM Unit := do
+  trace[Elab.definition.wf.eqns] "step\n{MessageData.ofGoal mvarId}"
+  if ← withAtLeastTransparency .all (tryURefl mvarId) then
+    trace[Elab.definition.wf.eqns] "refl!"
+    return ()
+  else if (← tryContradiction mvarId) then
+    trace[Elab.definition.wf.eqns] "contradiction!"
+    return ()
+  else if let some mvarId ← simpMatch? mvarId then
+    trace[Elab.definition.wf.eqns] "simpMatch!"
+    mkUnfoldProof declName mvarId
+  else if let some mvarId ← simpIf? mvarId then
+    trace[Elab.definition.wf.eqns] "simpIf!"
+    mkUnfoldProof declName mvarId
+  else
+    let ctx ← Simp.mkContext (config := { dsimp := false, etaStruct := .none })
+    match (← simpTargetStar mvarId ctx (simprocs := {})).1 with
+    | TacticResultCNM.closed => return ()
+    | TacticResultCNM.modified mvarId =>
+      trace[Elab.definition.wf.eqns] "simp only!"
+      mkUnfoldProof declName mvarId
+    | TacticResultCNM.noChange =>
+      if let some mvarIds ← casesOnStuckLHS? mvarId then
+        trace[Elab.definition.wf.eqns] "case split into {mvarIds.size} goals"
+        mvarIds.forM (mkUnfoldProof declName)
+      else if let some mvarIds ← splitTarget? mvarId then
+        trace[Elab.definition.wf.eqns] "splitTarget into {mvarIds.length} goals"
+        mvarIds.forM (mkUnfoldProof declName)
       else
-        let ctx ← Simp.mkContext (config := { dsimp := false, etaStruct := .none })
-        match (← simpTargetStar mvarId ctx (simprocs := {})).1 with
-        | TacticResultCNM.closed => return ()
-        | TacticResultCNM.modified mvarId =>
-          trace[Elab.definition.wf.eqns] "simp only!"
-          go mvarId
-        | TacticResultCNM.noChange =>
-          if let some mvarIds ← casesOnStuckLHS? mvarId then
-            trace[Elab.definition.wf.eqns] "case split into {mvarIds.size} goals"
-            mvarIds.forM go
-          else if let some mvarIds ← splitTarget? mvarId then
-            trace[Elab.definition.wf.eqns] "splitTarget into {mvarIds.length} goals"
-            mvarIds.forM go
-          else
-            -- At some point in the past, we looked for occurrences of Wf.fix to fold on the
-            -- LHS (introduced in 096e4eb), but it seems that code path was never used,
-            -- so #3133 removed it again (and can be recovered from there if this was premature).
-            throwError "failed to generate equational theorem for '{declName}'\n{MessageData.ofGoal mvarId}"
+        -- At some point in the past, we looked for occurrences of Wf.fix to fold on the
+        -- LHS (introduced in 096e4eb), but it seems that code path was never used,
+        -- so #3133 removed it again (and can be recovered from there if this was premature).
+        throwError "failed to generate equational theorem for '{declName}'\n{MessageData.ofGoal mvarId}"
 
-    let mvarId ← if declName != declNameNonRec then deltaLHS mvarId else pure mvarId
-    let mvarId ← rwFixEq mvarId
-    go mvarId
-    instantiateMVars main
-
-def mkUnfoldEq (preDef : PreDefinition) (unaryPreDefName : Name) : MetaM Unit := do
+def mkUnfoldEq (preDef : PreDefinition) (unaryPreDefName : Name) (wfPreprocessProof : Simp.Result) : MetaM Unit := do
+  let baseName := preDef.declName
+  let name := Name.str baseName unfoldThmSuffix
+  mapError (f := (m!"Cannot derive {name}{indentD ·}")) do
   withOptions (tactic.hygienic.set · false) do
-    let baseName := preDef.declName
     lambdaTelescope preDef.value fun xs body => do
       let us := preDef.levelParams.map mkLevelParam
-      let type ← mkEq (mkAppN (Lean.mkConst preDef.declName us) xs) body
-      let value ← mkUnfoldProof preDef.declName unaryPreDefName type
+      let lhs := mkAppN (Lean.mkConst preDef.declName us) xs
+      let type ← mkEq lhs body
+
+      let main ← mkFreshExprSyntheticOpaqueMVar type
+      let mvarId := main.mvarId!
+      let wfPreprocessProof ← Simp.mkCongr { expr := type.appFn! } (← wfPreprocessProof.addExtraArgs xs)
+      let mvarId ← applySimpResultToTarget mvarId type wfPreprocessProof
+      let mvarId ← if preDef.declName != unaryPreDefName then deltaLHS mvarId else pure mvarId
+      let mvarId ← rwFixEq mvarId
+      mkUnfoldProof preDef.declName mvarId
+
+      let value ← instantiateMVars main
       let type ← mkForallFVars xs type
       let value ← mkLambdaFVars xs value
-      let name := Name.str baseName unfoldThmSuffix
       addDecl <| Declaration.thmDecl {
         name, type, value
         levelParams := preDef.levelParams
       }
       trace[Elab.definition.wf] "mkUnfoldEq defined {.ofConstName name}"
+
+/--
+Derives the equational theorem for the individual functions from the equational
+theorem of `foo._unary` or `foo._binary`.
+
+It should just be a specialization of that one, due to defeq.
+-/
+def mkBinaryUnfoldEq (preDef : PreDefinition) (unaryPreDefName : Name) : MetaM Unit := do
+  let baseName := preDef.declName
+  let name := Name.str baseName unfoldThmSuffix
+  let unaryEqName := Name.str unaryPreDefName unfoldThmSuffix
+  mapError (f := (m!"Cannot derive {name} from {unaryEqName}{indentD ·}")) do
+  withOptions (tactic.hygienic.set · false) do
+    lambdaTelescope preDef.value fun xs body => do
+      let us := preDef.levelParams.map mkLevelParam
+      let lhs := mkAppN (Lean.mkConst preDef.declName us) xs
+      let type ← mkEq lhs body
+      let main ← mkFreshExprSyntheticOpaqueMVar type
+      let mvarId := main.mvarId!
+      let mvarId ← deltaLHS mvarId -- unfold the function
+      let mvarIds ← mvarId.applyConst unaryEqName
+      unless mvarIds.isEmpty do
+        throwError "Failed to apply '{unaryEqName}' to '{mvarId}'"
+
+      let value ← instantiateMVars main
+      let type ← mkForallFVars xs type
+      let value ← mkLambdaFVars xs value
+      addDecl <| Declaration.thmDecl {
+        name, type, value
+        levelParams := preDef.levelParams
+      }
+      trace[Elab.definition.wf] "mkBinaryUnfoldEq defined {.ofConstName name}"
+
+builtin_initialize
+  registerTraceClass `Elab.definition.wf.eqns
 
 end Lean.Elab.WF

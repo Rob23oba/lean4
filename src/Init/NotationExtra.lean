@@ -5,6 +5,8 @@ Authors: Leonardo de Moura
 
 Extra notation that depends on Init/Meta
 -/
+module
+
 prelude
 import Init.Data.ToString.Basic
 import Init.Data.Array.Subarray
@@ -307,7 +309,7 @@ syntax (name := Lean.Parser.Command.classAbbrev)
 macro_rules
   | `($mods:declModifiers class abbrev $id $params* $[: $ty]? := $[ $parents $[,]? ]*) =>
     let ctor := mkIdentFrom id <| id.raw[0].getId.modifyBase (. ++ `mk)
-    `($mods:declModifiers class $id $params* extends $parents,* $[: $ty]?
+    `($mods:declModifiers class $id $params* $[: $ty:term]? extends $[$parents:term],*
       attribute [instance] $ctor)
 
 macro_rules

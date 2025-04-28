@@ -116,6 +116,8 @@ private def ppActiveTheoremPatterns : M Unit := do
     pushMsg <| .trace { cls := `ematch } "E-matching patterns" m
 
 private def ppOffset : M Unit := do
+  unless grind.debug.get (← getOptions) do
+    return ()
   let goal ← read
   let s := goal.arith.offset
   let nodes := s.nodes
@@ -124,8 +126,20 @@ private def ppOffset : M Unit := do
   if model.isEmpty then return ()
   let mut ms := #[]
   for (e, val) in model do
-    ms := ms.push <| .trace { cls := `assign } m!"{e} := {val}" #[]
-  pushMsg <| .trace { cls := `offset } "Assignment satisfying offset contraints" ms
+    ms := ms.push <| .trace { cls := `assign } m!"{Arith.quoteIfArithTerm e} := {val}" #[]
+  pushMsg <| .trace { cls := `offset } "Assignment satisfying offset constraints" ms
+
+private def ppCutsat : M Unit := do
+  let goal ← read
+  let s := goal.arith.cutsat
+  let nodes := s.varMap
+  if nodes.isEmpty then return ()
+  let model ← Arith.Cutsat.mkModel goal
+  if model.isEmpty then return ()
+  let mut ms := #[]
+  for (e, val) in model do
+    ms := ms.push <| .trace { cls := `assign } m!"{Arith.quoteIfArithTerm e} := {val}" #[]
+  pushMsg <| .trace { cls := `cutsat } "Assignment satisfying linear constraints" ms
 
 private def ppThresholds (c : Grind.Config) : M Unit := do
   let goal ← read
@@ -139,6 +153,8 @@ private def ppThresholds (c : Grind.Config) : M Unit := do
     msgs := msgs.push <| .trace { cls := `limit } m!"maximum number of case-splits has been reached, threshold: `(splits := {c.splits})`" #[]
   if maxGen ≥ c.gen then
     msgs := msgs.push <| .trace { cls := `limit } m!"maximum term generation has been reached, threshold: `(gen := {c.gen})`" #[]
+  if goal.arith.ring.steps ≥ c.ringSteps then
+    msgs := msgs.push <| .trace { cls := `limit } m!"maximum number of ring steps has been reached, threshold: `(ringSteps := {c.ringSteps})`" #[]
   unless msgs.isEmpty do
     pushMsg <| .trace { cls := `limits } "Thresholds reached" msgs
 
@@ -153,7 +169,7 @@ private def ppCasesTrace : M Unit := do
 def goalToMessageData (goal : Goal) (config : Grind.Config) : MetaM MessageData := goal.mvarId.withContext do
   if config.verbose then
     let (_, m) ← go goal |>.run #[]
-    let gm := MessageData.trace { cls := `grind, collapsed := false } "Diagnostics" m
+    let gm := MessageData.trace { cls := `grind, collapsed := false } "Goal diagnostics" m
     let r := m!"{.ofGoal goal.mvarId}\n{gm}"
     addMessageContextFull r
   else
@@ -165,6 +181,7 @@ where
     ppCasesTrace
     ppActiveTheoremPatterns
     ppOffset
+    ppCutsat
     ppThresholds config
 
 end Lean.Meta.Grind

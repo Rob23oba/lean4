@@ -3,6 +3,8 @@ Copyright (c) 2014 Parikshit Khanna. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Parikshit Khanna, Jeremy Avigad, Leonardo de Moura, Floris van Doorn, Mario Carneiro
 -/
+module
+
 prelude
 import Init.Data.List.TakeDrop
 import Init.Data.Function
@@ -11,8 +13,8 @@ import Init.Data.Function
 # Lemmas about `List.zip`, `List.zipWith`, `List.zipWithAll`, and `List.unzip`.
 -/
 
--- set_option linter.listName true -- Enforce naming conventions for `List`/`Array`/`Vector` variables.
--- set_option linter.indexVariables true -- Enforce naming conventions for index variables.
+set_option linter.listVariables true -- Enforce naming conventions for `List`/`Array`/`Vector` variables.
+set_option linter.indexVariables true -- Enforce naming conventions for index variables.
 
 namespace List
 
@@ -22,21 +24,21 @@ open Nat
 
 /-! ### zipWith -/
 
-theorem zipWith_comm (f : α → β → γ) :
-    ∀ (as : List α) (bs : List β), zipWith f as bs = zipWith (fun b a => f a b) bs as
+theorem zipWith_comm {f : α → β → γ} :
+    ∀ {as : List α} {bs : List β}, zipWith f as bs = zipWith (fun b a => f a b) bs as
   | [], _ => List.zipWith_nil_right.symm
   | _ :: _, [] => rfl
-  | _ :: as, _ :: bs => congrArg _ (zipWith_comm f as bs)
+  | _ :: _, _ :: _ => congrArg _ zipWith_comm
 
-theorem zipWith_comm_of_comm (f : α → α → β) (comm : ∀ x y : α, f x y = f y x) (l l' : List α) :
+theorem zipWith_comm_of_comm {f : α → α → β} (comm : ∀ x y : α, f x y = f y x) {l l' : List α} :
     zipWith f l l' = zipWith f l' l := by
   rw [zipWith_comm]
   simp only [comm]
 
 @[simp]
-theorem zipWith_self (f : α → α → δ) : ∀ l : List α, zipWith f l l = l.map fun a => f a a
+theorem zipWith_self {f : α → α → δ} : ∀ {l : List α}, zipWith f l l = l.map fun a => f a a
   | [] => rfl
-  | _ :: xs => congrArg _ (zipWith_self f xs)
+  | _ :: _ => congrArg _ zipWith_self
 
 @[deprecated zipWith_self (since := "2025-01-29")] abbrev zipWith_same := @zipWith_self
 
@@ -92,23 +94,23 @@ theorem head_zipWith {f : α → β → γ} (h):
   rw [← head?_eq_head, head?_zipWith, head?_eq_head, head?_eq_head]
 
 @[simp]
-theorem zipWith_map {μ} (f : γ → δ → μ) (g : α → γ) (h : β → δ) (l₁ : List α) (l₂ : List β) :
+theorem zipWith_map {μ} {f : γ → δ → μ} {g : α → γ} {h : β → δ} {l₁ : List α} {l₂ : List β} :
     zipWith f (l₁.map g) (l₂.map h) = zipWith (fun a b => f (g a) (h b)) l₁ l₂ := by
   induction l₁ generalizing l₂ <;> cases l₂ <;> simp_all
 
-theorem zipWith_map_left (l₁ : List α) (l₂ : List β) (f : α → α') (g : α' → β → γ) :
+theorem zipWith_map_left {l₁ : List α} {l₂ : List β} {f : α → α'} {g : α' → β → γ} :
     zipWith g (l₁.map f) l₂ = zipWith (fun a b => g (f a) b) l₁ l₂ := by
   induction l₁ generalizing l₂ <;> cases l₂ <;> simp_all
 
-theorem zipWith_map_right (l₁ : List α) (l₂ : List β) (f : β → β') (g : α → β' → γ) :
+theorem zipWith_map_right {l₁ : List α} {l₂ : List β} {f : β → β'} {g : α → β' → γ} :
     zipWith g l₁ (l₂.map f) = zipWith (fun a b => g a (f b)) l₁ l₂ := by
   induction l₁ generalizing l₂ <;> cases l₂ <;> simp_all
 
-theorem zipWith_foldr_eq_zip_foldr {f : α → β → γ} (i : δ):
+theorem zipWith_foldr_eq_zip_foldr {f : α → β → γ} {i : δ} {g : γ → δ → δ} :
     (zipWith f l₁ l₂).foldr g i = (zip l₁ l₂).foldr (fun p r => g (f p.1 p.2) r) i := by
   induction l₁ generalizing l₂ <;> cases l₂ <;> simp_all
 
-theorem zipWith_foldl_eq_zip_foldl {f : α → β → γ} (i : δ):
+theorem zipWith_foldl_eq_zip_foldl {f : α → β → γ} {i : δ} {g : δ → γ → δ} :
     (zipWith f l₁ l₂).foldl g i = (zip l₁ l₂).foldl (fun r p => g r (f p.1 p.2)) i := by
   induction l₁ generalizing i l₂ <;> cases l₂ <;> simp_all
 
@@ -116,7 +118,7 @@ theorem zipWith_foldl_eq_zip_foldl {f : α → β → γ} (i : δ):
 theorem zipWith_eq_nil_iff {f : α → β → γ} {l l'} : zipWith f l l' = [] ↔ l = [] ∨ l' = [] := by
   cases l <;> cases l' <;> simp
 
-theorem map_zipWith {δ : Type _} (f : α → β) (g : γ → δ → α) (l : List γ) (l' : List δ) :
+theorem map_zipWith {δ : Type _} {f : α → β} {g : γ → δ → α} {l : List γ} {l' : List δ} :
     map f (zipWith g l l') = zipWith (fun x y => f (g x y)) l l' := by
   induction l generalizing l' with
   | nil => simp
@@ -135,8 +137,6 @@ theorem take_zipWith : (zipWith f l l').take i = zipWith f (l.take i) (l'.take i
       · simp
       · simp [hl]
 
-@[deprecated take_zipWith (since := "2024-07-26")] abbrev zipWith_distrib_take := @take_zipWith
-
 theorem drop_zipWith : (zipWith f l l').drop i = zipWith f (l.drop i) (l'.drop i) := by
   induction l generalizing l' i with
   | nil => simp
@@ -147,15 +147,11 @@ theorem drop_zipWith : (zipWith f l l').drop i = zipWith f (l.drop i) (l'.drop i
         · simp
         · simp [hl]
 
-@[deprecated drop_zipWith (since := "2024-07-26")] abbrev zipWith_distrib_drop := @drop_zipWith
-
 @[simp]
 theorem tail_zipWith : (zipWith f l l').tail = zipWith f l.tail l'.tail := by
   rw [← drop_one]; simp [drop_zipWith]
 
-@[deprecated tail_zipWith (since := "2024-07-28")] abbrev zipWith_distrib_tail := @tail_zipWith
-
-theorem zipWith_append (f : α → β → γ) (l₁ l₁' : List α) (l₂ l₂' : List β)
+theorem zipWith_append {f : α → β → γ} {l₁ l₁' : List α} {l₂ l₂' : List β}
     (h : l₁.length = l₂.length) :
     zipWith f (l₁ ++ l₁') (l₂ ++ l₂') = zipWith f l₁ l₂ ++ zipWith f l₁' l₂' := by
   induction l₁ generalizing l₂ with
@@ -167,7 +163,7 @@ theorem zipWith_append (f : α → β → γ) (l₁ l₁' : List α) (l₂ l₂'
     | nil => simp at h
     | cons _ _ =>
       simp only [length_cons, Nat.succ.injEq] at h
-      simp [ih _ h]
+      simp [ih h]
 
 theorem zipWith_eq_cons_iff {f : α → β → γ} {l₁ : List α} {l₂ : List β} :
     zipWith f l₁ l₂ = g :: l ↔
@@ -186,7 +182,7 @@ theorem zipWith_eq_cons_iff {f : α → β → γ} {l₁ : List α} {l₂ : List
 
 theorem zipWith_eq_append_iff {f : α → β → γ} {l₁ : List α} {l₂ : List β} :
     zipWith f l₁ l₂ = l₁' ++ l₂' ↔
-      ∃ w x y z, w.length = y.length ∧ l₁ = w ++ x ∧ l₂ = y ++ z ∧ l₁' = zipWith f w y ∧ l₂' = zipWith f x z := by
+      ∃ ws xs ys zs, ws.length = ys.length ∧ l₁ = ws ++ xs ∧ l₂ = ys ++ zs ∧ l₁' = zipWith f ws ys ∧ l₂' = zipWith f xs zs := by
   induction l₁ generalizing l₂ l₁' with
   | nil =>
     simp
@@ -226,7 +222,7 @@ theorem zipWith_eq_append_iff {f : α → β → γ} {l₁ : List α} {l₂ : Li
           · simp_all
         · obtain (⟨rfl, rfl⟩ | ⟨_, rfl, rfl⟩) := h₃
           · simp_all
-          · simp_all [zipWith_append, Nat.succ_inj']
+          · simp_all [zipWith_append, Nat.succ_inj]
 
 /-- See also `List.zipWith_replicate` in `Init.Data.List.TakeDrop` for a generalization with different lengths. -/
 @[simp] theorem zipWith_replicate' {a : α} {b : β} {n : Nat} :
@@ -235,7 +231,7 @@ theorem zipWith_eq_append_iff {f : α → β → γ} {l₁ : List α} {l₂ : Li
   | zero => rfl
   | succ n ih => simp [replicate_succ, ih]
 
-theorem map_uncurry_zip_eq_zipWith (f : α → β → γ) (l : List α) (l' : List β) :
+theorem map_uncurry_zip_eq_zipWith {f : α → β → γ} {l : List α} {l' : List β} :
     map (Function.uncurry f) (l.zip l') = zipWith f l l' := by
   rw [zip]
   induction l generalizing l' with
@@ -243,7 +239,7 @@ theorem map_uncurry_zip_eq_zipWith (f : α → β → γ) (l : List α) (l' : Li
   | cons hl tl ih =>
     cases l' <;> simp [ih]
 
-theorem map_zip_eq_zipWith (f : α × β → γ) (l : List α) (l' : List β) :
+theorem map_zip_eq_zipWith {f : α × β → γ} {l : List α} {l' : List β} :
     map f (l.zip l') = zipWith (Function.curry f) l l' := by
   rw [zip]
   induction l generalizing l' with
@@ -253,24 +249,24 @@ theorem map_zip_eq_zipWith (f : α × β → γ) (l : List α) (l' : List β) :
 
 /-! ### zip -/
 
-theorem zip_eq_zipWith : ∀ (l₁ : List α) (l₂ : List β), zip l₁ l₂ = zipWith Prod.mk l₁ l₂
+theorem zip_eq_zipWith : ∀ {l₁ : List α} {l₂ : List β}, zip l₁ l₂ = zipWith Prod.mk l₁ l₂
   | [], _ => rfl
   | _, [] => rfl
-  | a :: l₁, b :: l₂ => by simp [zip_cons_cons, zip_eq_zipWith l₁ l₂]
+  | a :: l₁, b :: l₂ => by simp [zip_cons_cons, zip_eq_zipWith (l₁ := l₁)]
 
-theorem zip_map (f : α → γ) (g : β → δ) :
-    ∀ (l₁ : List α) (l₂ : List β), zip (l₁.map f) (l₂.map g) = (zip l₁ l₂).map (Prod.map f g)
+theorem zip_map {f : α → γ} {g : β → δ} :
+    ∀ {l₁ : List α} {l₂ : List β}, zip (l₁.map f) (l₂.map g) = (zip l₁ l₂).map (Prod.map f g)
   | [], _ => rfl
   | _, [] => by simp only [map, zip_nil_right]
   | _ :: _, _ :: _ => by simp only [map, zip_cons_cons, zip_map, Prod.map]
 
-theorem zip_map_left (f : α → γ) (l₁ : List α) (l₂ : List β) :
+theorem zip_map_left {f : α → γ} {l₁ : List α} {l₂ : List β} :
     zip (l₁.map f) l₂ = (zip l₁ l₂).map (Prod.map f id) := by rw [← zip_map, map_id]
 
-theorem zip_map_right (f : β → γ) (l₁ : List α) (l₂ : List β) :
+theorem zip_map_right {f : β → γ} {l₁ : List α} {l₂ : List β} :
     zip l₁ (l₂.map f) = (zip l₁ l₂).map (Prod.map id f) := by rw [← zip_map, map_id]
 
-@[simp] theorem tail_zip (l₁ : List α) (l₂ : List β) :
+@[simp] theorem tail_zip {l₁ : List α} {l₂ : List β} :
     (zip l₁ l₂).tail = zip l₁.tail l₂.tail := by
   cases l₁ <;> cases l₂ <;> simp
 
@@ -282,8 +278,8 @@ theorem zip_append :
   | _ :: _, _, _ :: _, _, h => by
     simp only [cons_append, zip_cons_cons, zip_append (Nat.succ.inj h)]
 
-theorem zip_map' (f : α → β) (g : α → γ) :
-    ∀ l : List α, zip (l.map f) (l.map g) = l.map fun a => (f a, g a)
+theorem zip_map' {f : α → β} {g : α → γ} :
+    ∀ {l : List α}, zip (l.map f) (l.map g) = l.map fun a => (f a, g a)
   | [] => rfl
   | a :: l => by simp only [map, zip_cons_cons, zip_map']
 
@@ -295,19 +291,17 @@ theorem of_mem_zip {a b} : ∀ {l₁ : List α} {l₂ : List β}, (a, b) ∈ zip
     · have := of_mem_zip h
       exact ⟨Mem.tail _ this.1, Mem.tail _ this.2⟩
 
-@[deprecated of_mem_zip (since := "2024-07-28")] abbrev mem_zip := @of_mem_zip
-
 theorem map_fst_zip :
-    ∀ (l₁ : List α) (l₂ : List β), l₁.length ≤ l₂.length → map Prod.fst (zip l₁ l₂) = l₁
+    ∀ {l₁ : List α} {l₂ : List β}, l₁.length ≤ l₂.length → map Prod.fst (zip l₁ l₂) = l₁
   | [], _, _ => rfl
   | _ :: as, _ :: bs, h => by
     simp [Nat.succ_le_succ_iff] at h
     show _ :: map Prod.fst (zip as bs) = _ :: as
-    rw [map_fst_zip as bs h]
+    rw [map_fst_zip (l₁ := as) h]
   | _ :: _, [], h => by simp at h
 
 theorem map_snd_zip :
-    ∀ (l₁ : List α) (l₂ : List β), l₂.length ≤ l₁.length → map Prod.snd (zip l₁ l₂) = l₂
+    ∀ {l₁ : List α} {l₂ : List β}, l₂.length ≤ l₁.length → map Prod.snd (zip l₁ l₂) = l₂
   | _, [], _ => by
     rw [zip_nil_right]
     rfl
@@ -315,15 +309,15 @@ theorem map_snd_zip :
   | a :: as, b :: bs, h => by
     simp [Nat.succ_le_succ_iff] at h
     show _ :: map Prod.snd (zip as bs) = _ :: bs
-    rw [map_snd_zip as bs h]
+    rw [map_snd_zip (l₂ := bs) h]
 
-theorem map_prod_left_eq_zip {l : List α} (f : α → β) :
+theorem map_prod_left_eq_zip {l : List α} {f : α → β} :
     (l.map fun x => (x, f x)) = l.zip (l.map f) := by
   rw [← zip_map']
   congr
   simp
 
-theorem map_prod_right_eq_zip {l : List α} (f : α → β) :
+theorem map_prod_right_eq_zip {l : List α} {f : α → β} :
     (l.map fun x => (f x, x)) = (l.map f).zip l := by
   rw [← zip_map']
   congr
@@ -347,7 +341,7 @@ theorem zip_eq_cons_iff {l₁ : List α} {l₂ : List β} :
 
 theorem zip_eq_append_iff {l₁ : List α} {l₂ : List β} :
     zip l₁ l₂ = l₁' ++ l₂' ↔
-      ∃ w x y z, w.length = y.length ∧ l₁ = w ++ x ∧ l₂ = y ++ z ∧ l₁' = zip w y ∧ l₂' = zip x z := by
+      ∃ ws xs ys zs, ws.length = ys.length ∧ l₁ = ws ++ xs ∧ l₂ = ys ++ zs ∧ l₁' = zip ws ys ∧ l₂' = zip xs zs := by
   simp [zip_eq_zipWith, zipWith_eq_append_iff]
 
 /-- See also `List.zip_replicate` in `Init.Data.List.TakeDrop` for a generalization with different lengths. -/
@@ -387,19 +381,19 @@ theorem head?_zipWithAll {f : Option α → Option β → γ} :
     (zipWithAll f as bs).tail = zipWithAll f as.tail bs.tail := by
   cases as <;> cases bs <;> simp
 
-theorem zipWithAll_map {μ} (f : Option γ → Option δ → μ) (g : α → γ) (h : β → δ) (l₁ : List α) (l₂ : List β) :
+theorem zipWithAll_map {μ} {f : Option γ → Option δ → μ} {g : α → γ} {h : β → δ} {l₁ : List α} {l₂ : List β} :
     zipWithAll f (l₁.map g) (l₂.map h) = zipWithAll (fun a b => f (g <$> a) (h <$> b)) l₁ l₂ := by
   induction l₁ generalizing l₂ <;> cases l₂ <;> simp_all
 
-theorem zipWithAll_map_left (l₁ : List α) (l₂ : List β) (f : α → α') (g : Option α' → Option β → γ) :
+theorem zipWithAll_map_left {l₁ : List α} {l₂ : List β} {f : α → α'} {g : Option α' → Option β → γ} :
     zipWithAll g (l₁.map f) l₂ = zipWithAll (fun a b => g (f <$> a) b) l₁ l₂ := by
   induction l₁ generalizing l₂ <;> cases l₂ <;> simp_all
 
-theorem zipWithAll_map_right (l₁ : List α) (l₂ : List β) (f : β → β') (g : Option α → Option β' → γ) :
+theorem zipWithAll_map_right {l₁ : List α} {l₂ : List β} {f : β → β'} {g : Option α → Option β' → γ} :
     zipWithAll g l₁ (l₂.map f) = zipWithAll (fun a b => g a (f <$> b)) l₁ l₂ := by
   induction l₁ generalizing l₂ <;> cases l₂ <;> simp_all
 
-theorem map_zipWithAll {δ : Type _} (f : α → β) (g : Option γ → Option δ → α) (l : List γ) (l' : List δ) :
+theorem map_zipWithAll {δ : Type _} {f : α → β} {g : Option γ → Option δ → α} {l : List γ} {l' : List δ} :
     map f (zipWithAll g l l') = zipWithAll (fun x y => f (g x y)) l l' := by
   induction l generalizing l' with
   | nil => simp
@@ -407,7 +401,7 @@ theorem map_zipWithAll {δ : Type _} (f : α → β) (g : Option γ → Option �
     cases l' <;> simp_all
 
 @[simp] theorem zipWithAll_replicate {a : α} {b : β} {n : Nat} :
-    zipWithAll f (replicate n a) (replicate n b) = replicate n (f a b) := by
+    zipWithAll f (replicate n a) (replicate n b) = replicate n (f (some a) (some b)) := by
   induction n with
   | zero => rfl
   | succ n ih => simp [replicate_succ, ih]
@@ -420,13 +414,11 @@ theorem map_zipWithAll {δ : Type _} (f : α → β) (g : Option γ → Option �
 @[simp] theorem unzip_snd : (unzip l).snd = l.map Prod.snd := by
   induction l <;> simp_all
 
-@[deprecated unzip_fst (since := "2024-07-28")] abbrev unzip_left := @unzip_fst
-@[deprecated unzip_snd (since := "2024-07-28")] abbrev unzip_right := @unzip_snd
-
-theorem unzip_eq_map : ∀ l : List (α × β), unzip l = (l.map Prod.fst, l.map Prod.snd)
+theorem unzip_eq_map : ∀ {l : List (α × β)}, unzip l = (l.map Prod.fst, l.map Prod.snd)
   | [] => rfl
-  | (a, b) :: l => by simp only [unzip_cons, map_cons, unzip_eq_map l]
+  | (a, b) :: l => by simp only [unzip_cons, map_cons, unzip_eq_map (l := l)]
 
+-- The argument `l` is explicit so we can rewrite from right to left.
 theorem zip_unzip : ∀ l : List (α × β), zip (unzip l).1 (unzip l).2 = l
   | [] => rfl
   | (a, b) :: l => by simp only [unzip_cons, zip_cons_cons, zip_unzip l]
