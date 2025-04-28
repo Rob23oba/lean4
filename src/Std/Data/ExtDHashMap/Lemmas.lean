@@ -2474,6 +2474,11 @@ theorem modify_eq_empty_iff [LawfulBEq α] {k : α} {f : β k → β k} :
   exact m.inductionOn fun _ => DHashMap.isEmpty_modify
 
 @[simp]
+theorem modify_empty [LawfulBEq α] {k : α} {f : β k → β k} :
+    (∅ : ExtDHashMap α β).modify k f = ∅ := by
+  simp
+
+@[simp]
 theorem contains_modify [LawfulBEq α] {k k': α} {f : β k → β k} :
     (m.modify k f).contains k' = m.contains k' :=
   m.inductionOn fun _ => DHashMap.contains_modify
@@ -2601,6 +2606,11 @@ theorem modify_eq_empty_iff [EquivBEq α] [LawfulHashable α] {k : α} {f : β �
     Const.modify m k f = ∅ ↔ m = ∅ := by
   simp only [← isEmpty_iff, Bool.coe_iff_coe]
   exact m.inductionOn fun _ => DHashMap.Const.isEmpty_modify
+
+@[simp]
+theorem modify_empty [EquivBEq α] [LawfulHashable α] {k : α} {f : β → β} :
+    Const.modify ∅ k f = ∅ := by
+  simp
 
 @[simp]
 theorem contains_modify [EquivBEq α] [LawfulHashable α] {k k': α} {f : β → β} :
@@ -3196,6 +3206,11 @@ theorem map_eq_empty_iff [EquivBEq α] [LawfulHashable α] {f : (a : α) → β 
   simp only [← isEmpty_iff, Bool.coe_iff_coe]
   exact m.inductionOn fun _ => DHashMap.isEmpty_map
 
+@[simp]
+theorem map_empty [EquivBEq α] [LawfulHashable α] {f : (a : α) → β a → γ a} :
+    (∅ : ExtDHashMap α β).map f = ∅ := by
+  simp
+
 theorem contains_map [EquivBEq α] [LawfulHashable α]
     {f : (a : α) → β a → γ a} {k : α} :
     (m.map f).contains k = m.contains k :=
@@ -3318,5 +3333,78 @@ theorem getD_map_of_getKey?_eq_some [EquivBEq α] [LawfulHashable α] [Inhabited
 end Const
 
 end map
+
+theorem erase_insert [LawfulBEq α] {k k' : α} {v : β k} :
+    (m.insert k v).erase k' = if k == k' then m.erase k' else (m.erase k').insert k v := by
+  ext1 kk
+  split
+  · rename_i h
+    simp only [get?_erase, get?_insert, BEq.congr_left h]
+    split <;> rfl
+  · rename_i h
+    simp only [get?_erase, get?_insert]
+    split
+    · simp only [← BEq.congr_right ‹k' == _›, h, Bool.false_eq_true, ↓reduceDIte]
+    · rfl
+
+@[simp]
+theorem erase_insert_self [LawfulBEq α] {k : α} {v : β k} :
+    (m.insert k v).erase k = m.erase k := by
+  simp [erase_insert]
+
+@[simp]
+theorem insert_insert_self [LawfulBEq α] {k : α} {v v' : β k} :
+    (m.insert k v).insert k v' = m.insert k v' := by
+  ext1 kk
+  simp [get?_insert]
+  split <;> rfl
+
+@[simp]
+theorem map_insert [LawfulBEq α] {f : (k : α) → β k → γ k} {k : α} {v : β k} :
+    (m.insert k v).map f = (m.map f).insert k (f k v) := by
+  ext1 kk
+  simp only [get?_map, get?_insert]
+  split
+  · rename_i h
+    cases eq_of_beq h
+    rfl
+  · rfl
+
+theorem erase_eq_filter [LawfulBEq α] {k : α} :
+    m.erase k = m.filter (fun k' _ => k' != k) := by
+  ext1 kk
+  simp only [get?_filter, get?_erase, bne]
+  split
+  · rename_i h
+    simp only [BEq.symm h, Bool.not_true]
+    cases m.get? kk <;> rfl
+  · rename_i h
+    simp only [BEq.comm (a := kk), h, Bool.not_false]
+    cases m.get? kk <;> rfl
+
+theorem filter_insert [LawfulBEq α] {p : (k : α) → β k → Bool} {k : α} {v : β k} :
+    (m.insert k v).filter p = if p k v then (m.filter p).insert k v else (m.erase k).filter p := by
+  ext1 kk
+  split
+  · simp only [get?_filter, get?_insert]
+    split
+    · rename_i h h'
+      cases eq_of_beq h'
+      simp only [cast_eq, Option.filter_eq_some_iff, h, and_self]
+    · rfl
+  · simp only [get?_filter, get?_insert, get?_erase]
+    split
+    · rename_i h h'
+      cases eq_of_beq h'
+      simp [h]
+    · rfl
+
+theorem filter_filter [LawfulBEq α] {p p' : (k : α) → β k → Bool} :
+    (m.filter p).filter p' = m.filter (fun k v => p k v ∧ p' k v) := by
+  ext1 kk
+  simp only [get?_filter]
+  cases m.get? kk
+  · rfl
+  · simp [Option.filter_some, apply_ite]
 
 end Std.ExtDHashMap
