@@ -13,23 +13,29 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-lean_object* l_Lean_RArray_getImpl___rarg(lean_object*, lean_object*);
+lean_object* l_Lean_RArray_getImpl___redArg(lean_object*, lean_object*);
+lean_object* l_BitVec_toNat(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVExpr_Assignment_toAIGAssignment___boxed(lean_object*, lean_object*);
 uint8_t l_Nat_testBit(lean_object*, lean_object*);
 LEAN_EXPORT uint8_t l_Std_Tactic_BVDecide_BVExpr_Assignment_toAIGAssignment(lean_object*, lean_object*);
 LEAN_EXPORT uint8_t l_Std_Tactic_BVDecide_BVExpr_Assignment_toAIGAssignment(lean_object* x_1, lean_object* x_2) {
 _start:
 {
-lean_object* x_3; lean_object* x_4; lean_object* x_5; lean_object* x_6; uint8_t x_7; 
+lean_object* x_3; lean_object* x_4; lean_object* x_5; lean_object* x_6; lean_object* x_7; lean_object* x_8; uint8_t x_9; 
 x_3 = lean_ctor_get(x_2, 0);
-x_4 = l_Lean_RArray_getImpl___rarg(x_1, x_3);
-x_5 = lean_ctor_get(x_4, 1);
+x_4 = l_Lean_RArray_getImpl___redArg(x_1, x_3);
+x_5 = lean_ctor_get(x_4, 0);
 lean_inc(x_5);
+x_6 = lean_ctor_get(x_4, 1);
+lean_inc(x_6);
 lean_dec(x_4);
-x_6 = lean_ctor_get(x_2, 2);
-x_7 = l_Nat_testBit(x_5, x_6);
+x_7 = lean_ctor_get(x_2, 2);
+x_8 = l_BitVec_toNat(x_5, x_6);
+lean_dec(x_6);
 lean_dec(x_5);
-return x_7;
+x_9 = l_Nat_testBit(x_8, x_7);
+lean_dec(x_8);
+return x_9;
 }
 }
 LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVExpr_Assignment_toAIGAssignment___boxed(lean_object* x_1, lean_object* x_2) {

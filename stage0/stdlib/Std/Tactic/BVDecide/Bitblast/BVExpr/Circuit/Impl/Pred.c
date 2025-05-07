@@ -13,33 +13,23 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1___boxed(lean_object*, lean_object*);
-LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__4_splitter___rarg(lean_object*, lean_object*, lean_object*);
-static lean_object* l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1___closed__1;
-lean_object* lean_nat_div(lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at___Std_Tactic_BVDecide_BVPred_bitblast_spec__0___boxed(lean_object*, lean_object*);
+lean_object* lean_nat_shiftr(lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter___redArg(lean_object*, lean_object*);
+lean_object* l_Std_Tactic_BVDecide_BVPred_mkUlt___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_blastDivSubtractShift___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_go___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__40_spec__40_spec__48(lean_object*, lean_object*, lean_object*);
+lean_object* l_Std_Tactic_BVDecide_BVPred_mkEq___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__34(lean_object*, lean_object*, lean_object*);
 lean_object* l_Std_Tactic_BVDecide_BVExpr_bitblast(lean_object*, lean_object*, lean_object*);
-lean_object* l_Std_Tactic_BVDecide_instDecidableEqBVBit___boxed(lean_object*, lean_object*);
 lean_object* lean_nat_land(lean_object*, lean_object*);
-LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__4_splitter(lean_object*);
-LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter___rarg(lean_object*, lean_object*);
-LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1(lean_object*, lean_object*);
-lean_object* l_Std_Tactic_BVDecide_BVPred_mkEq___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__36(lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__4_splitter(lean_object*, lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__4_splitter___redArg(lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at___Std_Tactic_BVDecide_BVPred_bitblast_spec__0(lean_object*, lean_object*);
 lean_object* lean_array_fget(lean_object*, lean_object*);
 uint8_t lean_nat_dec_eq(lean_object*, lean_object*);
 uint8_t lean_nat_dec_lt(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVPred_bitblast(lean_object*, lean_object*);
-LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter___boxed(lean_object*, lean_object*);
-lean_object* l_Std_Tactic_BVDecide_BVPred_mkUlt___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__53(lean_object*, lean_object*, lean_object*);
-LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter(lean_object*, lean_object*);
-static lean_object* _init_l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1___closed__1() {
-_start:
-{
-lean_object* x_1; 
-x_1 = lean_alloc_closure((void*)(l_Std_Tactic_BVDecide_instDecidableEqBVBit___boxed), 2, 0);
-return x_1;
-}
-}
-LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1(lean_object* x_1, lean_object* x_2) {
+LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter___boxed(lean_object*, lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter(lean_object*, lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at___Std_Tactic_BVDecide_BVPred_bitblast_spec__0(lean_object* x_1, lean_object* x_2) {
 _start:
 {
 lean_object* x_3; lean_object* x_4; uint8_t x_5; 
@@ -48,53 +38,51 @@ x_4 = lean_ctor_get(x_2, 0);
 x_5 = lean_nat_dec_lt(x_3, x_4);
 if (x_5 == 0)
 {
-lean_object* x_6; uint8_t x_7; lean_object* x_8; lean_object* x_9; 
+lean_object* x_6; lean_object* x_7; lean_object* x_8; 
 x_6 = lean_unsigned_to_nat(0u);
-x_7 = 0;
-x_8 = lean_alloc_ctor(0, 1, 1);
-lean_ctor_set(x_8, 0, x_6);
-lean_ctor_set_uint8(x_8, sizeof(void*)*1, x_7);
-x_9 = lean_alloc_ctor(0, 2, 0);
-lean_ctor_set(x_9, 0, x_1);
-lean_ctor_set(x_9, 1, x_8);
-return x_9;
+x_7 = lean_alloc_ctor(0, 1, 1);
+lean_ctor_set(x_7, 0, x_6);
+lean_ctor_set_uint8(x_7, sizeof(void*)*1, x_5);
+x_8 = lean_alloc_ctor(0, 2, 0);
+lean_ctor_set(x_8, 0, x_1);
+lean_ctor_set(x_8, 1, x_7);
+return x_8;
 }
 else
 {
-lean_object* x_10; lean_object* x_11; lean_object* x_12; lean_object* x_13; lean_object* x_14; lean_object* x_15; lean_object* x_16; uint8_t x_17; 
-x_10 = lean_ctor_get(x_2, 1);
-x_11 = lean_array_fget(x_10, x_3);
-x_12 = lean_unsigned_to_nat(2u);
-x_13 = lean_nat_div(x_11, x_12);
-x_14 = lean_unsigned_to_nat(1u);
-x_15 = lean_nat_land(x_14, x_11);
-lean_dec(x_11);
-x_16 = lean_unsigned_to_nat(0u);
-x_17 = lean_nat_dec_eq(x_15, x_16);
-lean_dec(x_15);
-if (x_17 == 0)
+lean_object* x_9; lean_object* x_10; lean_object* x_11; lean_object* x_12; lean_object* x_13; lean_object* x_14; uint8_t x_15; 
+x_9 = lean_ctor_get(x_2, 1);
+x_10 = lean_array_fget(x_9, x_3);
+x_11 = lean_unsigned_to_nat(1u);
+x_12 = lean_nat_shiftr(x_10, x_11);
+x_13 = lean_nat_land(x_11, x_10);
+lean_dec(x_10);
+x_14 = lean_unsigned_to_nat(0u);
+x_15 = lean_nat_dec_eq(x_13, x_14);
+lean_dec(x_13);
+if (x_15 == 0)
 {
-uint8_t x_18; lean_object* x_19; lean_object* x_20; 
-x_18 = 1;
+lean_object* x_16; lean_object* x_17; 
+x_16 = lean_alloc_ctor(0, 1, 1);
+lean_ctor_set(x_16, 0, x_12);
+lean_ctor_set_uint8(x_16, sizeof(void*)*1, x_5);
+x_17 = lean_alloc_ctor(0, 2, 0);
+lean_ctor_set(x_17, 0, x_1);
+lean_ctor_set(x_17, 1, x_16);
+return x_17;
+}
+else
+{
+lean_object* x_18; lean_object* x_19; uint8_t x_20; lean_object* x_21; 
+x_18 = lean_box(0);
 x_19 = lean_alloc_ctor(0, 1, 1);
-lean_ctor_set(x_19, 0, x_13);
-lean_ctor_set_uint8(x_19, sizeof(void*)*1, x_18);
-x_20 = lean_alloc_ctor(0, 2, 0);
-lean_ctor_set(x_20, 0, x_1);
-lean_ctor_set(x_20, 1, x_19);
-return x_20;
-}
-else
-{
-uint8_t x_21; lean_object* x_22; lean_object* x_23; 
-x_21 = 0;
-x_22 = lean_alloc_ctor(0, 1, 1);
-lean_ctor_set(x_22, 0, x_13);
-lean_ctor_set_uint8(x_22, sizeof(void*)*1, x_21);
-x_23 = lean_alloc_ctor(0, 2, 0);
-lean_ctor_set(x_23, 0, x_1);
-lean_ctor_set(x_23, 1, x_22);
-return x_23;
+lean_ctor_set(x_19, 0, x_12);
+x_20 = lean_unbox(x_18);
+lean_ctor_set_uint8(x_19, sizeof(void*)*1, x_20);
+x_21 = lean_alloc_ctor(0, 2, 0);
+lean_ctor_set(x_21, 0, x_1);
+lean_ctor_set(x_21, 1, x_19);
+return x_21;
 }
 }
 }
@@ -157,7 +145,7 @@ if (x_20 == 0)
 lean_object* x_21; lean_object* x_22; 
 x_21 = lean_ctor_get(x_17, 0);
 lean_ctor_set(x_17, 0, x_15);
-x_22 = l_Std_Tactic_BVDecide_BVPred_mkEq___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__36(x_6, x_21, x_17);
+x_22 = l_Std_Tactic_BVDecide_BVPred_mkEq___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__34(x_6, x_21, x_17);
 lean_dec(x_17);
 lean_dec(x_6);
 lean_ctor_set(x_16, 0, x_22);
@@ -174,7 +162,7 @@ lean_dec(x_17);
 x_25 = lean_alloc_ctor(0, 2, 0);
 lean_ctor_set(x_25, 0, x_15);
 lean_ctor_set(x_25, 1, x_24);
-x_26 = l_Std_Tactic_BVDecide_BVPred_mkEq___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__36(x_6, x_23, x_25);
+x_26 = l_Std_Tactic_BVDecide_BVPred_mkEq___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__34(x_6, x_23, x_25);
 lean_dec(x_25);
 lean_dec(x_6);
 lean_ctor_set(x_16, 0, x_26);
@@ -206,7 +194,7 @@ if (lean_is_scalar(x_30)) {
 }
 lean_ctor_set(x_31, 0, x_15);
 lean_ctor_set(x_31, 1, x_29);
-x_32 = l_Std_Tactic_BVDecide_BVPred_mkEq___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__36(x_6, x_28, x_31);
+x_32 = l_Std_Tactic_BVDecide_BVPred_mkEq___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__34(x_6, x_28, x_31);
 lean_dec(x_31);
 lean_dec(x_6);
 x_33 = lean_alloc_ctor(0, 2, 0);
@@ -230,7 +218,7 @@ if (x_36 == 0)
 lean_object* x_37; lean_object* x_38; 
 x_37 = lean_ctor_get(x_17, 0);
 lean_ctor_set(x_17, 0, x_15);
-x_38 = l_Std_Tactic_BVDecide_BVPred_mkUlt___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__53(x_6, x_37, x_17);
+x_38 = l_Std_Tactic_BVDecide_BVPred_mkUlt___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_blastDivSubtractShift___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_go___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__40_spec__40_spec__48(x_6, x_37, x_17);
 lean_ctor_set(x_16, 0, x_38);
 return x_16;
 }
@@ -245,7 +233,7 @@ lean_dec(x_17);
 x_41 = lean_alloc_ctor(0, 2, 0);
 lean_ctor_set(x_41, 0, x_15);
 lean_ctor_set(x_41, 1, x_40);
-x_42 = l_Std_Tactic_BVDecide_BVPred_mkUlt___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__53(x_6, x_39, x_41);
+x_42 = l_Std_Tactic_BVDecide_BVPred_mkUlt___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_blastDivSubtractShift___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_go___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__40_spec__40_spec__48(x_6, x_39, x_41);
 lean_ctor_set(x_16, 0, x_42);
 return x_16;
 }
@@ -275,7 +263,7 @@ if (lean_is_scalar(x_46)) {
 }
 lean_ctor_set(x_47, 0, x_15);
 lean_ctor_set(x_47, 1, x_45);
-x_48 = l_Std_Tactic_BVDecide_BVPred_mkUlt___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__53(x_6, x_44, x_47);
+x_48 = l_Std_Tactic_BVDecide_BVPred_mkUlt___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_blastDivSubtractShift___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_go___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__40_spec__40_spec__48(x_6, x_44, x_47);
 x_49 = lean_alloc_ctor(0, 2, 0);
 lean_ctor_set(x_49, 0, x_48);
 lean_ctor_set(x_49, 1, x_43);
@@ -330,7 +318,7 @@ if (lean_is_scalar(x_59)) {
 }
 lean_ctor_set(x_60, 0, x_51);
 lean_ctor_set(x_60, 1, x_58);
-x_61 = l_Std_Tactic_BVDecide_BVPred_mkEq___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__36(x_6, x_57, x_60);
+x_61 = l_Std_Tactic_BVDecide_BVPred_mkEq___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__34(x_6, x_57, x_60);
 lean_dec(x_60);
 lean_dec(x_6);
 if (lean_is_scalar(x_56)) {
@@ -374,7 +362,7 @@ if (lean_is_scalar(x_67)) {
 }
 lean_ctor_set(x_68, 0, x_51);
 lean_ctor_set(x_68, 1, x_66);
-x_69 = l_Std_Tactic_BVDecide_BVPred_mkUlt___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__53(x_6, x_65, x_68);
+x_69 = l_Std_Tactic_BVDecide_BVPred_mkUlt___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_blastDivSubtractShift___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_go___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__40_spec__40_spec__48(x_6, x_65, x_68);
 if (lean_is_scalar(x_64)) {
  x_70 = lean_alloc_ctor(0, 2, 0);
 } else {
@@ -465,7 +453,7 @@ if (lean_is_scalar(x_90)) {
 }
 lean_ctor_set(x_91, 0, x_81);
 lean_ctor_set(x_91, 1, x_89);
-x_92 = l_Std_Tactic_BVDecide_BVPred_mkEq___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__36(x_72, x_88, x_91);
+x_92 = l_Std_Tactic_BVDecide_BVPred_mkEq___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__34(x_72, x_88, x_91);
 lean_dec(x_91);
 lean_dec(x_72);
 if (lean_is_scalar(x_87)) {
@@ -509,7 +497,7 @@ if (lean_is_scalar(x_98)) {
 }
 lean_ctor_set(x_99, 0, x_81);
 lean_ctor_set(x_99, 1, x_97);
-x_100 = l_Std_Tactic_BVDecide_BVPred_mkUlt___at_Std_Tactic_BVDecide_BVExpr_bitblast_go___spec__53(x_72, x_96, x_99);
+x_100 = l_Std_Tactic_BVDecide_BVPred_mkUlt___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_blastDivSubtractShift___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv_go___at___Std_Tactic_BVDecide_BVExpr_bitblast_blastUdiv___at___Std_Tactic_BVDecide_BVExpr_bitblast_go_spec__34_spec__40_spec__40_spec__48(x_72, x_96, x_99);
 if (lean_is_scalar(x_95)) {
  x_101 = lean_alloc_ctor(0, 2, 0);
 } else {
@@ -552,7 +540,7 @@ x_111 = lean_ctor_get(x_108, 0);
 x_112 = lean_ctor_get(x_108, 1);
 lean_ctor_set_tag(x_3, 0);
 lean_ctor_set(x_3, 1, x_112);
-x_113 = l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1(x_111, x_3);
+x_113 = l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at___Std_Tactic_BVDecide_BVPred_bitblast_spec__0(x_111, x_3);
 lean_dec(x_3);
 lean_ctor_set(x_108, 1, x_109);
 lean_ctor_set(x_108, 0, x_113);
@@ -568,7 +556,7 @@ lean_inc(x_114);
 lean_dec(x_108);
 lean_ctor_set_tag(x_3, 0);
 lean_ctor_set(x_3, 1, x_115);
-x_116 = l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1(x_114, x_3);
+x_116 = l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at___Std_Tactic_BVDecide_BVPred_bitblast_spec__0(x_114, x_3);
 lean_dec(x_3);
 x_117 = lean_alloc_ctor(0, 2, 0);
 lean_ctor_set(x_117, 0, x_116);
@@ -610,7 +598,7 @@ x_127 = lean_alloc_ctor(0, 3, 0);
 lean_ctor_set(x_127, 0, x_118);
 lean_ctor_set(x_127, 1, x_125);
 lean_ctor_set(x_127, 2, x_120);
-x_128 = l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1(x_124, x_127);
+x_128 = l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at___Std_Tactic_BVDecide_BVPred_bitblast_spec__0(x_124, x_127);
 lean_dec(x_127);
 if (lean_is_scalar(x_126)) {
  x_129 = lean_alloc_ctor(0, 2, 0);
@@ -674,7 +662,7 @@ if (lean_is_scalar(x_134)) {
 lean_ctor_set(x_142, 0, x_131);
 lean_ctor_set(x_142, 1, x_140);
 lean_ctor_set(x_142, 2, x_133);
-x_143 = l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1(x_139, x_142);
+x_143 = l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at___Std_Tactic_BVDecide_BVPred_bitblast_spec__0(x_139, x_142);
 lean_dec(x_142);
 if (lean_is_scalar(x_141)) {
  x_144 = lean_alloc_ctor(0, 2, 0);
@@ -688,16 +676,16 @@ return x_144;
 }
 }
 }
-LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1___boxed(lean_object* x_1, lean_object* x_2) {
+LEAN_EXPORT lean_object* l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at___Std_Tactic_BVDecide_BVPred_bitblast_spec__0___boxed(lean_object* x_1, lean_object* x_2) {
 _start:
 {
 lean_object* x_3; 
-x_3 = l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1(x_1, x_2);
+x_3 = l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at___Std_Tactic_BVDecide_BVPred_bitblast_spec__0(x_1, x_2);
 lean_dec(x_2);
 return x_3;
 }
 }
-LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter___rarg(lean_object* x_1, lean_object* x_2) {
+LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter___redArg(lean_object* x_1, lean_object* x_2) {
 _start:
 {
 lean_object* x_3; lean_object* x_4; lean_object* x_5; 
@@ -710,24 +698,24 @@ x_5 = lean_apply_2(x_2, x_3, x_4);
 return x_5;
 }
 }
-LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter(lean_object* x_1, lean_object* x_2) {
+LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter(lean_object* x_1, lean_object* x_2, lean_object* x_3, lean_object* x_4) {
 _start:
 {
-lean_object* x_3; 
-x_3 = lean_alloc_closure((void*)(l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter___rarg), 2, 0);
-return x_3;
+lean_object* x_5; 
+x_5 = l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter___redArg(x_3, x_4);
+return x_5;
 }
 }
-LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter___boxed(lean_object* x_1, lean_object* x_2) {
+LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter___boxed(lean_object* x_1, lean_object* x_2, lean_object* x_3, lean_object* x_4) {
 _start:
 {
-lean_object* x_3; 
-x_3 = l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter(x_1, x_2);
+lean_object* x_5; 
+x_5 = l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__5_splitter(x_1, x_2, x_3, x_4);
 lean_dec(x_1);
-return x_3;
+return x_5;
 }
 }
-LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__4_splitter___rarg(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
+LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__4_splitter___redArg(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
 _start:
 {
 if (lean_obj_tag(x_1) == 0)
@@ -762,12 +750,12 @@ return x_13;
 }
 }
 }
-LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__4_splitter(lean_object* x_1) {
+LEAN_EXPORT lean_object* l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__4_splitter(lean_object* x_1, lean_object* x_2, lean_object* x_3, lean_object* x_4) {
 _start:
 {
-lean_object* x_2; 
-x_2 = lean_alloc_closure((void*)(l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__4_splitter___rarg), 3, 0);
-return x_2;
+lean_object* x_5; 
+x_5 = l___private_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Pred_0__Std_Tactic_BVDecide_BVPred_bitblast_match__4_splitter___redArg(x_2, x_3, x_4);
+return x_5;
 }
 }
 lean_object* initialize_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Operations_Eq(uint8_t builtin, lean_object*);
@@ -791,8 +779,6 @@ lean_dec_ref(res);
 res = initialize_Std_Tactic_BVDecide_Bitblast_BVExpr_Circuit_Impl_Expr(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1___closed__1 = _init_l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1___closed__1();
-lean_mark_persistent(l_Std_Tactic_BVDecide_BVPred_blastGetLsbD___at_Std_Tactic_BVDecide_BVPred_bitblast___spec__1___closed__1);
 return lean_io_result_mk_ok(lean_box(0));
 }
 #ifdef __cplusplus

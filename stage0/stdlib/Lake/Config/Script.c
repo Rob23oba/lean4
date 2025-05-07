@@ -13,53 +13,21 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-static lean_object* l_Lake_instInhabitedScript___lambda__1___closed__1;
-static lean_object* l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__3;
-static lean_object* l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__1;
+LEAN_EXPORT lean_object* l_Lake_instInhabitedScript___lam__0___boxed(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Lake_instInhabitedScript;
-static lean_object* l_Lake_instInhabitedScript___lambda__1___closed__2;
-LEAN_EXPORT lean_object* l_Lake_instInhabitedScript___lambda__1___boxed(lean_object*, lean_object*, lean_object*);
-static lean_object* l_Lake_instInhabitedScript___closed__2;
-LEAN_EXPORT lean_object* l_Lake_instInhabitedScript___lambda__1(lean_object*, lean_object*, lean_object*);
-static lean_object* l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__2;
+LEAN_EXPORT lean_object* l_Lake_instInhabitedScript___lam__0(lean_object*, lean_object*, lean_object*);
 lean_object* l_Lean_Name_mkStr2(lean_object*, lean_object*);
-static lean_object* l_Lake_instInhabitedScript___closed__3;
 LEAN_EXPORT lean_object* l_Lake_Script_run(lean_object*, lean_object*, lean_object*, lean_object*);
-static lean_object* l_Lake_instInhabitedScript___closed__1;
 LEAN_EXPORT lean_object* l_Lake_instTypeNameScriptFn;
 LEAN_EXPORT lean_object* l_Lake_instImpl____x40_Lake_Config_Script___hyg_17_;
-static lean_object* _init_l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__1() {
-_start:
-{
-lean_object* x_1; 
-x_1 = lean_mk_string_unchecked("Lake", 4, 4);
-return x_1;
-}
-}
-static lean_object* _init_l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__2() {
-_start:
-{
-lean_object* x_1; 
-x_1 = lean_mk_string_unchecked("ScriptFn", 8, 8);
-return x_1;
-}
-}
-static lean_object* _init_l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__3() {
-_start:
-{
-lean_object* x_1; lean_object* x_2; lean_object* x_3; 
-x_1 = l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__1;
-x_2 = l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__2;
-x_3 = l_Lean_Name_mkStr2(x_1, x_2);
-return x_3;
-}
-}
 static lean_object* _init_l_Lake_instImpl____x40_Lake_Config_Script___hyg_17_() {
 _start:
 {
-lean_object* x_1; 
-x_1 = l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__3;
-return x_1;
+lean_object* x_1; lean_object* x_2; lean_object* x_3; 
+x_1 = lean_mk_string_unchecked("Lake", 4, 4);
+x_2 = lean_mk_string_unchecked("ScriptFn", 8, 8);
+x_3 = l_Lean_Name_mkStr2(x_1, x_2);
+return x_3;
 }
 }
 static lean_object* _init_l_Lake_instTypeNameScriptFn() {
@@ -70,78 +38,38 @@ x_1 = l_Lake_instImpl____x40_Lake_Config_Script___hyg_17_;
 return x_1;
 }
 }
-static lean_object* _init_l_Lake_instInhabitedScript___lambda__1___closed__1() {
+LEAN_EXPORT lean_object* l_Lake_instInhabitedScript___lam__0(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
 _start:
 {
-lean_object* x_1; 
-x_1 = lean_mk_string_unchecked("(`Inhabited.default` for `IO.Error`)", 36, 36);
-return x_1;
-}
-}
-static lean_object* _init_l_Lake_instInhabitedScript___lambda__1___closed__2() {
-_start:
-{
-lean_object* x_1; lean_object* x_2; 
-x_1 = l_Lake_instInhabitedScript___lambda__1___closed__1;
-x_2 = lean_alloc_ctor(18, 1, 0);
-lean_ctor_set(x_2, 0, x_1);
-return x_2;
-}
-}
-LEAN_EXPORT lean_object* l_Lake_instInhabitedScript___lambda__1(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
-_start:
-{
-lean_object* x_4; lean_object* x_5; 
-x_4 = l_Lake_instInhabitedScript___lambda__1___closed__2;
-x_5 = lean_alloc_ctor(1, 2, 0);
+lean_object* x_4; lean_object* x_5; lean_object* x_6; 
+x_4 = lean_mk_string_unchecked("(`Inhabited.default` for `IO.Error`)", 36, 36);
+x_5 = lean_alloc_ctor(18, 1, 0);
 lean_ctor_set(x_5, 0, x_4);
-lean_ctor_set(x_5, 1, x_3);
-return x_5;
-}
-}
-static lean_object* _init_l_Lake_instInhabitedScript___closed__1() {
-_start:
-{
-lean_object* x_1; 
-x_1 = lean_mk_string_unchecked("", 0, 0);
-return x_1;
-}
-}
-static lean_object* _init_l_Lake_instInhabitedScript___closed__2() {
-_start:
-{
-lean_object* x_1; 
-x_1 = lean_alloc_closure((void*)(l_Lake_instInhabitedScript___lambda__1___boxed), 3, 0);
-return x_1;
-}
-}
-static lean_object* _init_l_Lake_instInhabitedScript___closed__3() {
-_start:
-{
-lean_object* x_1; lean_object* x_2; lean_object* x_3; lean_object* x_4; 
-x_1 = lean_box(0);
-x_2 = l_Lake_instInhabitedScript___closed__1;
-x_3 = l_Lake_instInhabitedScript___closed__2;
-x_4 = lean_alloc_ctor(0, 3, 0);
-lean_ctor_set(x_4, 0, x_2);
-lean_ctor_set(x_4, 1, x_3);
-lean_ctor_set(x_4, 2, x_1);
-return x_4;
+x_6 = lean_alloc_ctor(1, 2, 0);
+lean_ctor_set(x_6, 0, x_5);
+lean_ctor_set(x_6, 1, x_3);
+return x_6;
 }
 }
 static lean_object* _init_l_Lake_instInhabitedScript() {
 _start:
 {
-lean_object* x_1; 
-x_1 = l_Lake_instInhabitedScript___closed__3;
-return x_1;
+lean_object* x_1; lean_object* x_2; lean_object* x_3; lean_object* x_4; 
+x_1 = lean_alloc_closure((void*)(l_Lake_instInhabitedScript___lam__0___boxed), 3, 0);
+x_2 = lean_mk_string_unchecked("", 0, 0);
+x_3 = lean_box(0);
+x_4 = lean_alloc_ctor(0, 3, 0);
+lean_ctor_set(x_4, 0, x_2);
+lean_ctor_set(x_4, 1, x_1);
+lean_ctor_set(x_4, 2, x_3);
+return x_4;
 }
 }
-LEAN_EXPORT lean_object* l_Lake_instInhabitedScript___lambda__1___boxed(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
+LEAN_EXPORT lean_object* l_Lake_instInhabitedScript___lam__0___boxed(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
 _start:
 {
 lean_object* x_4; 
-x_4 = l_Lake_instInhabitedScript___lambda__1(x_1, x_2, x_3);
+x_4 = l_Lake_instInhabitedScript___lam__0(x_1, x_2, x_3);
 lean_dec(x_2);
 lean_dec(x_1);
 return x_4;
@@ -171,26 +99,10 @@ lean_dec_ref(res);
 res = initialize_Lake_Config_Context(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__1 = _init_l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__1();
-lean_mark_persistent(l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__1);
-l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__2 = _init_l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__2();
-lean_mark_persistent(l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__2);
-l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__3 = _init_l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__3();
-lean_mark_persistent(l_Lake_instImpl____x40_Lake_Config_Script___hyg_17____closed__3);
 l_Lake_instImpl____x40_Lake_Config_Script___hyg_17_ = _init_l_Lake_instImpl____x40_Lake_Config_Script___hyg_17_();
 lean_mark_persistent(l_Lake_instImpl____x40_Lake_Config_Script___hyg_17_);
 l_Lake_instTypeNameScriptFn = _init_l_Lake_instTypeNameScriptFn();
 lean_mark_persistent(l_Lake_instTypeNameScriptFn);
-l_Lake_instInhabitedScript___lambda__1___closed__1 = _init_l_Lake_instInhabitedScript___lambda__1___closed__1();
-lean_mark_persistent(l_Lake_instInhabitedScript___lambda__1___closed__1);
-l_Lake_instInhabitedScript___lambda__1___closed__2 = _init_l_Lake_instInhabitedScript___lambda__1___closed__2();
-lean_mark_persistent(l_Lake_instInhabitedScript___lambda__1___closed__2);
-l_Lake_instInhabitedScript___closed__1 = _init_l_Lake_instInhabitedScript___closed__1();
-lean_mark_persistent(l_Lake_instInhabitedScript___closed__1);
-l_Lake_instInhabitedScript___closed__2 = _init_l_Lake_instInhabitedScript___closed__2();
-lean_mark_persistent(l_Lake_instInhabitedScript___closed__2);
-l_Lake_instInhabitedScript___closed__3 = _init_l_Lake_instInhabitedScript___closed__3();
-lean_mark_persistent(l_Lake_instInhabitedScript___closed__3);
 l_Lake_instInhabitedScript = _init_l_Lake_instInhabitedScript();
 lean_mark_persistent(l_Lake_instInhabitedScript);
 return lean_io_result_mk_ok(lean_box(0));

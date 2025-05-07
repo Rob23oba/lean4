@@ -13,106 +13,98 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-lean_object* l_instInhabitedReaderT___rarg___boxed(lean_object*, lean_object*);
-static lean_object* l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__2;
-lean_object* l_Lean_Compiler_LCNF_getPhase(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
-static lean_object* l_Lean_Compiler_LCNF_getOtherDeclType___closed__1;
+lean_object* l_Lean_Core_instMonadCoreM___lam__0___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_panic___at___Lean_Compiler_LCNF_getOtherDeclType_spec__0___lam__0___boxed(lean_object*, lean_object*);
+lean_object* l_ReaderT_instFunctorOfMonad___redArg___lam__1(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+lean_object* l_instMonadEIO___lam__1(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+lean_object* l_ReaderT_instApplicativeOfMonad___redArg___lam__3(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+lean_object* l_ReaderT_instMonad(lean_object*, lean_object*, lean_object*);
+lean_object* l_instMonadEIO(lean_object*);
+lean_object* l_Lean_Compiler_LCNF_getPhase___redArg(lean_object*, lean_object*);
+lean_object* l_ReaderT_instApplicativeOfMonad___redArg___lam__1(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+lean_object* l_instInhabitedOfMonad___redArg(lean_object*, lean_object*);
 extern lean_object* l_Lean_instInhabitedExpr;
-static lean_object* l_Lean_Compiler_LCNF_getOtherDeclType___closed__4;
 lean_object* l___private_Init_Util_0__mkPanicMessageWithDecl(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 lean_object* l_Lean_Compiler_LCNF_getOtherDeclBaseType(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
-static lean_object* l_Lean_Compiler_LCNF_getOtherDeclType___closed__3;
-LEAN_EXPORT lean_object* l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
-static lean_object* l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__3;
+lean_object* l_instMonadEIO___lam__2(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+lean_object* l_ReaderT_instFunctorOfMonad___redArg___lam__0(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_panic___at___Lean_Compiler_LCNF_getOtherDeclType_spec__0(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 lean_object* lean_panic_fn(lean_object*, lean_object*);
-static lean_object* l_Lean_Compiler_LCNF_getOtherDeclType___closed__2;
 lean_object* l_Lean_Compiler_LCNF_getOtherDeclMonoType(lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Lean_Compiler_LCNF_getOtherDeclType(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
-extern lean_object* l_Lean_Core_instMonadCoreM;
-lean_object* l_instInhabitedOfMonad___rarg(lean_object*, lean_object*);
-static lean_object* l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__1;
-lean_object* l_ReaderT_instMonad___rarg(lean_object*);
-static lean_object* _init_l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__1() {
+lean_object* l_EStateM_seqRight(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+lean_object* l_Lean_Core_instMonadCoreM___lam__1(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_panic___at___Lean_Compiler_LCNF_getOtherDeclType_spec__0___lam__0(lean_object*, lean_object*);
+LEAN_EXPORT lean_object* l_panic___at___Lean_Compiler_LCNF_getOtherDeclType_spec__0___lam__0(lean_object* x_1, lean_object* x_2) {
 _start:
 {
-lean_object* x_1; lean_object* x_2; 
-x_1 = l_Lean_Core_instMonadCoreM;
-x_2 = l_ReaderT_instMonad___rarg(x_1);
-return x_2;
-}
-}
-static lean_object* _init_l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__2() {
-_start:
-{
-lean_object* x_1; lean_object* x_2; lean_object* x_3; 
-x_1 = l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__1;
-x_2 = l_Lean_instInhabitedExpr;
-x_3 = l_instInhabitedOfMonad___rarg(x_1, x_2);
-return x_3;
-}
-}
-static lean_object* _init_l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__3() {
-_start:
-{
-lean_object* x_1; lean_object* x_2; 
-x_1 = l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__2;
-x_2 = lean_alloc_closure((void*)(l_instInhabitedReaderT___rarg___boxed), 2, 1);
-lean_closure_set(x_2, 0, x_1);
-return x_2;
-}
-}
-LEAN_EXPORT lean_object* l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1(lean_object* x_1, lean_object* x_2, lean_object* x_3, lean_object* x_4, lean_object* x_5, lean_object* x_6) {
-_start:
-{
-lean_object* x_7; lean_object* x_8; lean_object* x_9; 
-x_7 = l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__3;
-x_8 = lean_panic_fn(x_7, x_1);
-x_9 = lean_apply_5(x_8, x_2, x_3, x_4, x_5, x_6);
-return x_9;
-}
-}
-static lean_object* _init_l_Lean_Compiler_LCNF_getOtherDeclType___closed__1() {
-_start:
-{
-lean_object* x_1; 
-x_1 = lean_mk_string_unchecked("Lean.Compiler.LCNF.OtherDecl", 28, 28);
+lean_inc(x_1);
 return x_1;
 }
 }
-static lean_object* _init_l_Lean_Compiler_LCNF_getOtherDeclType___closed__2() {
+LEAN_EXPORT lean_object* l_panic___at___Lean_Compiler_LCNF_getOtherDeclType_spec__0(lean_object* x_1, lean_object* x_2, lean_object* x_3, lean_object* x_4, lean_object* x_5, lean_object* x_6) {
 _start:
 {
-lean_object* x_1; 
-x_1 = lean_mk_string_unchecked("Lean.Compiler.LCNF.getOtherDeclType", 35, 35);
-return x_1;
-}
-}
-static lean_object* _init_l_Lean_Compiler_LCNF_getOtherDeclType___closed__3() {
-_start:
-{
-lean_object* x_1; 
-x_1 = lean_mk_string_unchecked("unreachable code has been reached", 33, 33);
-return x_1;
-}
-}
-static lean_object* _init_l_Lean_Compiler_LCNF_getOtherDeclType___closed__4() {
-_start:
-{
-lean_object* x_1; lean_object* x_2; lean_object* x_3; lean_object* x_4; lean_object* x_5; lean_object* x_6; 
-x_1 = l_Lean_Compiler_LCNF_getOtherDeclType___closed__1;
-x_2 = l_Lean_Compiler_LCNF_getOtherDeclType___closed__2;
-x_3 = lean_unsigned_to_nat(19u);
-x_4 = lean_unsigned_to_nat(9u);
-x_5 = l_Lean_Compiler_LCNF_getOtherDeclType___closed__3;
-x_6 = l___private_Init_Util_0__mkPanicMessageWithDecl(x_1, x_2, x_3, x_4, x_5);
-return x_6;
+lean_object* x_7; lean_object* x_8; lean_object* x_9; lean_object* x_10; lean_object* x_11; lean_object* x_12; lean_object* x_13; lean_object* x_14; lean_object* x_15; lean_object* x_16; lean_object* x_17; lean_object* x_18; lean_object* x_19; lean_object* x_20; lean_object* x_21; lean_object* x_22; lean_object* x_23; lean_object* x_24; lean_object* x_25; lean_object* x_26; lean_object* x_27; lean_object* x_28; lean_object* x_29; lean_object* x_30; lean_object* x_31; lean_object* x_32; 
+x_7 = lean_alloc_closure((void*)(l_Lean_Core_instMonadCoreM___lam__0___boxed), 5, 0);
+x_8 = lean_alloc_closure((void*)(l_Lean_Core_instMonadCoreM___lam__1), 7, 0);
+x_9 = l_instMonadEIO(lean_box(0));
+x_10 = l_ReaderT_instMonad(lean_box(0), lean_box(0), x_9);
+x_11 = lean_ctor_get(x_10, 0);
+lean_inc(x_11);
+lean_dec(x_10);
+x_12 = lean_ctor_get(x_11, 0);
+lean_inc(x_12);
+lean_dec(x_11);
+lean_inc(x_12);
+x_13 = lean_alloc_closure((void*)(l_ReaderT_instFunctorOfMonad___redArg___lam__0), 6, 1);
+lean_closure_set(x_13, 0, x_12);
+x_14 = lean_alloc_closure((void*)(l_ReaderT_instFunctorOfMonad___redArg___lam__1), 6, 1);
+lean_closure_set(x_14, 0, x_12);
+x_15 = lean_alloc_ctor(0, 2, 0);
+lean_ctor_set(x_15, 0, x_13);
+lean_ctor_set(x_15, 1, x_14);
+x_16 = lean_alloc_closure((void*)(l_instMonadEIO___lam__1), 5, 0);
+x_17 = lean_alloc_closure((void*)(l_ReaderT_instApplicativeOfMonad___redArg___lam__1), 6, 1);
+lean_closure_set(x_17, 0, x_16);
+x_18 = lean_alloc_closure((void*)(l_ReaderT_instApplicativeOfMonad___redArg___lam__1), 6, 1);
+lean_closure_set(x_18, 0, x_17);
+x_19 = lean_alloc_closure((void*)(l_instMonadEIO___lam__2), 5, 0);
+x_20 = lean_alloc_closure((void*)(l_ReaderT_instApplicativeOfMonad___redArg___lam__3), 6, 1);
+lean_closure_set(x_20, 0, x_19);
+x_21 = lean_alloc_closure((void*)(l_ReaderT_instApplicativeOfMonad___redArg___lam__3), 6, 1);
+lean_closure_set(x_21, 0, x_20);
+x_22 = lean_alloc_closure((void*)(l_EStateM_seqRight), 7, 2);
+lean_closure_set(x_22, 0, lean_box(0));
+lean_closure_set(x_22, 1, lean_box(0));
+x_23 = lean_alloc_closure((void*)(l_ReaderT_instApplicativeOfMonad___redArg___lam__3), 6, 1);
+lean_closure_set(x_23, 0, x_22);
+x_24 = lean_alloc_closure((void*)(l_ReaderT_instApplicativeOfMonad___redArg___lam__3), 6, 1);
+lean_closure_set(x_24, 0, x_23);
+x_25 = lean_alloc_ctor(0, 5, 0);
+lean_ctor_set(x_25, 0, x_15);
+lean_ctor_set(x_25, 1, x_7);
+lean_ctor_set(x_25, 2, x_18);
+lean_ctor_set(x_25, 3, x_21);
+lean_ctor_set(x_25, 4, x_24);
+x_26 = lean_alloc_ctor(0, 2, 0);
+lean_ctor_set(x_26, 0, x_25);
+lean_ctor_set(x_26, 1, x_8);
+x_27 = l_ReaderT_instMonad(lean_box(0), lean_box(0), x_26);
+x_28 = l_Lean_instInhabitedExpr;
+x_29 = l_instInhabitedOfMonad___redArg(x_27, x_28);
+x_30 = lean_alloc_closure((void*)(l_panic___at___Lean_Compiler_LCNF_getOtherDeclType_spec__0___lam__0___boxed), 2, 1);
+lean_closure_set(x_30, 0, x_29);
+x_31 = lean_panic_fn(x_30, x_1);
+x_32 = lean_apply_5(x_31, x_2, x_3, x_4, x_5, x_6);
+return x_32;
 }
 }
 LEAN_EXPORT lean_object* l_Lean_Compiler_LCNF_getOtherDeclType(lean_object* x_1, lean_object* x_2, lean_object* x_3, lean_object* x_4, lean_object* x_5, lean_object* x_6, lean_object* x_7) {
 _start:
 {
 lean_object* x_8; lean_object* x_9; uint8_t x_10; 
-x_8 = l_Lean_Compiler_LCNF_getPhase(x_3, x_4, x_5, x_6, x_7);
+x_8 = l_Lean_Compiler_LCNF_getPhase___redArg(x_3, x_7);
 x_9 = lean_ctor_get(x_8, 0);
 lean_inc(x_9);
 x_10 = lean_unbox(x_9);
@@ -143,17 +135,35 @@ return x_14;
 }
 default: 
 {
-lean_object* x_15; lean_object* x_16; lean_object* x_17; 
+lean_object* x_15; lean_object* x_16; lean_object* x_17; lean_object* x_18; lean_object* x_19; lean_object* x_20; lean_object* x_21; lean_object* x_22; 
 lean_dec(x_2);
 lean_dec(x_1);
 x_15 = lean_ctor_get(x_8, 1);
 lean_inc(x_15);
 lean_dec(x_8);
-x_16 = l_Lean_Compiler_LCNF_getOtherDeclType___closed__4;
-x_17 = l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1(x_16, x_3, x_4, x_5, x_6, x_15);
-return x_17;
+x_16 = lean_mk_string_unchecked("Lean.Compiler.LCNF.OtherDecl", 28, 28);
+x_17 = lean_mk_string_unchecked("Lean.Compiler.LCNF.getOtherDeclType", 35, 35);
+x_18 = lean_unsigned_to_nat(19u);
+x_19 = lean_unsigned_to_nat(9u);
+x_20 = lean_mk_string_unchecked("unreachable code has been reached", 33, 33);
+x_21 = l___private_Init_Util_0__mkPanicMessageWithDecl(x_16, x_17, x_18, x_19, x_20);
+lean_dec(x_20);
+lean_dec(x_17);
+lean_dec(x_16);
+x_22 = l_panic___at___Lean_Compiler_LCNF_getOtherDeclType_spec__0(x_21, x_3, x_4, x_5, x_6, x_15);
+return x_22;
 }
 }
+}
+}
+LEAN_EXPORT lean_object* l_panic___at___Lean_Compiler_LCNF_getOtherDeclType_spec__0___lam__0___boxed(lean_object* x_1, lean_object* x_2) {
+_start:
+{
+lean_object* x_3; 
+x_3 = l_panic___at___Lean_Compiler_LCNF_getOtherDeclType_spec__0___lam__0(x_1, x_2);
+lean_dec(x_2);
+lean_dec(x_1);
+return x_3;
 }
 }
 lean_object* initialize_Lean_Compiler_LCNF_BaseTypes(uint8_t builtin, lean_object*);
@@ -169,20 +179,6 @@ lean_dec_ref(res);
 res = initialize_Lean_Compiler_LCNF_MonoTypes(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__1 = _init_l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__1();
-lean_mark_persistent(l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__1);
-l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__2 = _init_l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__2();
-lean_mark_persistent(l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__2);
-l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__3 = _init_l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__3();
-lean_mark_persistent(l_panic___at_Lean_Compiler_LCNF_getOtherDeclType___spec__1___closed__3);
-l_Lean_Compiler_LCNF_getOtherDeclType___closed__1 = _init_l_Lean_Compiler_LCNF_getOtherDeclType___closed__1();
-lean_mark_persistent(l_Lean_Compiler_LCNF_getOtherDeclType___closed__1);
-l_Lean_Compiler_LCNF_getOtherDeclType___closed__2 = _init_l_Lean_Compiler_LCNF_getOtherDeclType___closed__2();
-lean_mark_persistent(l_Lean_Compiler_LCNF_getOtherDeclType___closed__2);
-l_Lean_Compiler_LCNF_getOtherDeclType___closed__3 = _init_l_Lean_Compiler_LCNF_getOtherDeclType___closed__3();
-lean_mark_persistent(l_Lean_Compiler_LCNF_getOtherDeclType___closed__3);
-l_Lean_Compiler_LCNF_getOtherDeclType___closed__4 = _init_l_Lean_Compiler_LCNF_getOtherDeclType___closed__4();
-lean_mark_persistent(l_Lean_Compiler_LCNF_getOtherDeclType___closed__4);
 return lean_io_result_mk_ok(lean_box(0));
 }
 #ifdef __cplusplus

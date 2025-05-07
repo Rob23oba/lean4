@@ -34,6 +34,7 @@ res = initialize_Init_Data_List_Lex(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 l_String_leTrans = _init_l_String_leTrans();
+lean_mark_persistent(l_String_leTrans);
 return lean_io_result_mk_ok(lean_box(0));
 }
 #ifdef __cplusplus

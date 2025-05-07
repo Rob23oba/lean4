@@ -48,8 +48,11 @@ res = initialize_Init_Data_UInt_Lemmas(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 l_Char_leTrans = _init_l_Char_leTrans();
+lean_mark_persistent(l_Char_leTrans);
 l_Char_ltTrans = _init_l_Char_ltTrans();
+lean_mark_persistent(l_Char_ltTrans);
 l_Char_notLTTrans = _init_l_Char_notLTTrans();
+lean_mark_persistent(l_Char_notLTTrans);
 return lean_io_result_mk_ok(lean_box(0));
 }
 #ifdef __cplusplus

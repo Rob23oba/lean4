@@ -14,26 +14,21 @@
 extern "C" {
 #endif
 LEAN_EXPORT lean_object* l_Lean_Compiler_LCNF_Simp_instInhabitedConfig;
-static lean_object* l_Lean_Compiler_LCNF_Simp_instInhabitedConfig___closed__1;
-static lean_object* _init_l_Lean_Compiler_LCNF_Simp_instInhabitedConfig___closed__1() {
-_start:
-{
-uint8_t x_1; lean_object* x_2; 
-x_1 = 0;
-x_2 = lean_alloc_ctor(0, 0, 4);
-lean_ctor_set_uint8(x_2, 0, x_1);
-lean_ctor_set_uint8(x_2, 1, x_1);
-lean_ctor_set_uint8(x_2, 2, x_1);
-lean_ctor_set_uint8(x_2, 3, x_1);
-return x_2;
-}
-}
 static lean_object* _init_l_Lean_Compiler_LCNF_Simp_instInhabitedConfig() {
 _start:
 {
-lean_object* x_1; 
-x_1 = l_Lean_Compiler_LCNF_Simp_instInhabitedConfig___closed__1;
-return x_1;
+lean_object* x_1; lean_object* x_2; uint8_t x_3; uint8_t x_4; uint8_t x_5; uint8_t x_6; 
+x_1 = lean_box(0);
+x_2 = lean_alloc_ctor(0, 0, 4);
+x_3 = lean_unbox(x_1);
+lean_ctor_set_uint8(x_2, 0, x_3);
+x_4 = lean_unbox(x_1);
+lean_ctor_set_uint8(x_2, 1, x_4);
+x_5 = lean_unbox(x_1);
+lean_ctor_set_uint8(x_2, 2, x_5);
+x_6 = lean_unbox(x_1);
+lean_ctor_set_uint8(x_2, 3, x_6);
+return x_2;
 }
 }
 lean_object* initialize_Init_Core(uint8_t builtin, lean_object*);
@@ -45,8 +40,6 @@ _G_initialized = true;
 res = initialize_Init_Core(builtin, lean_io_mk_world());
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-l_Lean_Compiler_LCNF_Simp_instInhabitedConfig___closed__1 = _init_l_Lean_Compiler_LCNF_Simp_instInhabitedConfig___closed__1();
-lean_mark_persistent(l_Lean_Compiler_LCNF_Simp_instInhabitedConfig___closed__1);
 l_Lean_Compiler_LCNF_Simp_instInhabitedConfig = _init_l_Lean_Compiler_LCNF_Simp_instInhabitedConfig();
 lean_mark_persistent(l_Lean_Compiler_LCNF_Simp_instInhabitedConfig);
 return lean_io_result_mk_ok(lean_box(0));
