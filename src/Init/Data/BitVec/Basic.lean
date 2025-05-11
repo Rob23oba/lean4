@@ -237,10 +237,6 @@ instance : Mul (BitVec n) := ⟨.mul⟩
 
 /--
 Raises a bitvector to a natural number power. Usually accessed via the `^` operator.
-
-Note that this is currently an inefficient implementation,
-and should be replaced via an `@[extern]` with a native implementation.
-See https://github.com/leanprover/lean4/issues/7887.
 -/
 protected def pow (x : BitVec n) (y : Nat) : BitVec n :=
   match y with
@@ -248,6 +244,14 @@ protected def pow (x : BitVec n) (y : Nat) : BitVec n :=
   | y + 1 => x.pow y * x
 instance : Pow (BitVec n) Nat where
   pow x y := x.pow y
+
+/--
+Raises a bitvector to an (unsigned) bitvector power. Usually accessed via the `^` operator.
+-/
+protected def hpow (x y : BitVec w) : BitVec w :=
+  x ^ y.toNat
+instance : Pow (BitVec n) (BitVec n) where
+  pow x y := x.hpow y
 
 /--
 Unsigned division of bitvectors using the Lean convention where division by zero returns zero.
@@ -717,6 +721,8 @@ section normalization_eqs
 @[simp] theorem sub_eq (x y : BitVec w)                   : BitVec.sub x y = x - y            := rfl
 @[simp] theorem mul_eq (x y : BitVec w)                   : BitVec.mul x y = x * y            := rfl
 @[simp] theorem udiv_eq (x y : BitVec w)                  : BitVec.udiv x y = x / y           := rfl
+@[simp] theorem pow_eq (x : BitVec w) (n : Nat)           : BitVec.pow x n = x ^ n            := rfl
+@[simp] theorem hpow_eq (x y : BitVec w)                  : BitVec.hpow x y = x ^ y           := rfl
 @[simp] theorem umod_eq (x y : BitVec w)                  : BitVec.umod x y = x % y           := rfl
 @[simp] theorem zero_eq                                   : BitVec.zero n = 0#n               := rfl
 end normalization_eqs

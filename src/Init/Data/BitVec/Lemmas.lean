@@ -2,7 +2,6 @@
 Copyright (c) 2023 Lean FRO, LLC. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Joe Hendrix, Harun Khan, Alex Keizer, Abdalrhman M Mohamed, Siddharth Bhat
-
 -/
 module
 
@@ -3131,7 +3130,36 @@ theorem cons_append_append (x : BitVec w₁) (y : BitVec w₂) (z : BitVec w₃)
       decide_true, Bool.true_and, h₀, show i - (w₁ + w₂ + w₃) = 0 by omega]
     by_cases h₂ : i < w₃
     · simp [h₂]; omega
-    · simp [h₂];  omega
+    · simp [h₂]; omega
+
+/-- Recursor for bitvectors using `BitVec.cons`. -/
+@[elab_as_elim]
+def BitVec.consRec {motive : (w : Nat) → BitVec w → Sort u}
+    (nil : motive 0 .nil) (cons : ∀ {w} b x, motive w x → motive (w + 1) (.cons b x))
+    {w : Nat} (t : BitVec w) : motive w t :=
+  match w with
+  | 0 => cast (congrArg _ (eq_nil t).symm) nil
+  | w' + 1 =>
+    cast (congrArg _ (cons_msb_setWidth _)) (cons t.msb (t.setWidth w') (consRec nil @cons _))
+
+@[simp]
+theorem BitVec.consRec_nil {motive : (w : Nat) → BitVec w → Sort u}
+    (nil : motive 0 .nil) (cons : ∀ {w} b x, motive w x → motive (w + 1) (.cons b x)) :
+    consRec nil @cons .nil = nil := rfl
+
+@[simp]
+theorem BitVec.consRec_cons {motive : (w : Nat) → BitVec w → Sort u}
+    (nil : motive 0 .nil) (cons : ∀ {w} b x, motive w x → motive (w + 1) (.cons b x))
+    {w : Nat} (b : Bool) (x : BitVec w) :
+    consRec nil @cons (.cons b x) = cons b x (consRec nil @cons x) := by
+  rw [consRec]
+  apply eq_of_heq
+  refine (cast_heq ..).trans ?_
+  rw [BitVec.msb_cons, BitVec.setWidth_cons]
+
+theorem BitVec.exists_eq_cons {w : Nat} (x : BitVec (w + 1)) : ∃ b y, x = .cons b y := by
+  cases x using BitVec.consRec
+  exact ⟨_, _, rfl⟩
 
 /-! ### concat -/
 
@@ -3228,6 +3256,41 @@ theorem msb_concat {w : Nat} {b : Bool} {x : BitVec w} :
 @[simp] theorem zero_concat_false : concat 0#w false = 0#(w + 1) := by
   ext
   simp [getElem_concat]
+
+/-- Recursor for bitvectors using `BitVec.concat`. -/
+@[elab_as_elim]
+def BitVec.concatRec {motive : (w : Nat) → BitVec w → Sort u}
+    (nil : motive 0 .nil) (concat : ∀ {w} x b, motive w x → motive (w + 1) (.concat x b))
+    {w : Nat} (t : BitVec w) : motive w t :=
+  match w with
+  | 0 => cast (congrArg _ (eq_nil t).symm) nil
+  | w' + 1 => by
+    refine cast (congrArg _ ?_) (concat (t.extractLsb' 1 w') t[0] (concatRec nil @concat _))
+    ext i hi
+    cases i
+    · simp
+    · simp [Nat.add_comm 1, ← getLsbD_eq_getElem, hi, Nat.lt_of_add_lt_add_right hi]
+
+@[simp]
+theorem BitVec.concatRec_nil {motive : (w : Nat) → BitVec w → Sort u}
+    (nil : motive 0 .nil) (concat : ∀ {w} x b, motive w x → motive (w + 1) (.concat x b)) :
+    concatRec nil @concat .nil = nil := rfl
+
+@[simp]
+theorem BitVec.concatRec_concat {motive : (w : Nat) → BitVec w → Sort u}
+    (nil : motive 0 .nil) (concat : ∀ {w} x b, motive w x → motive (w + 1) (.concat x b))
+    {w : Nat} (b : Bool) (x : BitVec w) :
+    concatRec nil @concat (.concat x b) = concat x b (concatRec nil @concat x) := by
+  rw [concatRec]
+  apply eq_of_heq
+  refine (cast_heq ..).trans ?_
+  rw [BitVec.getElem_concat_zero]
+  congr; all_goals
+  ext i hi; simp [Nat.add_comm 1, ← getLsbD_eq_getElem, hi]
+
+theorem BitVec.exists_eq_concat {w : Nat} (x : BitVec (w + 1)) : ∃ y b, x = .concat y b := by
+  cases x using BitVec.concatRec
+  exact ⟨_, _, rfl⟩
 
 /-! ### shiftConcat -/
 
@@ -3779,11 +3842,37 @@ protected theorem pow_succ {x : BitVec w} : x ^ (n + 1) = x ^ n * x := rfl
 @[simp]
 protected theorem pow_one {x : BitVec w} : x ^ 1 = x := by simp [BitVec.pow_succ]
 
-protected theorem pow_add {x : BitVec w} {n m : Nat}: x ^ (n + m) = (x ^ n) * (x ^ m):= by
+protected theorem pow_two {x : BitVec w} : x ^ 2 = x * x := by simp [BitVec.pow_succ]
+
+protected theorem pow_add {x : BitVec w} {n m : Nat} : x ^ (n + m) = (x ^ n) * (x ^ m) := by
   induction m with
   | zero => simp
+  | succ m ih => rw [← Nat.add_assoc, BitVec.pow_succ, ih, BitVec.mul_assoc, BitVec.pow_succ]
+
+protected theorem pow_succ' {x : BitVec w} : x ^ (n + 1) = x * x ^ n := by
+  rw [BitVec.pow_succ, BitVec.mul_comm]
+
+protected theorem pow_mul {x : BitVec w} {n m : Nat} : x ^ (n * m) = (x ^ n) ^ m := by
+  induction m with
+  | zero => simp
+  | succ m ih => rw [Nat.mul_add_one, BitVec.pow_succ, BitVec.pow_add, ih]
+
+@[simp]
+protected theorem one_pow {n : Nat} : 1#w ^ n = 1#w := by
+  induction n with
+  | zero => simp
+  | succ m ih => simp [BitVec.pow_succ, ih]
+
+protected theorem pow_mul' {x : BitVec w} {n m : Nat} : x ^ (m * n) = (x ^ n) ^ m := by
+  rw [Nat.mul_comm, BitVec.pow_mul]
+
+protected theorem mul_pow {x y : BitVec w} {n : Nat} : (x * y) ^ n = x ^ n * y ^ n := by
+  induction n with
+  | zero => simp
   | succ m ih =>
-    rw [← Nat.add_assoc, BitVec.pow_succ, ih, BitVec.mul_assoc, BitVec.pow_succ]
+    simp only [BitVec.pow_succ, ih]
+    rw [← BitVec.mul_assoc, BitVec.mul_assoc (x ^ m), BitVec.mul_comm (y ^ m)]
+    simp only [BitVec.mul_assoc]
 
 /-! ### le and lt -/
 

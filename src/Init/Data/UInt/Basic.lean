@@ -62,14 +62,13 @@ protected def UInt8.div (a b : UInt8) : UInt8 := ⟨BitVec.udiv a.toBitVec b.toB
 /--
 The power operation, raising an 8-bit unsigned integer to a natural number power,
 wrapping around on overflow. Usually accessed via the `^` operator.
-
-This function is currently *not* overridden at runtime with an efficient implementation,
-and should be used with caution. See https://github.com/leanprover/lean4/issues/7887.
 -/
-protected def UInt8.pow (x : UInt8) (n : Nat) : UInt8 :=
-  match n with
-  | 0 => 1
-  | n + 1 => UInt8.mul (UInt8.pow x n) x
+protected def UInt8.pow (x : UInt8) (n : Nat) : UInt8 := ⟨x.toBitVec ^ n⟩
+/--
+The homogenous power operation, raising an 8-bit unsigned integer to a 8-bit unsigned integer
+power, wrapping around on overflow. Usually accessed via the `^` operator.
+-/
+protected def UInt8.hpow (x y : UInt8) : UInt8 := ⟨x.toBitVec ^ y.toBitVec⟩
 /--
 The modulo operator for 8-bit unsigned integers, which computes the remainder when dividing one
 integer by another. Usually accessed via the `%` operator.
@@ -274,14 +273,13 @@ protected def UInt16.div (a b : UInt16) : UInt16 := ⟨BitVec.udiv a.toBitVec b.
 /--
 The power operation, raising a 16-bit unsigned integer to a natural number power,
 wrapping around on overflow. Usually accessed via the `^` operator.
-
-This function is currently *not* overridden at runtime with an efficient implementation,
-and should be used with caution. See https://github.com/leanprover/lean4/issues/7887.
 -/
-protected def UInt16.pow (x : UInt16) (n : Nat) : UInt16 :=
-  match n with
-  | 0 => 1
-  | n + 1 => UInt16.mul (UInt16.pow x n) x
+protected def UInt16.pow (x : UInt16) (n : Nat) : UInt16 := ⟨x.toBitVec ^ n⟩
+/--
+The homogenous power operation, raising an 16-bit unsigned integer to a 16-bit unsigned integer
+power, wrapping around on overflow. Usually accessed via the `^` operator.
+-/
+protected def UInt16.hpow (x y : UInt16) : UInt16 := ⟨x.toBitVec ^ y.toBitVec⟩
 /--
 The modulo operator for 16-bit unsigned integers, which computes the remainder when dividing one
 integer by another. Usually accessed via the `%` operator.
@@ -488,14 +486,13 @@ protected def UInt32.div (a b : UInt32) : UInt32 := ⟨BitVec.udiv a.toBitVec b.
 /--
 The power operation, raising a 32-bit unsigned integer to a natural number power,
 wrapping around on overflow. Usually accessed via the `^` operator.
-
-This function is currently *not* overridden at runtime with an efficient implementation,
-and should be used with caution. See https://github.com/leanprover/lean4/issues/7887.
 -/
-protected def UInt32.pow (x : UInt32) (n : Nat) : UInt32 :=
-  match n with
-  | 0 => 1
-  | n + 1 => UInt32.mul (UInt32.pow x n) x
+protected def UInt32.pow (x : UInt32) (n : Nat) : UInt32 := ⟨x.toBitVec ^ n⟩
+/--
+The homogenous power operation, raising an 32-bit unsigned integer to a 32-bit unsigned integer
+power, wrapping around on overflow. Usually accessed via the `^` operator.
+-/
+protected def UInt32.hpow (x y : UInt32) : UInt32 := ⟨x.toBitVec ^ y.toBitVec⟩
 /--
 The modulo operator for 32-bit unsigned integers, which computes the remainder when dividing one
 integer by another. Usually accessed via the `%` operator.
@@ -664,14 +661,13 @@ protected def UInt64.div (a b : UInt64) : UInt64 := ⟨BitVec.udiv a.toBitVec b.
 /--
 The power operation, raising a 64-bit unsigned integer to a natural number power,
 wrapping around on overflow. Usually accessed via the `^` operator.
-
-This function is currently *not* overridden at runtime with an efficient implementation,
-and should be used with caution. See https://github.com/leanprover/lean4/issues/7887.
 -/
-protected def UInt64.pow (x : UInt64) (n : Nat) : UInt64 :=
-  match n with
-  | 0 => 1
-  | n + 1 => UInt64.mul (UInt64.pow x n) x
+protected def UInt64.pow (x : UInt64) (n : Nat) : UInt64 := ⟨x.toBitVec ^ n⟩
+/--
+The power operation, raising a 64-bit unsigned integer to a 64-bit unsigned integer
+power, wrapping around on overflow. Usually accessed via the `^` operator.
+-/
+protected def UInt64.hpow (x y : UInt64) : UInt64 := ⟨x.toBitVec ^ y.toBitVec⟩
 /--
 The modulo operator for 64-bit unsigned integers, which computes the remainder when dividing one
 integer by another. Usually accessed via the `%` operator.
@@ -871,14 +867,13 @@ protected def USize.div (a b : USize) : USize := ⟨a.toBitVec / b.toBitVec⟩
 /--
 The power operation, raising a word-sized unsigned integer to a natural number power,
 wrapping around on overflow. Usually accessed via the `^` operator.
-
-This function is currently *not* overridden at runtime with an efficient implementation,
-and should be used with caution. See https://github.com/leanprover/lean4/issues/7887.
 -/
-protected def USize.pow (x : USize) (n : Nat) : USize :=
-  match n with
-  | 0 => 1
-  | n + 1 => USize.mul (USize.pow x n) x
+protected def USize.pow (x : USize) (n : Nat) : USize := ⟨x.toBitVec ^ n⟩
+/--
+The power operation, raising a word-sized unsigned integer to a word-sized unsigned integer
+power, wrapping around on overflow. Usually accessed via the `^` operator.
+-/
+protected def USize.hpow (x y : USize) : USize := ⟨x.toBitVec ^ y.toBitVec⟩
 /--
 The modulo operator for word-sized unsigned integers, which computes the remainder when dividing one
 integer by another. Usually accessed via the `%` operator.
