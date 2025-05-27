@@ -399,13 +399,14 @@ structure State where
 
 structure Context where
   /--
-    When visiting an assigned metavariable, if it has an user-name. We save it here.
-    We want to preserve these user-names when generating new pattern variables. -/
+  When visiting an assigned metavariable, if it has an user-name, we save it here.
+  We want to preserve these user-names when generating new pattern variables.
+  -/
   userName : Name := Name.anonymous
   /--
-    Pattern variables that were explicitly provided by the user.
-    Recall that implicit parameters and `_` are elaborated as metavariables, and then converted into pattern variables
-    by the `normalize` procedure.
+  Pattern variables that were explicitly provided by the user.
+  Recall that implicit parameters and `_` are elaborated as metavariables, and then converted into pattern variables
+  by the `normalize` procedure.
   -/
   explicitPatternVars : Array FVarId := #[]
 

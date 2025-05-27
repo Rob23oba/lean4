@@ -119,10 +119,11 @@ partial def instantiatePatternMVars : Pattern → MetaM Pattern
 
 structure AltLHS where
   ref        : Syntax
-  fvarDecls  : List LocalDecl -- Free variables used in the patterns.
-  patterns   : List Pattern   -- We use `List Pattern` since we have nary match-expressions.
+  fvarDecls  : List LocalDecl  -- Free variables used in the patterns.
+  patterns   : List Pattern    -- We use `List Pattern` since we have nary match-expressions.
+  original   : List Expr := [] -- Original left-hand sides, out-of-bounds values are taken from `patterns`
 
-def AltLHS.collectFVars (altLHS: AltLHS) : StateRefT CollectFVars.State MetaM Unit := do
+def AltLHS.collectFVars (altLHS : AltLHS) : StateRefT CollectFVars.State MetaM Unit := do
   altLHS.fvarDecls.forM fun fvarDecl => fvarDecl.collectFVars
   altLHS.patterns.forM fun p => p.collectFVars
 
