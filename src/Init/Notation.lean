@@ -392,6 +392,7 @@ macro_rules | `($x > $y)  => `(binrel% GT.gt $x $y)
 macro_rules | `($x >= $y) => `(binrel% GE.ge $x $y)
 macro_rules | `($x ≥ $y)  => `(binrel% GE.ge $x $y)
 macro_rules | `($x = $y)  => `(binrel% Eq $x $y)
+macro_rules | `($x ≍ $y)  => `(binrel% HEq $x $y)
 macro_rules | `($x == $y) => `(binrel_no_prop% BEq.beq $x $y)
 
 recommended_spelling "le" for "≤" in [LE.le, «term_≤_»]
@@ -403,6 +404,7 @@ recommended_spelling "ge" for "≥" in [GE.ge, «term_≥_»]
 /-- prefer `≥` over `>=` -/
 recommended_spelling "ge" for ">=" in [GE.ge, «term_>=_»]
 recommended_spelling "eq" for "=" in [Eq, «term_=_»]
+recommended_spelling "heq" for "≍" in [HEq, «term_≍_»]
 recommended_spelling "beq" for "==" in [BEq.beq, «term_==_»]
 
 @[inherit_doc] infixr:35 " /\\ " => And
