@@ -240,11 +240,28 @@ std::string lrealpath(std::string const & fname) {
 #elif defined(LEAN_WINDOWS)
     constexpr unsigned BufferSize = 8192;
     char buffer[BufferSize];
-    DWORD retval = GetFullPathName(fname.c_str(), BufferSize, buffer, nullptr);
+    HANDLE hFile = CreateFileA(
+        fname.c_str(),
+        0,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS, // Required to open directories too
+        NULL
+    );
+    if (hFile == INVALID_HANDLE_VALUE) {
+        return fname;
+    }
+    DWORD retval = GetFinalPathNameByHandleA(hFile, buffer, BufferSize, 0);
+    CloseHandle(hFile);
     if (retval == 0 || retval > BufferSize) {
         return fname;
     } else {
-        return std::string(buffer);
+        char * buf = buffer;
+        if (buf[0] == '\\' && buf[1] == '\\' && buf[2] == '?' && buf[3] == '\\') {
+            buf += (size_t)4;
+        }
+        return std::string(buf);
     }
 #else
     constexpr unsigned BufferSize = 8192;

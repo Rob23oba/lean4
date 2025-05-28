@@ -237,8 +237,8 @@ and finally define
 
 ```lean
 def control {α : Type}
-  (f : ({β : Type} → StateT σ IO β → IO (stM β)) → IO (stM α))
-  : StateT σ IO α := do
+    (f : ({β : Type} → StateT σ IO β → IO (stM β)) → IO (stM α)) :
+    StateT σ IO α := do
   let s ← get
   let mapInBase := fun {β} (z : StateT σ IO β) => StateT.run z s
   let r : IO (stM α) := f mapInBase

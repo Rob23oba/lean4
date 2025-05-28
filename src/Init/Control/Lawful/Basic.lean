@@ -224,8 +224,8 @@ theorem LawfulMonad.mk' (m : Type u → Type v) [Monad m]
     (seqRight_eq : ∀ {α β} (x : m α) (y : m β), x *> y = (x >>= fun _ => y) := by intros; rfl)
     (bind_pure_comp : ∀ {α β} (f : α → β) (x : m α),
       x >>= (fun y => pure (f y)) = f <$> x := by intros; rfl)
-    (bind_map : ∀ {α β} (f : m (α → β)) (x : m α), f >>= (. <$> x) = f <*> x := by intros; rfl)
-    : LawfulMonad m :=
+    (bind_map : ∀ {α β} (f : m (α → β)) (x : m α), f >>= (. <$> x) = f <*> x := by intros; rfl) :
+    LawfulMonad m :=
   have map_pure {α β} (g : α → β) (x : α) : g <$> (pure x : m α) = pure (g x) := by
     rw [← bind_pure_comp]; simp [pure_bind]
   { id_map, bind_pure_comp, bind_map, pure_bind, bind_assoc, map_pure,

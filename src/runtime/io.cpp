@@ -958,17 +958,34 @@ extern "C" LEAN_EXPORT obj_res lean_io_realpath(obj_arg fname, obj_arg) {
 #if defined(LEAN_WINDOWS)
     constexpr unsigned BufferSize = 8192;
     char buffer[BufferSize];
-    DWORD retval = GetFullPathName(string_cstr(fname), BufferSize, buffer, nullptr);
+    HANDLE hFile = CreateFileA(
+        string_cstr(fname),
+        0,
+        FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_BACKUP_SEMANTICS, // Required to open directories too
+        NULL
+    );
+    if (hFile == INVALID_HANDLE_VALUE) {
+        return io_result_mk_ok(fname);
+    }
+    DWORD retval = GetFinalPathNameByHandleA(hFile, buffer, BufferSize, 0);
+    CloseHandle(hFile);
     if (retval == 0 || retval > BufferSize) {
         return io_result_mk_ok(fname);
     } else {
         dec_ref(fname);
+        char * buf = buffer;
+        if (buf[0] == '\\' && buf[1] == '\\' && buf[2] == '?' && buf[3] == '\\') {
+            buf += (size_t)4;
+        }
         // Hack for making sure disk is lower case
         // TODO(Leo): more robust solution
-        if (strlen(buffer) >= 2 && buffer[1] == ':') {
-            buffer[0] = tolower(buffer[0]);
+        if (strlen(buf) >= 2 && buf[1] == ':') {
+            buf[0] = tolower(buf[0]);
         }
-        return io_result_mk_ok(mk_string(buffer));
+        return io_result_mk_ok(mk_string(buf));
     }
 #else
     char buffer[PATH_MAX];
