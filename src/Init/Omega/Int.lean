@@ -176,7 +176,7 @@ end Nat
 namespace Fin
 
 theorem ne_iff_lt_or_gt {i j : Fin n} : i ≠ j ↔ i < j ∨ i > j := by
-  cases i; cases j; simp only [ne_eq, Fin.mk.injEq, Nat.ne_iff_lt_or_gt, gt_iff_lt]; rfl
+  cases i; cases j; simp only [Fin.mk.injEq, Nat.ne_iff_lt_or_gt, gt_iff_lt]; rfl
 
 protected theorem lt_or_gt_of_ne {i j : Fin n} (h : i ≠ j) : i < j ∨ i > j := Fin.ne_iff_lt_or_gt.mp h
 

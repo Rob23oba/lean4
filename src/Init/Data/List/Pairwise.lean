@@ -188,7 +188,7 @@ theorem pairwise_append_comm {R : α → α → Prop} (s : ∀ {x y}, R x y → 
   induction n with
   | zero => simp
   | succ n ih =>
-    simp only [replicate_succ, pairwise_cons, mem_replicate, ne_eq, and_imp,
+    simp only [replicate_succ, pairwise_cons, mem_replicate, and_imp,
       forall_eq_apply_imp_iff, ih]
     constructor
     · rintro ⟨h, h' | h'⟩

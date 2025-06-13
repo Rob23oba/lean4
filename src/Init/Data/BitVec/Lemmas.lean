@@ -145,7 +145,7 @@ theorem toNat_ne_iff_ne {n} {x y : BitVec n} : x.toNat ≠ y.toNat ↔ x ≠ y :
 theorem toNat_inj {x y : BitVec n} : x.toNat = y.toNat ↔ x = y := toNat_eq.symm
 
 @[bitvec_to_nat] theorem toNat_ne {x y : BitVec n} : x ≠ y ↔ x.toNat ≠ y.toNat := by
-  rw [Ne, toNat_eq]
+  rw [toNat_eq]
 
 protected theorem toNat_lt_twoPow_of_le (h : m ≤ n) {x : BitVec m} :
     x.toNat < 2 ^ n := by
@@ -674,7 +674,7 @@ theorem toInt_inj {x y : BitVec n} : x.toInt = y.toInt ↔ x = y :=
   Iff.intro eq_of_toInt_eq (congrArg BitVec.toInt)
 
 theorem toInt_ne {x y : BitVec n} : x.toInt ≠ y.toInt ↔ x ≠ y  := by
-  rw [Ne, toInt_inj]
+  rw [toInt_inj]
 
 @[simp, bitvec_to_nat] theorem toNat_ofInt {n : Nat} (i : Int) :
   (BitVec.ofInt n i).toNat = (i % (2^n : Nat)).toNat := by
@@ -3948,7 +3948,7 @@ protected theorem lt_of_le_ne {x y : BitVec n} : x ≤ y → ¬ x = y → x < y 
   apply Nat.lt_of_le_of_ne
 
 protected theorem ne_of_lt {x y : BitVec n} : x < y → x ≠ y := by
-  simp only [lt_def, ne_eq, toNat_eq]
+  simp only [lt_def, toNat_eq]
   apply Nat.ne_of_lt
 
 protected theorem umod_lt (x : BitVec n) {y : BitVec n} : 0 < y → x % y < y := by
@@ -4207,7 +4207,7 @@ theorem toInt_umod_of_msb {x y : BitVec w} (h : x.msb = false) :
 theorem msb_umod_of_msb_false_of_ne_zero {x y : BitVec w} (hmsb : y.msb = false) (h_ne_zero : y ≠ 0#w) :
     (x % y).msb = false := by
   simp only [msb_umod, Bool.and_eq_false_imp, Bool.or_eq_false_iff, beq_eq_false_iff_ne,
-    ne_eq, h_ne_zero]
+    h_ne_zero]
   intro h
   simp [BitVec.le_of_lt, lt_of_msb_false_of_msb_true hmsb h]
 
@@ -5212,7 +5212,7 @@ theorem abs_intMin {w : Nat} : (intMin w).abs = intMin w := by
 
 theorem toInt_neg_of_ne_intMin {x : BitVec w} (rs : x ≠ intMin w) :
     (-x).toInt = -(x.toInt) := by
-  simp only [ne_eq, toNat_eq, toNat_intMin] at rs
+  simp only [toNat_eq, toNat_intMin] at rs
   by_cases x_zero : x = 0
   · subst x_zero
     simp [BitVec.toInt]

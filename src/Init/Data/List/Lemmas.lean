@@ -157,7 +157,7 @@ theorem cons_ne_nil (a : α) (l : List α) : a :: l ≠ [] := nofun
 theorem cons_ne_self (a : α) (l : List α) : a :: l ≠ l := mt (congrArg length) (Nat.succ_ne_self _)
 
 @[simp] theorem ne_cons_self {a : α} {l : List α} : l ≠ a :: l := by
-  rw [ne_eq, eq_comm]
+  rw [eq_comm]
   simp
 
 theorem head_eq_of_cons_eq (H : h₁ :: t₁ = h₂ :: t₂) : h₁ = h₂ := (cons.inj H).1
@@ -688,7 +688,7 @@ theorem getElem?_set' {l : List α} {i j : Nat} {a : α} :
     (set l i a)[j]? = if i = j then Function.const _ a <$> l[j]? else l[j]? := by
   by_cases i = j
   · simp only [getElem?_set_self', Option.map_eq_map, ↓reduceIte, *]
-  · simp only [ne_eq, not_false_eq_true, getElem?_set_ne, ↓reduceIte, *]
+  · simp only [not_false_eq_true, getElem?_set_ne, ↓reduceIte, *]
 
 @[simp] theorem set_getElem_self {as : List α} {i : Nat} (h : i < as.length) :
     as.set i as[i] = as := by
@@ -1052,7 +1052,7 @@ theorem one_lt_length_of_tail_ne_nil {l : List α} (h : l.tail ≠ []) : 1 < l.l
   cases l with
   | nil => simp at h
   | cons _ l =>
-    simp only [tail_cons, ne_eq] at h
+    simp only [tail_cons] at h
     exact Nat.lt_add_of_pos_left (length_pos_iff.mpr h)
 
 @[simp] theorem head_tail {l : List α} (h : l.tail ≠ []) :
@@ -1957,7 +1957,7 @@ theorem flatten_filter_not_isEmpty  :
 
 theorem flatten_filter_ne_nil [DecidablePred fun l : List α => l ≠ []] {L : List (List α)} :
     flatten (L.filter fun l => l ≠ []) = L.flatten := by
-  simp only [ne_eq, ← isEmpty_iff, Bool.not_eq_true, Bool.decide_eq_false,
+  simp only [← isEmpty_iff, Bool.not_eq_true, Bool.decide_eq_false,
     flatten_filter_not_isEmpty]
 
 @[simp, grind _=_] theorem flatten_append {L₁ L₂ : List (List α)} : flatten (L₁ ++ L₂) = flatten L₁ ++ flatten L₂ := by
@@ -2257,7 +2257,7 @@ theorem map_const' {l : List α} {b : β} : map (fun _ => b) l = replicate l.len
   constructor
   · simp
   · intro b
-    simp only [mem_append, mem_replicate, ne_eq]
+    simp only [mem_append, mem_replicate]
     rintro (⟨-, rfl⟩ | ⟨_, rfl⟩) <;> rfl
 
 @[deprecated replicate_append_replicate (since := "2025-01-16")]

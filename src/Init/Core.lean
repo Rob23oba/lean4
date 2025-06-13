@@ -843,15 +843,39 @@ theorem Eq.substr {α : Sort u} {p : α → Prop} {a b : α} (h₁ : b = a) (h�
   rfl
 
 /--
-`a ≠ b`, or `Ne a b` is defined as `¬ (a = b)` or `a = b → False`,
+`a ≠ b` is notation for `¬ (a = b)` or `a = b → False`,
 and asserts that `a` and `b` are not equal.
 -/
-@[reducible] def Ne {α : Sort u} (a b : α) :=
-  ¬(a = b)
+macro:50 a:term:51 " ≠ " b:term:51 : term => `(Not ($a = $b))
 
-@[inherit_doc] infix:50 " ≠ "  => Ne
+@[deprecated "use notation instead" (since := "2025-06-13")]
+abbrev Ne (a b : α) := a ≠ b
 
-recommended_spelling "ne" for "≠" in [Ne, «term_≠_»]
+set_option linter.missingDocs false in
+@[app_unexpander Not]
+def unexpandNe : Lean.PrettyPrinter.Unexpander
+  | `($_ $eq) =>
+    match eq with
+    | `($a = $b) => `($a ≠ $b)
+    | _ => throw ()
+  | _ => throw ()
+
+recommended_spelling "ne" for "≠" in [«term_≠_»]
+
+/-- `Refl r` means the binary relation `r` is symmetric, that is, `r x y` implies `r y x`. -/
+class IsSymm (α : Sort u) (r : α → α → Prop) : Prop where
+  /-- A reflexive relation satisfies `r a b → r b a`. -/
+  symm : ∀ a b, r a b → r b a
+
+instance : IsSymm α Eq where
+  symm _ _ := Eq.symm
+
+section Not
+
+protected theorem Not.symm {r : α → α → Prop} [IsSymm α r] {a b : α} (h : ¬r a b) : ¬r b a :=
+  mt (IsSymm.symm b a) h
+
+end Not
 
 section Ne
 variable {α : Sort u}
@@ -863,7 +887,7 @@ theorem Ne.elim (h : a ≠ b) : a = b → False := h
 
 theorem Ne.irrefl (h : a ≠ a) : False := h rfl
 
-@[symm] theorem Ne.symm (h : a ≠ b) : b ≠ a := fun h₁ => h (h₁.symm)
+theorem Ne.symm (h : a ≠ b) : b ≠ a := fun h₁ => h (h₁.symm)
 
 theorem ne_comm {α} {a b : α} : a ≠ b ↔ b ≠ a := ⟨Ne.symm, Ne.symm⟩
 

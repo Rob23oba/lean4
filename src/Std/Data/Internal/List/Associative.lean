@@ -392,7 +392,7 @@ theorem containsKey_iff_exists [BEq α] [PartialEquivBEq α] {l : List ((a : α)
 theorem containsKey_eq_false_iff_forall_mem_keys [BEq α] [PartialEquivBEq α]
     {l : List ((a : α) × β a)} {a : α} :
     (containsKey a l) = false ↔ ∀ a' ∈ keys l, (a == a') = false := by
-  simp only [Bool.eq_false_iff, ne_eq, containsKey_iff_exists, not_exists, not_and]
+  simp only [Bool.eq_false_iff, containsKey_iff_exists, not_exists, not_and]
 
 theorem containsKey_eq_false_iff [BEq α] [PartialEquivBEq α] {l : List ((a : α) × β a)} {a : α} :
     containsKey a l = false ↔ ∀ (b : ((a : α) × β a)), b ∈ l → (a == b.fst) = false := by
@@ -661,7 +661,7 @@ theorem getValueCastD_eq_getValueCast? [BEq α] [LawfulBEq α] {l : List ((a : �
 
 theorem getValueCastD_eq_fallback [BEq α] [LawfulBEq α] {l : List ((a : α) × β a)} {a : α}
     {fallback : β a} (h : containsKey a l = false) : getValueCastD a l fallback = fallback := by
-  rw [containsKey_eq_isSome_getValueCast?, Bool.eq_false_iff, ne_eq,
+  rw [containsKey_eq_isSome_getValueCast?, Bool.eq_false_iff,
     Option.not_isSome_iff_eq_none] at h
   rw [getValueCastD_eq_getValueCast?, h, Option.getD_none]
 
@@ -689,7 +689,7 @@ theorem getValueCast!_eq_getValueCast? [BEq α] [LawfulBEq α] {l : List ((a : �
 
 theorem getValueCast!_eq_default [BEq α] [LawfulBEq α] {l : List ((a : α) × β a)} {a : α}
     [Inhabited (β a)] (h : containsKey a l = false) : getValueCast! a l = default := by
-  rw [containsKey_eq_isSome_getValueCast?, Bool.eq_false_iff, ne_eq,
+  rw [containsKey_eq_isSome_getValueCast?, Bool.eq_false_iff,
     Option.not_isSome_iff_eq_none] at h
   rw [getValueCast!_eq_getValueCast?, h, Option.get!_none]
 
@@ -722,7 +722,7 @@ theorem getValueD_eq_getValue? [BEq α] {l : List ((_ : α) × β)} {a : α} {fa
 
 theorem getValueD_eq_fallback [BEq α] {l : List ((_ : α) × β)} {a : α} {fallback : β}
     (h : containsKey a l = false) : getValueD a l fallback = fallback := by
-  rw [containsKey_eq_isSome_getValue?, Bool.eq_false_iff, ne_eq, Option.not_isSome_iff_eq_none] at h
+  rw [containsKey_eq_isSome_getValue?, Bool.eq_false_iff, Option.not_isSome_iff_eq_none] at h
   rw [getValueD_eq_getValue?, h, Option.getD_none]
 
 theorem getValue_eq_getValueD [BEq α] {l : List ((_ : α) × β)} {a : α} {fallback : β}
@@ -754,7 +754,7 @@ theorem getValue!_eq_getValue? [BEq α] [Inhabited β] {l : List ((_ : α) × β
 
 theorem getValue!_eq_default [BEq α] [Inhabited β] {l : List ((_ : α) × β)} {a : α}
     (h : containsKey a l = false) : getValue! a l = default := by
-  rw [containsKey_eq_isSome_getValue?, Bool.eq_false_iff, ne_eq, Option.not_isSome_iff_eq_none] at h
+  rw [containsKey_eq_isSome_getValue?, Bool.eq_false_iff, Option.not_isSome_iff_eq_none] at h
   rw [getValue!_eq_getValue?, h, Option.get!_none]
 
 theorem getValue_eq_getValue! [BEq α] [Inhabited β] {l : List ((_ : α) × β)} {a : α}
@@ -981,7 +981,7 @@ theorem getKeyD_eq_getKey? [BEq α] {l : List ((a : α) × β a)} {a fallback : 
 
 theorem getKeyD_eq_fallback [BEq α] [EquivBEq α] {l : List ((a : α) × β a)} {a fallback : α}
     (h : containsKey a l = false) : getKeyD a l fallback = fallback := by
-  rw [containsKey_eq_isSome_getKey?, Bool.eq_false_iff, ne_eq,
+  rw [containsKey_eq_isSome_getKey?, Bool.eq_false_iff,
     Option.not_isSome_iff_eq_none] at h
   rw [getKeyD_eq_getKey?, h, Option.getD_none]
 
@@ -1017,7 +1017,7 @@ theorem getKey!_eq_getKey? [BEq α] [Inhabited α] {l : List ((a : α) × β a)}
 
 theorem getKey!_eq_default [BEq α] [Inhabited α] {l : List ((a : α) × β a)} {a : α}
     (h : containsKey a l = false) : getKey! a l = default := by
-  rw [containsKey_eq_isSome_getKey?, Bool.eq_false_iff, ne_eq,
+  rw [containsKey_eq_isSome_getKey?, Bool.eq_false_iff,
     Option.not_isSome_iff_eq_none] at h
   rw [getKey!_eq_getKey?, h, Option.get!_none]
 
@@ -2107,7 +2107,7 @@ theorem getEntry?_of_perm [BEq α] [PartialEquivBEq α] {l l' : List ((a : α) �
     simp only [getEntry?_cons]
     cases h₂ : k₂ == a <;> cases h₁ : k₁ == a <;> try simp; done
     simp only [distinctKeys_cons_iff, containsKey_cons, Bool.or_eq_false_iff] at hl
-    exact ((Bool.eq_false_iff.1 hl.2.1).elim (BEq.trans h₁ (BEq.symm h₂))).elim
+    exact (Bool.eq_false_iff.1 hl.2.1).elim (BEq.trans h₁ (BEq.symm h₂))
   · next l₁ l₂ l₃ hl₁₂ _ ih₁ ih₂ => exact (ih₁ hl).trans (ih₂ (hl.perm (hl₁₂.symm)))
 
 theorem containsKey_of_perm [BEq α] [PartialEquivBEq α] {l l' : List ((a : α) × β a)} {k : α}
@@ -5087,7 +5087,7 @@ theorem isEmpty_filterMap_eq_false [BEq α] [LawfulBEq α] {f : (a : α) → β 
     {l : List ((a : α) × β a)} (distinct : DistinctKeys l) :
     (l.filterMap fun p => (f p.1 p.2).map (fun x => (⟨p.1, x⟩ : (a : α) × γ a))).isEmpty = false ↔
       ∃ (k : α) (h : containsKey k l = true), (f k (getValueCast k l h)).isSome := by
-  rw [Bool.eq_false_iff, Ne.eq_1, isEmpty_filterMap_eq_true distinct]
+  rw [Bool.eq_false_iff, isEmpty_filterMap_eq_true distinct]
   simp [Option.ne_none_iff_isSome]
 
 theorem isEmpty_filter_eq_true [BEq α] [LawfulBEq α] {f : (a : α) → β a → Bool}
@@ -5401,7 +5401,7 @@ theorem isEmpty_filterMap_eq_false [BEq α] [EquivBEq α] {β : Type v} {γ : Ty
     {f : (_ : α) → β → Option γ} {l : List ((_ : α) × β)} (distinct : DistinctKeys l) :
     (l.filterMap fun p => (f p.1 p.2).map (fun x => (⟨p.1, x⟩ : (_ : α) × γ))).isEmpty = false ↔
       ∃ (k : α) (h : containsKey k l = true), (f (getKey k l h) (getValue k l h)).isSome := by
-  rw [Bool.eq_false_iff, ne_eq, isEmpty_filterMap_eq_true distinct]
+  rw [Bool.eq_false_iff, isEmpty_filterMap_eq_true distinct]
   simp only [Classical.not_forall, Option.ne_none_iff_isSome]
 
 theorem isEmpty_filter_eq_true [BEq α] [EquivBEq α] {β : Type v}
@@ -5415,7 +5415,7 @@ theorem isEmpty_filter_eq_false [BEq α] [EquivBEq α] {β : Type v}
     {f : (_ : α) → β → Bool} {l : List ((_ : α) × β)} (distinct : DistinctKeys l) :
     (l.filter fun p => (f p.1 p.2)).isEmpty = false ↔
       ∃ (k : α) (h : containsKey k l = true), f (getKey k l h) (getValue k l h) = true := by
-  rw [Bool.eq_false_iff, ne_eq, isEmpty_filter_eq_true distinct]
+  rw [Bool.eq_false_iff, isEmpty_filter_eq_true distinct]
   simp only [Classical.not_forall, Bool.not_eq_false]
 
 theorem isEmpty_filter_key_eq_true [BEq α] [EquivBEq α] {β : Type v}

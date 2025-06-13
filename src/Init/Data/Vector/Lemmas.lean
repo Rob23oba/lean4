@@ -1083,7 +1083,7 @@ theorem any_eq_true {p : α → Bool} {xs : Vector α n} :
 
 theorem any_eq_false {p : α → Bool} {xs : Vector α n} :
     xs.any p = false ↔ ∀ (i : Nat) (_ : i < n), ¬p xs[i] := by
-  rw [Bool.eq_false_iff, Ne, any_eq_true]
+  rw [Bool.eq_false_iff, any_eq_true]
   simp
 
 theorem allM_eq_not_anyM_not [Monad m] [LawfulMonad m] {p : α → m Bool} {xs : Vector α n} :
@@ -1102,7 +1102,7 @@ theorem all_eq_not_any_not {p : α → Bool} {xs : Vector α n} :
 
 @[simp] theorem all_eq_false {p : α → Bool} {xs : Vector α n} :
     xs.all p = false ↔ ∃ (i : Nat) (_ : i < n), ¬p xs[i] := by
-  rw [Bool.eq_false_iff, Ne, all_eq_true]
+  rw [Bool.eq_false_iff, all_eq_true]
   simp
 
 theorem all_eq_true_iff_forall_mem {xs : Vector α n} : xs.all p ↔ ∀ x, x ∈ xs → p x := by

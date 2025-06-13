@@ -248,7 +248,7 @@ theorem back?_pop {xs : Array α} :
   simp
 
 @[simp] theorem ne_push_self {a : α} {xs : Array α} : xs ≠ xs.push a := by
-  rw [ne_eq, eq_comm]
+  rw [eq_comm]
   simp
 
 theorem back_eq_of_push_eq {a b : α} {xs ys : Array α} (h : xs.push a = ys.push b) : a = b := by
@@ -283,7 +283,7 @@ theorem push_eq_append_singleton {as : Array α} {x : α} : as.push x = as ++ #[
 theorem exists_push_of_ne_empty {xs : Array α} (h : xs ≠ #[]) :
     ∃ (ys : Array α) (a : α), xs = ys.push a := by
   rcases xs with ⟨xs⟩
-  simp only [ne_eq, mk.injEq] at h
+  simp only [mk.injEq] at h
   exact ⟨(xs.take (xs.length - 1)).toArray, xs.getLast h, by simp⟩
 
 theorem ne_empty_iff_exists_push {xs : Array α} :
@@ -642,7 +642,7 @@ theorem any_iff_exists {p : α → Bool} {as : Array α} {start stop} :
 
 @[simp] theorem any_eq_false {p : α → Bool} {as : Array α} :
     as.any p = false ↔ ∀ (i : Nat) (_ : i < as.size), ¬p as[i] := by
-  rw [Bool.eq_false_iff, Ne, any_eq_true]
+  rw [Bool.eq_false_iff, any_eq_true]
   simp
 
 @[simp, grind =] theorem any_toList {p : α → Bool} {as : Array α} : as.toList.any p = as.any p := by
@@ -681,7 +681,7 @@ theorem all_iff_forall {p : α → Bool} {as : Array α} {start stop} :
 
 @[simp] theorem all_eq_false {p : α → Bool} {as : Array α} :
     as.all p = false ↔ ∃ (i : Nat) (_ : i < as.size), ¬p as[i] := by
-  rw [Bool.eq_false_iff, Ne, all_eq_true]
+  rw [Bool.eq_false_iff, all_eq_true]
   simp
 
 @[simp, grind =] theorem all_toList {p : α → Bool} {as : Array α} : as.toList.all p = as.all p := by
@@ -747,7 +747,7 @@ theorem any_eq_true' {p : α → Bool} {as : Array α} :
 /-- Variant of `any_eq_false` in terms of membership rather than an array index. -/
 theorem any_eq_false' {p : α → Bool} {as : Array α} :
     as.any p = false ↔ ∀ x, x ∈ as → ¬p x := by
-  rw [Bool.eq_false_iff, Ne, any_eq_true']
+  rw [Bool.eq_false_iff, any_eq_true']
   simp
 
 /-- Variant of `all_eq_true` in terms of membership rather than an array index. -/
@@ -759,7 +759,7 @@ theorem all_eq_true' {p : α → Bool} {as : Array α} :
 /-- Variant of `all_eq_false` in terms of membership rather than an array index. -/
 theorem all_eq_false' {p : α → Bool} {as : Array α} :
     as.all p = false ↔ ∃ x, x ∈ as ∧ ¬p x := by
-  rw [Bool.eq_false_iff, Ne, all_eq_true']
+  rw [Bool.eq_false_iff, all_eq_true']
   simp
 
 @[grind =]
@@ -2215,7 +2215,7 @@ theorem flatten_filter_not_isEmpty {xss : Array (Array α)} :
 
 theorem flatten_filter_ne_empty [DecidablePred fun xs : Array α => xs ≠ #[]] {xss : Array (Array α)} :
     flatten (xss.filter fun xs => xs ≠ #[]) = xss.flatten := by
-  simp only [ne_eq, ← isEmpty_iff, Bool.not_eq_true, Bool.decide_eq_false,
+  simp only [← isEmpty_iff, Bool.not_eq_true, Bool.decide_eq_false,
     flatten_filter_not_isEmpty]
 
 @[simp, grind _=_] theorem flatten_append {xss₁ xss₂ : Array (Array α)} :
@@ -2703,7 +2703,7 @@ theorem getElem?_swap {xs : Array α} {i j : Nat} (hi hj) {k : Nat} : (xs.swap i
         · simp only [← h₃, Nat.not_le.2 (Nat.lt_succ_self _), Nat.le_refl, false_and]
           exact (List.getElem?_reverse' (Eq.trans (by simp +arith) h)).symm
         simp only [Nat.succ_le, Nat.lt_iff_le_and_ne.trans (and_iff_left h₃),
-          Nat.lt_succ.symm.trans (Nat.lt_iff_le_and_ne.trans (and_iff_left (Ne.symm h₂)))]
+          Nat.lt_succ.symm.trans (Nat.lt_iff_le_and_ne.trans (and_iff_left h₂.symm))]
     · rw [H]; split <;> rename_i h₂
       · cases Nat.le_antisymm (Nat.not_lt.1 h₁) (Nat.le_trans h₂.1 h₂.2)
         cases Nat.le_antisymm h₂.1 h₂.2

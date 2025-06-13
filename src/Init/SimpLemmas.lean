@@ -110,8 +110,8 @@ theorem dite_congr {_ : Decidable b} [Decidable c]
   | inl h => rw [dif_pos h]; subst b; rw [dif_pos h]; exact h₂ h
   | inr h => rw [dif_neg h]; subst b; rw [dif_neg h]; exact h₃ h
 
-@[simp] theorem ne_eq (a b : α) : (a ≠ b) = ¬(a = b) := rfl
-norm_cast_add_elim ne_eq
+@[deprecated "no longer useful" (since := "2025-06-13")]
+theorem ne_eq (a b : α) : (a ≠ b) = ¬(a = b) := rfl
 @[simp] theorem ite_true (a b : α) : (if True then a else b) = a := rfl
 @[simp] theorem ite_false (a b : α) : (if False then a else b) = b := rfl
 @[simp] theorem dite_true {α : Sort u} {t : True → α} {e : ¬ True → α} : (dite True t e) = t True.intro := rfl
@@ -307,7 +307,7 @@ Added for critical pair for `¬((a != b) = true)`
 These will both normalize to `a = b` with the first via `bne_eq_false_iff_eq`.
 -/
 @[simp] theorem beq_eq_false_iff_ne [BEq α] [LawfulBEq α] {a b : α} : (a == b) = false ↔ a ≠ b := by
-  rw [ne_eq, ← beq_iff_eq (a := a) (b := b)]
+  rw [← beq_iff_eq (a := a) (b := b)]
   cases a == b <;> decide
 
 @[simp] theorem bne_eq_false_iff_eq [BEq α] [LawfulBEq α] {a b : α} : (a != b) = false ↔ a = b := by

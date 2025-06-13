@@ -300,7 +300,7 @@ theorem mod_eq_of_lt {a b : Nat} (h : a < b) : a % b = a :=
   | 1 => simp
   | n + 2 =>
     rw [mod_eq_of_lt (by exact Nat.lt_of_sub_eq_succ rfl)]
-    simp only [add_one_ne_zero, false_iff, ne_eq]
+    simp only [add_one_ne_zero, false_iff]
     exact ne_of_beq_eq_false rfl
 
 @[simp] theorem zero_eq_one_mod_iff {n : Nat} : 0 = 1 % n ↔ n = 1 := by

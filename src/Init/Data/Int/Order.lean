@@ -568,7 +568,7 @@ TODO: rename `natAbs_ofNat'` to `natAbs_ofNat` once the current deprecated alias
   fun e => e ▸ rfl⟩
 
 @[simp] theorem natAbs_pos : 0 < natAbs a ↔ a ≠ 0 := by
-  rw [Nat.pos_iff_ne_zero, Ne, natAbs_eq_zero]
+  rw [Nat.pos_iff_ne_zero, natAbs_eq_zero]
 
 @[simp] theorem natAbs_neg : ∀ (a : Int), natAbs (-a) = natAbs a
   | 0      => rfl

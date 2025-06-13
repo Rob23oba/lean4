@@ -98,7 +98,7 @@ theorem nonzeroMinimum_le_iff {xs : List Nat} {y : Nat} :
     xs.nonzeroMinimum ≤ y ↔ xs.nonzeroMinimum = 0 ∨ ∃ x ∈ xs, x ≤ y ∧ x ≠ 0 := by
   refine ⟨fun h => ?_, fun h => ?_⟩
   · rw [Classical.or_iff_not_imp_right]
-    simp only [ne_eq, not_exists, not_and, Classical.not_not, nonzeroMinimum_eq_zero_iff]
+    simp only [not_exists, not_and, Classical.not_not, nonzeroMinimum_eq_zero_iff]
     intro w
     apply nonzeroMinimum_eq_zero_iff.mp
     if p : xs.nonzeroMinimum = 0 then
@@ -124,7 +124,7 @@ theorem nonzeroMininum_map_le_nonzeroMinimum (f : α → β) (p : α → Nat) (q
     refine .inr ⟨q (f a), List.mem_map_of_mem (List.mem_map_of_mem m), ?_, ?_⟩
     · rw [eq] at z ⊢
       apply w _ m z
-    · rwa [Ne, ← h _ m, ← eq]
+    · rwa [← h _ m, ← eq]
 
 /--
 The minimum absolute value of a nonzero entry, or zero if all entries are zero.

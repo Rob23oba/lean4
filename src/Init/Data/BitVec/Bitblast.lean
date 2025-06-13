@@ -525,7 +525,7 @@ theorem msb_neg {w : Nat} {x : BitVec w} :
 
 theorem msb_abs {w : Nat} {x : BitVec w} :
     x.abs.msb = (decide (x = intMin w) && decide (0 < w)) := by
-  simp only [BitVec.abs, getMsbD_neg, ne_eq, decide_not, Bool.not_bne]
+  simp only [BitVec.abs, getMsbD_neg, decide_not, Bool.not_bne]
   by_cases h₀ : 0 < w
   · by_cases h₁ : x = intMin w
     · simp [h₁, msb_intMin]
@@ -563,7 +563,7 @@ theorem slt_eq_ult_of_msb_eq {x y : BitVec w} (h : x.msb = y.msb) :
 /-- If two bitvectors have different `msb`s, then unsigned comparison is determined by this bit -/
 theorem ult_eq_msb_of_msb_neq {x y : BitVec w} (h : x.msb ≠ y.msb) :
     x.ult y = y.msb := by
-  simp only [BitVec.ult, msb_eq_decide, ne_eq, decide_eq_decide] at *
+  simp only [BitVec.ult, msb_eq_decide, decide_eq_decide] at *
   omega
 
 /-- If two bitvectors have different `msb`s, then signed and unsigned comparisons are opposites -/
@@ -1574,7 +1574,7 @@ theorem toInt_eq_neg_toNat_neg_of_msb_true {x : BitVec w} (h : x.msb = true) :
   · omega
   · have := @BitVec.isLt w x
     have ne_zero := ne_zero_of_msb_true h
-    simp only [ne_eq, toNat_eq, toNat_ofNat, zero_mod] at ne_zero
+    simp only [toNat_eq, toNat_ofNat, zero_mod] at ne_zero
     omega
 
 theorem toInt_eq_neg_toNat_neg_of_nonpos {x : BitVec w} (h : x = 0#w ∨ x.msb = true) :
@@ -1629,7 +1629,7 @@ theorem toInt_sdiv_of_ne_or_ne (a b : BitVec w) (h : a ≠ intMin w ∨ b ≠ -1
   have := Nat.two_pow_pos (w - 1)
 
   by_cases hbintMin : b = intMin w
-  · simp only [ne_eq, Decidable.not_not] at hbintMin
+  · simp only [Decidable.not_not] at hbintMin
     subst hbintMin
     have toIntA_lt := @BitVec.toInt_lt w a; norm_cast at toIntA_lt
     have le_toIntA := @BitVec.le_toInt w a; norm_cast at le_toIntA
@@ -1641,7 +1641,7 @@ theorem toInt_sdiv_of_ne_or_ne (a b : BitVec w) (h : a ≠ intMin w ∨ b ≠ -1
         rw [Int.tdiv_self (by omega)]
       · by_cases ha_nonneg : 0 ≤ a.toInt
         · simp [Int.tdiv_eq_zero_of_lt ha_nonneg (by norm_cast at *), ha_intMin, -Int.natCast_pow]
-        · simp only [ne_eq, ← toInt_inj, toInt_intMin, wpos, Nat.two_pow_pred_mod_two_pow] at h
+        · simp only [← toInt_inj, toInt_intMin, wpos, Nat.two_pow_pred_mod_two_pow] at h
           rw [← Int.neg_tdiv, Int.tdiv_eq_zero_of_lt (by omega)]
           · simp [ha_intMin]
           · simp [wpos, ← toInt_ne, toInt_intMin, -Int.natCast_pow] at ha_intMin
@@ -1656,7 +1656,7 @@ theorem toInt_sdiv_of_ne_or_ne (a b : BitVec w) (h : a ≠ intMin w ∨ b ≠ -1
       rw [toInt_eq_toNat_of_msb]
       · rfl
       · by_cases ha_intMin : a = intMin w
-        · simp only [ha_intMin, ne_eq, not_true_eq_false, _root_.false_or] at h
+        · simp only [ha_intMin, not_true_eq_false, _root_.false_or] at h
           simp [msb_udiv, neg_eq_iff_eq_neg, h]
         · simp [msb_udiv, ha_intMin, ha]
     · have sdiv_toInt_of_msb_true_of_msb_false :
@@ -1719,7 +1719,7 @@ theorem msb_umod_eq_false_of_left {x : BitVec w} (hx : x.msb = false) (y : BitVe
 theorem msb_umod_of_le_of_ne_zero_of_le {x y : BitVec w}
     (hx : x ≤ intMin w) (hy : y ≠ 0#w) (hy' : y ≤ intMin w) : (x % y).msb = false := by
   simp only [msb_umod, Bool.and_eq_false_imp, Bool.or_eq_false_iff, decide_eq_false_iff_not,
-    BitVec.not_lt, beq_eq_false_iff_ne, ne_eq, hy, not_false_eq_true, _root_.and_true]
+    BitVec.not_lt, beq_eq_false_iff_ne, hy, not_false_eq_true, _root_.and_true]
   intro h
   rw [← intMin_le_iff_msb_eq_true (length_pos_of_ne hy)] at h
   rwa [BitVec.le_antisymm hx h]

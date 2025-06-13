@@ -137,7 +137,7 @@ theorem subset_replicate {n : Nat} {a : α} {l : List α} (h : n ≠ 0) : l ⊆ 
   induction l with
   | nil => simp
   | cons x xs ih =>
-    simp only [cons_subset, mem_replicate, ne_eq, ih, mem_cons, forall_eq_or_imp,
+    simp only [cons_subset, mem_replicate, ih, mem_cons, forall_eq_or_imp,
       and_congr_left_iff, and_iff_right_iff_imp]
     solve_by_elim
 
@@ -810,7 +810,7 @@ grind_pattern IsPrefix.reverse => l₁ <+: l₂, l₂.reverse
 
 theorem IsPrefix.head {l₁ l₂ : List α} (h : l₁ <+: l₂) (hx : l₁ ≠ []) :
     l₁.head hx = l₂.head (h.ne_nil hx) := by
-  cases l₁ <;> cases l₂ <;> simp only [head_cons, ne_eq, not_true_eq_false] at hx ⊢
+  cases l₁ <;> cases l₂ <;> simp only [head_cons, not_true_eq_false] at hx ⊢
   all_goals (obtain ⟨_, h⟩ := h; injection h)
 
 theorem IsSuffix.getLast {l₁ l₂ : List α} (h : l₁ <:+ l₂) (hx : l₁ ≠ []) :

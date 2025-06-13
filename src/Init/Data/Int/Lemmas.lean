@@ -554,7 +554,7 @@ protected theorem mul_ne_zero {a b : Int} (a0 : a ≠ 0) (b0 : b ≠ 0) : a * b 
   Or.rec a0 b0 ∘ Int.mul_eq_zero.mp
 
 @[simp] protected theorem mul_ne_zero_iff {a b : Int} : a * b ≠ 0 ↔ a ≠ 0 ∧ b ≠ 0 := by
-  rw [ne_eq, Int.mul_eq_zero, not_or, ne_eq]
+  rw [Int.mul_eq_zero, not_or]
 
 protected theorem eq_of_mul_eq_mul_right {a b c : Int} (ha : a ≠ 0) (h : b * a = c * a) : b = c :=
   have : (b - c) * a = 0 := by rwa [Int.sub_mul, Int.sub_eq_zero]

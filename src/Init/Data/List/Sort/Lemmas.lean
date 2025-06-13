@@ -409,7 +409,6 @@ theorem mergeSort_cons {le : α → α → Bool}
     rw [map_append] at nd'
     have j0 := nd'.rel_of_mem_append
       (mem_map_of_mem m) (mem_map_of_mem mem_cons_self)
-    simp only [ne_eq] at j0
     have r := s.rel_of_mem_append m mem_cons_self
     simp_all [zipIdxLE]
 

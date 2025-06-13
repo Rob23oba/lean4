@@ -358,7 +358,7 @@ theorem gcd_add_mul_self (m n k : Nat) : gcd m (n + k * m) = gcd m n :=
    fun h => by simp [h]⟩
 
 @[simp] theorem gcd_pos_iff {m n : Nat} : 0 < gcd m n ↔ 0 < m ∨ 0 < n := by
-  simp only [Nat.pos_iff_ne_zero, ne_eq, gcd_eq_zero_iff, Decidable.not_and_iff_or_not]
+  simp only [Nat.pos_iff_ne_zero, gcd_eq_zero_iff, Decidable.not_and_iff_or_not]
 
 /-- Characterization of the value of `Nat.gcd`. -/
 theorem gcd_eq_iff {a b : Nat} :
