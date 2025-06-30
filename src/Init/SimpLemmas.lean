@@ -199,7 +199,9 @@ instance : Std.LawfulIdentity And True where
 instance : Std.IdempotentOp And := ⟨and_self⟩
 @[simp] theorem and_not_self : ¬(a ∧ ¬a) | ⟨ha, hn⟩ => absurd ha hn
 @[simp] theorem not_and_self : ¬(¬a ∧ a) := and_not_self ∘ And.symm
-@[simp] theorem and_imp : (a ∧ b → c) ↔ (a → b → c) := ⟨fun h ha hb => h ⟨ha, hb⟩, fun h ⟨ha, hb⟩ => h ha hb⟩
+@[simp low] theorem forall_and_index {p : a ∧ b → Prop} : (∀ h, p h) ↔ (∀ h h', p ⟨h, h'⟩) :=
+  ⟨fun h ha hb => h ⟨ha, hb⟩, fun h ⟨ha, hb⟩ => h ha hb⟩
+@[simp] theorem and_imp : (a ∧ b → c) ↔ (a → b → c) := forall_and_index
 @[simp] theorem not_and : ¬(a ∧ b) ↔ (a → ¬b) := and_imp
 @[simp] theorem or_self (p : Prop) : (p ∨ p) = p := propext ⟨fun | .inl h | .inr h => h, .inl⟩
 instance : Std.IdempotentOp Or := ⟨or_self⟩
@@ -218,8 +220,9 @@ instance : Std.LawfulIdentity Or False where
 @[simp] theorem false_implies (p : Prop) : (False → p) = True := eq_true False.elim
 @[simp] theorem forall_false (p : False → Prop) : (∀ h : False, p h) = True := eq_true (False.elim ·)
 @[simp] theorem implies_true (α : Sort u) : (α → True) = True := eq_true fun _ => trivial
+@[simp low] theorem forall_true (p : True → Prop) : (∀ h, p h) = p ⟨⟩ := propext ⟨(· trivial), (fun _ => ·)⟩
 -- This is later proved by the simp lemma `forall_const`, but this is useful during bootstrapping.
-@[simp] theorem true_implies (p : Prop) : (True → p) = p := propext ⟨(· trivial), (fun _ => ·)⟩
+@[simp] theorem true_implies (p : Prop) : (True → p) = p := forall_true _
 @[simp] theorem not_false_eq_true : (¬ False) = True := eq_true False.elim
 @[simp] theorem not_true_eq_false : (¬ True) = False := by decide
 

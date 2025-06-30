@@ -121,8 +121,11 @@ theorem or_and_left : a ∨ (b ∧ c) ↔ (a ∨ b) ∧ (a ∨ c) :=
 /-- `∨` distributes over `∧` (on the right). -/
 theorem and_or_right : (a ∧ b) ∨ c ↔ (a ∨ c) ∧ (b ∨ c) := by rw [@or_comm (a ∧ b), or_and_left, @or_comm c, @or_comm c]
 
-theorem or_imp : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
-  Iff.intro (fun h => ⟨h ∘ .inl, h ∘ .inr⟩) (fun ⟨ha, hb⟩ => Or.rec ha hb)
+theorem forall_or_index {p : a ∨ b → Prop} :
+    (∀ h, p h) ↔ (∀ h, p (.inl h)) ∧ (∀ h, p (.inr h)) :=
+  Iff.intro (fun h => ⟨fun h' => h (.inl h'), fun h' => h (.inr h')⟩) (fun ⟨ha, hb⟩ => Or.rec ha hb)
+
+theorem or_imp : (a ∨ b → c) ↔ (a → c) ∧ (b → c) := forall_or_index
 
 /-
 `not_or` is made simp for confluence with `¬((b || c) = true)`:
@@ -211,13 +214,26 @@ variable {p q : α → Prop} {b : Prop}
 
 theorem forall_imp (h : ∀ a, p a → q a) : (∀ a, p a) → ∀ a, q a := fun h' a => h a (h' a)
 
-/--
-As `simp` does not index foralls, this `@[simp]` lemma is tried on every `forall` expression.
-This is not ideal, and likely a performance issue, but it is difficult to remove this attribute at this time.
--/
 @[simp] theorem forall_exists_index {q : (∃ x, p x) → Prop} :
     (∀ h, q h) ↔ ∀ x (h : p x), q ⟨x, h⟩ :=
   ⟨fun h x hpx => h ⟨x, hpx⟩, fun h ⟨x, hpx⟩ => h x hpx⟩
+
+@[simp] theorem exists_assoc {q : (∃ x, p x) → Prop} :
+    Exists q ↔ ∃ (x : α) (h : p x), q ⟨x, h⟩ :=
+  ⟨fun ⟨⟨x, hpx⟩, h⟩ => ⟨x, hpx, h⟩, fun ⟨x, hpx, h⟩ => ⟨⟨x, hpx⟩, h⟩⟩
+
+@[simp] theorem exists_false_index {p : False → Prop} :
+    Exists p ↔ False :=
+  iff_false_intro nofun
+
+@[simp] theorem exists_and_index {p : a ∧ b → Prop} :
+    Exists p ↔ ∃ h h', p ⟨h, h'⟩ :=
+  ⟨fun ⟨⟨h, h'⟩, hp⟩ => ⟨h, h', hp⟩, fun ⟨h, h', hp⟩ => ⟨⟨h, h'⟩, hp⟩⟩
+
+theorem exists_or_index {p : a ∨ b → Prop} :
+    Exists p ↔ (∃ h, p (.inl h)) ∨ ∃ h, p (.inr h) :=
+  ⟨fun | ⟨.inl h, h'⟩ => .inl ⟨h, h'⟩ | ⟨.inr h, h'⟩ => .inr ⟨h, h'⟩,
+   fun | .inl ⟨h, h'⟩ => ⟨.inl h, h'⟩ | .inr ⟨h, h'⟩ => ⟨.inr h, h'⟩⟩
 
 theorem Exists.imp (h : ∀ a, p a → q a) : (∃ a, p a) → ∃ a, q a
   | ⟨a, hp⟩ => ⟨a, h a hp⟩
@@ -318,10 +334,11 @@ theorem nonempty_of_exists {α : Sort u} {p : α → Prop} : Exists (fun x => p 
 theorem not_forall_of_exists_not {p : α → Prop} : (∃ x, ¬p x) → ¬∀ x, p x
   | ⟨x, hn⟩, h => hn (h x)
 
-@[simp] theorem forall_eq {p : α → Prop} {a' : α} : (∀ a, a = a' → p a) ↔ p a' :=
-  ⟨fun h => h a' rfl, fun h _ e => e.symm ▸ h⟩
+@[simp] theorem forall_eq {a : α} {p : (b : α) → b = a → Prop} : (∀ b h, p b h) ↔ p a rfl :=
+  ⟨fun h => h a rfl, fun h _ e => e.symm ▸ h⟩
 
-@[simp] theorem forall_eq' {a' : α} : (∀ a, a' = a → p a) ↔ p a' := by simp [@eq_comm _ a']
+@[simp] theorem forall_eq' {a : α} {p : (b : α) → a = b → Prop} : (∀ b h, p b h) ↔ p a rfl := by
+  simp [@eq_comm _ a]
 
 @[simp] theorem exists_eq : ∃ a, a = a' := ⟨_, rfl⟩
 

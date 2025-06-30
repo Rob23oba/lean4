@@ -25,9 +25,9 @@ Lemmas about the operations on `Std.DHashMap.Raw` are available in the module
 set_option linter.missingDocs true
 set_option autoImplicit false
 
-universe u v w
+universe u v w w'
 
-variable {α : Type u} {β : α → Type v} {δ : Type w} {m : Type w → Type w} [Monad m]
+variable {α : Type u} {β : α → Type v} {δ : Type w} {m : Type w → Type w'} [Monad m]
 
 namespace Std
 
@@ -410,6 +410,18 @@ instance : ForM m (Raw α β) ((a : α) × β a) where
 
 instance : ForIn m (Raw α β) ((a : α) × β a) where
   forIn m init f := m.forIn (fun a b acc => f ⟨a, b⟩ acc) init
+
+/-- Check if all entries satisfy the predicate, short-circuiting if a predicate fails. -/
+def all (m : Raw α β) (p : (a : α) → β a → Bool) : Bool := Id.run do
+  for ⟨a, b⟩ in m do
+    unless p a b do return false
+  return true
+
+/-- Check if any entry satisfies the predicate, short-circuiting if a predicate succeeds. -/
+def any (m : Raw α β) (p : (a : α) → β a → Bool) : Bool := Id.run do
+  for ⟨a, b⟩ in m do
+    if p a b then return true
+  return false
 
 namespace Const
 

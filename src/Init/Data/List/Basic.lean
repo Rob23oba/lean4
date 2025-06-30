@@ -152,7 +152,8 @@ instance [BEq α] [LawfulBEq α] : LawfulBEq (List α) where
       cases bs with
       | nil => intro h; contradiction
       | cons b bs =>
-        simp [show (a::as == b::bs) = (a == b && as == bs) from rfl, -and_imp]
+        simp only [show (a :: as == b :: bs) = (a == b && as == bs) from rfl, Bool.and_eq_true,
+          beq_iff_eq, cons.injEq]
         intro ⟨h₁, h₂⟩
         exact ⟨h₁, ih h₂⟩
 

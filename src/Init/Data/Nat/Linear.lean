@@ -511,43 +511,38 @@ theorem Poly.of_isNonZero (ctx : Context) {p : Poly} (h : isNonZero p = true) : 
 
 theorem PolyCnstr.eq_false_of_isUnsat (ctx : Context) {c : PolyCnstr} : c.isUnsat → c.denote ctx = False := by
   cases c; rename_i eq lhs rhs
-  simp [isUnsat]
-  by_cases he : eq = true <;> simp [he, denote, Poly.denote_eq, Poly.denote_le, -and_imp]
+  simp only [isUnsat, eq_iff_iff, iff_false]
+  by_cases he : eq = true <;>
+    simp only [he, cond_true, cond_false, Bool.or_eq_true, Bool.and_eq_true, denote,
+      Poly.denote_eq, Poly.denote_le]
   · intro
       | Or.inl ⟨h₁, h₂⟩ => simp [Poly.of_isZero, h₁]; have := Nat.ne_zero_of_lt (Poly.of_isNonZero ctx h₂); simp [this.symm]
       | Or.inr ⟨h₁, h₂⟩ => simp [Poly.of_isZero, h₂]; have := Nat.ne_zero_of_lt (Poly.of_isNonZero ctx h₁); simp [this]
   · intro ⟨h₁, h₂⟩
-    simp [Poly.of_isZero, h₂]
+    simp only [h₂, Poly.of_isZero, Nat.not_le]
     exact Poly.of_isNonZero ctx h₁
 
 theorem PolyCnstr.eq_true_of_isValid (ctx : Context) {c : PolyCnstr} : c.isValid → c.denote ctx = True := by
   cases c; rename_i eq lhs rhs
-  simp [isValid]
-  by_cases he : eq = true <;> simp [he, denote, Poly.denote_eq, Poly.denote_le, -and_imp]
+  simp only [isValid, eq_iff_iff, iff_true]
+  by_cases he : eq = true <;>
+    simp only [he, cond_false, cond_true, Bool.and_eq_true, denote, Poly.denote_eq, Poly.denote_le]
   · intro ⟨h₁, h₂⟩
     simp [Poly.of_isZero, h₁, h₂]
   · intro h
     simp [Poly.of_isZero, h]
 
 theorem ExprCnstr.eq_false_of_isUnsat (ctx : Context) (c : ExprCnstr) (h : c.toNormPoly.isUnsat) : c.denote ctx = False := by
-  have := PolyCnstr.eq_false_of_isUnsat ctx h
-  simp [-eq_iff_iff] at this
-  assumption
+  simpa using PolyCnstr.eq_false_of_isUnsat ctx h
 
 theorem ExprCnstr.eq_true_of_isValid (ctx : Context) (c : ExprCnstr) (h : c.toNormPoly.isValid) : c.denote ctx = True := by
-  have := PolyCnstr.eq_true_of_isValid ctx h
-  simp [-eq_iff_iff] at this
-  assumption
+  simpa using PolyCnstr.eq_true_of_isValid ctx h
 
 theorem ExprCnstr.eq_of_toNormPoly_eq (ctx : Context) (c d : ExprCnstr) (h : c.toNormPoly == d.toPoly) : c.denote ctx = d.denote ctx := by
-  have h := congrArg (PolyCnstr.denote ctx) (eq_of_beq h)
-  simp [-eq_iff_iff] at h
-  assumption
+  simpa using congrArg (PolyCnstr.denote ctx) (eq_of_beq h)
 
 theorem Expr.eq_of_toNormPoly_eq (ctx : Context) (e e' : Expr) (h : e.toNormPoly == e'.toPoly) : e.denote ctx = e'.denote ctx := by
-  have h := congrArg (Poly.denote ctx) (eq_of_beq h)
-  simp [Expr.toNormPoly, Poly.norm] at h
-  assumption
+  simpa [Expr.toNormPoly, Poly.norm] using congrArg (Poly.denote ctx) (eq_of_beq h)
 
 end Linear
 

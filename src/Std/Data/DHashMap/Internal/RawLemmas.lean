@@ -155,6 +155,8 @@ private def queryMap : Std.DHashMap Name (fun _ => Name × Array (MacroM (TSynta
      ⟨`foldRev, (``Raw.foldRev_eq_foldr_toListModel, #[])⟩,
      ⟨`forIn, (``Raw.forIn_eq_forIn_toListModel, #[])⟩,
      ⟨`forM, (``Raw.forM_eq_forM_toListModel, #[])⟩,
+     ⟨`all, (``Raw.all_eq_all_toListModel, #[])⟩,
+     ⟨`any, (``Raw.any_eq_any_toListModel, #[])⟩,
      ⟨`Equiv, (``Raw.equiv_iff_toListModel_perm,
       #[`(_root_.List.Perm.congr_left), `(_root_.List.Perm.congr_right)])⟩]
 
@@ -1103,7 +1105,7 @@ end Const
 section monadic
 
 -- The types are redefined because fold/for does not need BEq/Hashable
-variable {α : Type u} {β : α → Type v} (m : Raw₀ α β) {δ : Type w} {m' : Type w → Type w}
+variable {α : Type u} {β : α → Type v} (m : Raw₀ α β) {δ : Type w} {m' : Type w → Type w'}
 
 theorem foldM_eq_foldlM_toList [Monad m'] [LawfulMonad m']
     {f : δ → (a : α) → β a → m' δ} {init : δ} :
@@ -1161,6 +1163,14 @@ theorem forIn_eq_forIn_keys [Monad m'] [LawfulMonad m']
     m.1.forIn (fun a _ d => f a d) init = ForIn.forIn m.1.keys init f := by
   simp_to_model [forIn, keys] using List.forIn_eq_forIn_keys
 
+theorem all_eq_all_toList {p : (a : α) → β a → Bool} :
+    m.1.all p = m.1.toList.all fun a => p a.1 a.2 := by
+  simp_to_model [all, toList]
+
+theorem any_eq_any_toList {p : (a : α) → β a → Bool} :
+    m.1.any p = m.1.toList.any fun a => p a.1 a.2 := by
+  simp_to_model [any, toList]
+
 namespace Const
 
 variable {β : Type v} (m : Raw₀ α (fun _ => β))
@@ -1193,9 +1203,27 @@ theorem forIn_eq_forIn_toList [Monad m'] [LawfulMonad m']
     m.1.forIn f init = ForIn.forIn (Raw.Const.toList m.1) init (fun a b => f a.1 a.2 b) := by
   simp_to_model [forIn, Const.toList] using List.forIn_eq_forIn_toProd
 
+theorem all_eq_all_toList {p : α → β → Bool} :
+    m.1.all p = (Raw.Const.toList m.1).all fun a => p a.1 a.2 := by
+  symm
+  simp_to_model [all, Const.toList] using List.all_map
+
+theorem any_eq_any_toList {p : α → β → Bool} :
+    m.1.any p = (Raw.Const.toList m.1).any fun a => p a.1 a.2 := by
+  symm
+  simp_to_model [any, Const.toList] using List.any_map
+
 end Const
 
 end monadic
+
+section anyAll
+
+theorem all_eq_true [LawfulBEq α] {p : (a : α) → β a → Bool} :
+    m.1.all p = true ↔ ∀ a, (h : m.contains a) → p a (m.get a h) := by
+  simp_to_model [all, toList]
+
+end anyAll
 
 section insertMany
 
@@ -3016,6 +3044,18 @@ theorem map_equiv_congr {γ : α → Type w} (m₁ m₂ : Raw₀ α β) (h : m�
 theorem filterMap_equiv_congr {γ : α → Type w} (h : m₁.1 ~m m₂.1)
     {f : (a : α) → β a → Option (γ a)} : (m₁.filterMap f).1 ~m (m₂.filterMap f).1 := by
   simp_to_model [filterMap, Equiv] using h.1.filterMap _
+
+theorem all_eq_of_equiv (h : m₁.1 ~m m₂.1) {p : (a : α) → β a → Bool} :
+    m₁.1.all p = m₂.1.all p := by
+  simp_to_model [all]
+  rw [Bool.eq_iff_iff]
+  simp only [List.all_eq_true, h.1.mem_iff]
+
+theorem any_eq_of_equiv (h : m₁.1 ~m m₂.1) {p : (a : α) → β a → Bool} :
+    m₁.1.any p = m₂.1.any p := by
+  simp_to_model [any]
+  rw [Bool.eq_iff_iff]
+  simp only [List.any_eq_true, h.1.mem_iff]
 
 namespace Const
 
