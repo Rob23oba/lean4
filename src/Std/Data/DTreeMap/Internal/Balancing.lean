@@ -730,7 +730,7 @@ theorem balance!_desc {k : α} {v : β k} {l r : Impl α β} (hlb : l.Balanced) 
     (hlr : BalanceLErasePrecond l.size r.size ∨ BalanceLErasePrecond r.size l.size) :
     (balance! k v l r).size = l.size + 1 + r.size ∧ (balance! k v l r).Balanced := by
   rw [balance!_eq_balanceₘ hlb hrb hlr]
-  induction k, v, l, r using balanceₘ.fun_cases_unfolding
+  fun_cases balanceₘ k v l r
   · rw [bin, balanced_inner_iff]
     exact ⟨rfl, hlb, hrb, Or.inl ‹_›, rfl⟩
   · simp only [size_rotateL (.left ‹_›), size_bin, size_inner]
