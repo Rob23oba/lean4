@@ -28,13 +28,11 @@ inductive Impl (α : Type u) (β : α → Type v) where
 deriving Inhabited
 
 /-- The "delta" parameter of the size-bounded tree. Controls how imbalanced the tree can be. -/
-@[inline, Std.Internal.tree_tac]
-def delta : Nat := 3
+abbrev delta : Nat := 3
 
 /-- The "ratio" parameter of the size-bounded tree. Controls how aggressive the rebalancing
 operations are. -/
-@[inline, Std.Internal.tree_tac]
-def ratio : Nat := 2
+abbrev ratio : Nat := 2
 
 variable {α : Type u} {β : α → Type v}
 
@@ -53,8 +51,8 @@ def size : Impl α β → Nat
   | inner sz _ _ _ _ => sz
   | leaf => 0
 
-@[Std.Internal.tree_tac] theorem size_leaf : (Impl.leaf : Impl α β).size = 0 := rfl
-@[Std.Internal.tree_tac] theorem size_inner {sz k v l r} : (Impl.inner sz k v l r : Impl α β).size = sz := rfl
+@[grind =] theorem size_leaf : (Impl.leaf : Impl α β).size = 0 := rfl
+@[grind =] theorem size_inner {sz k v l r} : (Impl.inner sz k v l r : Impl α β).size = sz := rfl
 
 /-!
 ## `toListModel`

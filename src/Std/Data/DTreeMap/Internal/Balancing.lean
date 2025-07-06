@@ -39,12 +39,10 @@ namespace Std.DTreeMap.Internal.Impl
 -/
 
 /-- Precondition for `balanceL`: at most one element was added to left subtree. -/
-@[Std.Internal.tree_tac]
 abbrev BalanceLPrecond (left right : Nat) :=
   BalancedAtRoot left right ∨ (1 ≤ left ∧ BalancedAtRoot (left - 1) right)
 
 /-- Precondition for `balanceLErase`. As Breitner et al. remark, "not very educational". -/
-@[Std.Internal.tree_tac]
 abbrev BalanceLErasePrecond (left right : Nat) :=
   (delta * left ≤ delta * delta * right + delta * right + right + delta ∧ right + 1 ≤ left) ∨
     BalancedAtRoot left (right + 1) ∨ BalancedAtRoot left right
@@ -54,31 +52,13 @@ section
 open Lean.Parser.Tactic
 
 /-- Internal implementation detail of the tree map -/
-scoped macro "tree_tac" : tactic => `(tactic|(
-  subst_eqs
-  repeat' split
-  all_goals
-    try simp only [Std.Internal.tree_tac] at *
-  all_goals
-    try simp only [Std.Internal.tree_tac] at *
-    repeat cases ‹_ ∧ _›
-    repeat' apply And.intro
-  all_goals
-    try assumption
-    try contradiction
-  all_goals
-    subst_eqs
-    omega
-  ))
-
-/-- Internal implementation detail of the tree map -/
-scoped macro "✓" : term => `(term| by as_aux_lemma => tree_tac)
+scoped macro "✓" : term => `(term| by grind)
 
 end
 
 theorem BalanceLPrecond.erase {left right : Nat} :
     BalanceLPrecond left right → BalanceLErasePrecond left right := by
-  tree_tac
+  grind
 
 /-!
 ### `balanceL` variants
@@ -392,24 +372,24 @@ def balance! (k : α) (v : β k) (l r : Impl α β) : Impl α β :=
 -/
 
 theorem BalancedAtRoot.erase_left {l l' r : Nat} : BalancedAtRoot l r → l - 1 ≤ l' → l' ≤ l →
-    BalanceLErasePrecond r l' := by tree_tac
+    BalanceLErasePrecond r l' := by grind
 
 theorem BalancedAtRoot.erase_right {l r r' : Nat} : BalancedAtRoot l r → r - 1 ≤ r' → r' ≤ r →
     BalanceLErasePrecond l r' :=
   fun h h₁ h₂ => h.symm.erase_left h₁ h₂
 
 theorem BalancedAtRoot.adjust_left {l l' r : Nat} : BalancedAtRoot l r → l - 1 ≤ l' → l' ≤ l + 1 →
-    BalanceLErasePrecond l' r ∨ BalanceLErasePrecond r l' := by tree_tac
+    BalanceLErasePrecond l' r ∨ BalanceLErasePrecond r l' := by grind
 
 theorem BalancedAtRoot.adjust_right {l r r' : Nat} : BalancedAtRoot l r → r - 1 ≤ r' → r' ≤ r + 1 →
     BalanceLErasePrecond l r' ∨ BalanceLErasePrecond r' l :=
   fun h h₁ h₂ => h.symm.adjust_left h₁ h₂ |>.symm
 
 theorem balanceLErasePrecond_zero_iff {n : Nat} : BalanceLErasePrecond 0 n ↔ n ≤ 1 := by
-  tree_tac
+  grind
 
 theorem balanceLErasePrecond_zero_iff' {n : Nat} : BalanceLErasePrecond n 0 ↔ n ≤ 3 := by
-  tree_tac
+  grind
 
 /-!
 The following definitions are not actually used by the tree map implementation. They are only used
@@ -421,7 +401,7 @@ in Haskell.
 -/
 
 /-- Constructor for an inner node with the correct size. -/
-@[Std.Internal.tree_tac]
+@[grind =]
 def bin (k : α) (v : β k) (l r : Impl α β) : Impl α β :=
   .inner (l.size + 1 + r.size) k v l r
 
@@ -429,7 +409,7 @@ theorem size_bin (k : α) (v : β k) (l r : Impl α β) : (bin k v l r).size = l
   rfl
 
 /-- A single left rotation. -/
-@[Std.Internal.tree_tac]
+@[grind =]
 def singleL (k : α) (v : β k) (l : Impl α β) (rk : α) (rv : β rk) (rl rr : Impl α β) : Impl α β :=
   bin rk rv (bin k v l rl) rr
 
@@ -439,7 +419,7 @@ theorem size_singleL (k : α) (v : β k) (l : Impl α β) (rk : α) (rv : β rk)
   ac_rfl
 
 /-- A single right rotation. -/
-@[Std.Internal.tree_tac]
+@[grind =]
 def singleR (k : α) (v : β k) (lk : α) (lv : β lk) (ll lr : Impl α β) (r : Impl α β) : Impl α β :=
   bin lk lv ll (bin k v lr r)
 
@@ -449,7 +429,7 @@ theorem size_singleR (k : α) (v : β k) (lk : α) (lv : β lk) (ll lr : Impl α
   ac_rfl
 
 /-- A double left rotation. -/
-@[Std.Internal.tree_tac]
+@[grind =]
 def doubleL (k : α) (v : β k) (l : Impl α β) (rk : α) (rv : β rk) (rlk : α) (rlv : β rlk)
     (rll rlr : Impl α β) (rr : Impl α β) : Impl α β :=
   bin rlk rlv (bin k v l rll) (bin rk rv rlr rr)
@@ -461,7 +441,7 @@ theorem size_doubleL (k : α) (v : β k) (l : Impl α β) (rk : α) (rv : β rk)
   ac_rfl
 
 /-- A double right rotation. -/
-@[Std.Internal.tree_tac]
+@[grind =]
 def doubleR (k : α) (v : β k) (lk : α) (lv : β lk) (ll : Impl α β) (lrk : α) (lrv : β lrk)
     (lrl lrr : Impl α β) (r : Impl α β) : Impl α β :=
   bin lrk lrv (bin lk lv ll lrl) (bin k v lrr r)
@@ -526,63 +506,33 @@ def balanceₘ (k : α) (v : β k) (l r : Impl α β) : Impl α β :=
 
 attribute [Std.Internal.tree_tac] and_true true_and and_self heq_eq_eq inner.injEq
 
-theorem balance!_eq_balanceₘ {k v} {l r : Impl α β} (hlb : l.Balanced) (hrb : r.Balanced)
+theorem balance_eq_balanceₘ {k v} {l r : Impl α β} (hlb : l.Balanced) (hrb : r.Balanced)
     (hlr : BalanceLErasePrecond l.size r.size ∨ BalanceLErasePrecond r.size l.size) :
-    balance! k v l r = balanceₘ k v l r := by
-  fun_cases balance!
+    balance k v l r hlb hrb hlr = balanceₘ k v l r := by
+  fun_cases balance
   all_goals dsimp only [balanceₘ]
   · rfl
-  · split <;> simp_all [Std.Internal.tree_tac]
-  · split <;> simp_all only [Std.Internal.tree_tac]
-    · omega
-    · rw [dif_pos (by omega)]
-      simp only [rotateL, Std.Internal.tree_tac, ite_self]
-      omega
-  · next l r =>
-    simp only  [Std.Internal.tree_tac, rotateL] at *
-    suffices h : l.size = 0 ∧ r.size = 0 by
-      simp only [h.1, h.2, reduceDIte, Nat.not_lt_zero]
-      cases l <;> cases r <;> simp_all [Std.Internal.tree_tac]
-    omega
-  · simp only [size_leaf, size_inner]
-    simp_all [Std.Internal.tree_tac]
-    rw [if_neg (by omega)]
-    rw [if_pos (by omega), rotateL, if_pos]
-    all_goals
-      simp only [Std.Internal.tree_tac] at *
-      omega
-  · simp_all [Std.Internal.tree_tac]
-  · simp_all only [Std.Internal.tree_tac]
-    rw [if_neg (by omega)]
-    next l r _ =>
-    rw [dif_neg (by omega), dif_pos (by omega), rotateR]
-    suffices h : l.size = 0 ∧ r.size = 0 by
-      simp only [h.1, h.2]
-      cases l <;> cases r <;> simp_all [Std.Internal.tree_tac]
-    omega
-  · simp_all only [rotateR, Std.Internal.tree_tac]
-    rw [if_neg (by omega), dif_neg (by omega), dif_pos (by omega), if_pos (by omega)]
-    simp only [inner.injEq, heq_eq_eq, and_true]
-    omega
-  · simp_all only [Std.Internal.tree_tac]
-    rw [if_neg (by omega)]
-    simp only [Std.Internal.tree_tac, rotateR]
-    rw [if_pos (by omega), dif_neg (by omega), dif_pos (by omega)]
-    simp only [inner.injEq, heq_eq_eq, and_self, and_true, true_and]
-    omega
-  · simp_all only [Std.Internal.tree_tac]
+  · grind only [= size_leaf, = balanced_inner_iff, Balanced.leaf, = BalancedAtRoot.eq_1,
+      = size_inner, bin, cases Or]
+  · grind (splits := 11) only [rotateL, = size_leaf, = balanced_inner_iff, Balanced.leaf,
+      = BalancedAtRoot.eq_1, = size_inner, bin, singleL, cases Or]
+  · grind (splits := 12) [rotateL, cases Impl]
+  · grind (splits := 18) [rotateL]
+  · grind
+  · grind (splits := 12) [cases Impl, rotateR]
+  · grind (splits := 11) [rotateR]
+  · grind (splits := 18) [rotateR]
+  · simp_all only [size_inner, dite_true]
     rw [if_neg]
-    · repeat simp_all only [rotateL, dite_true, Std.Internal.tree_tac, if_true]
-      omega
-    · simp only [Nat.not_le] at *
-      omega
+    · grind (splits := 19) [rotateL]
+    · grind
   · rw [rotateL]
-    repeat simp_all only [Std.Internal.tree_tac, dite_true, Nat.not_lt]
-    rw [if_neg (by omega), if_neg (by omega)]
-    simp only [Std.Internal.tree_tac, Nat.add_right_cancel_iff] at *
-    omega
+    simp_all only [size_inner, dite_true, if_false]
+    rw [if_neg (by grind)]
+    simp [doubleL, bin]
+    grind
   · exfalso
-    simp only [balanced_inner_iff, size_inner, size_leaf, balancedAtRoot_zero_iff'] at hrb
+    simp_all only [balanced_inner_iff, size_inner]
     simp only [delta] at ‹delta * _ < _›
     have := hlb.one_le
     omega
