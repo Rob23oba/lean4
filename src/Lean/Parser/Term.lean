@@ -682,7 +682,7 @@ x + y
 The *anaphoric let* `let := v` defines a variable called `this`.
 -/
 @[builtin_term_parser] def «let» := leading_parser:leadPrec
-  withPosition ("let" >> letConfig >> letDecl) >> optSemicolon termParser
+  withPosition ("let" >> letConfig >> ppSpace >> letDecl) >> optSemicolon termParser
 /--
 `have` is used to declare local hypotheses and opaque local definitions.
 
@@ -690,7 +690,7 @@ It has the same syntax as `let`, and it is equivalent to `let +nondep`,
 creating a *nondependent* let expression.
 -/
 @[builtin_term_parser] def «have» := leading_parser:leadPrec
-  withPosition ("have" >> letConfig >> letDecl) >> optSemicolon termParser
+  withPosition ("have" >> letConfig >> ppSpace >> letDecl) >> optSemicolon termParser
 /--
 `let_fun x := v; b` is deprecated syntax sugar for `have x := v; b`.
 -/
@@ -709,10 +709,10 @@ It is often used when building macros.
   withPosition ("let_tmp " >> letDecl) >> optSemicolon termParser
 /-- `haveI` behaves like `have`, but inlines the value instead of producing a `have` term. -/
 @[builtin_term_parser] def «haveI» := leading_parser
-  withPosition ("haveI " >> letConfig >> letDecl) >> optSemicolon termParser
+  withPosition ("haveI" >> letConfig >> ppSpace >> letDecl) >> optSemicolon termParser
 /-- `letI` behaves like `let`, but inlines the value instead of producing a `let` term. -/
 @[builtin_term_parser] def «letI» := leading_parser
-  withPosition ("letI " >> letConfig >> letDecl) >> optSemicolon termParser
+  withPosition ("letI" >> letConfig >> ppSpace >> letDecl) >> optSemicolon termParser
 
 def «scoped» := leading_parser "scoped "
 def «local»  := leading_parser "local "

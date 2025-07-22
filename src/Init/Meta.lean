@@ -1627,24 +1627,24 @@ macro (name := declareSimpLikeTactic) doc?:(docComment)?
 /-- `simp!` is shorthand for `simp` with `autoUnfold := true`.
 This will rewrite with all equation lemmas, which can be used to
 partially evaluate many definitions. -/
-declare_simp_like_tactic simpAutoUnfold "simp! " (autoUnfold := true)
+declare_simp_like_tactic simpAutoUnfold "simp!" (autoUnfold := true)
 
 /--
 `simp_arith` has been deprecated. It was a shorthand for `simp +arith +decide`.
 Note that `+decide` is not needed for reducing arithmetic terms since simprocs have been added to Lean.
 -/
-syntax (name := simpArith) "simp_arith " optConfig (discharger)? (&" only")? (" [" (simpStar <|> simpErase <|> simpLemma),* "]")? (location)? : tactic
+syntax (name := simpArith) "simp_arith" optConfig (discharger)? (&" only")? (" [" (simpStar <|> simpErase <|> simpLemma),* "]")? (location)? : tactic
 
 /--
 `simp_arith!` has been deprecated. It was a shorthand for `simp! +arith +decide`.
 Note that `+decide` is not needed for reducing arithmetic terms since simprocs have been added to Lean.
 -/
-syntax (name := simpArithBang) "simp_arith! " optConfig (discharger)? (&" only")? (" [" (simpStar <|> simpErase <|> simpLemma),* "]")? (location)? : tactic
+syntax (name := simpArithBang) "simp_arith!" optConfig (discharger)? (&" only")? (" [" (simpStar <|> simpErase <|> simpLemma),* "]")? (location)? : tactic
 
 /-- `simp_all!` is shorthand for `simp_all` with `autoUnfold := true`.
 This will rewrite with all equation lemmas, which can be used to
 partially evaluate many definitions. -/
-declare_simp_like_tactic (all := true) simpAllAutoUnfold "simp_all! " (autoUnfold := true)
+declare_simp_like_tactic (all := true) simpAllAutoUnfold "simp_all!" (autoUnfold := true)
 
 /--
 `simp_all_arith` has been deprecated. It was a shorthand for `simp_all +arith +decide`.
@@ -1662,7 +1662,7 @@ syntax (name := simpAllArithBang) "simp_all_arith!" optConfig (discharger)? (&" 
 /-- `dsimp!` is shorthand for `dsimp` with `autoUnfold := true`.
 This will rewrite with all equation lemmas, which can be used to
 partially evaluate many definitions. -/
-declare_simp_like_tactic (dsimp := true) dsimpAutoUnfold "dsimp! " (autoUnfold := true)
+declare_simp_like_tactic (dsimp := true) dsimpAutoUnfold "dsimp!" (autoUnfold := true)
 
 end Tactic
 

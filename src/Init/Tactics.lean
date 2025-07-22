@@ -827,7 +827,7 @@ The `have` tactic is for adding hypotheses to the local context of the main goal
   For example, given `h : p ∧ q ∧ r`, `have ⟨h₁, h₂, h₃⟩ := h` produces the
   hypotheses `h₁ : p`, `h₂ : q`, and `h₃ : r`.
 -/
-syntax "have " letConfig letDecl : tactic
+syntax "have" letConfig ppSpace letDecl : tactic
 macro_rules
   -- special case: when given a nested `by` block, move it outside of the `refine` to enable
   -- incrementality
@@ -879,7 +879,7 @@ The `let` tactic is for adding definitions to the local context of the main goal
   For example, given `p : α × β × γ`, `let ⟨x, y, z⟩ := p` produces the
   local variables `x : α`, `y : β`, and `z : γ`.
 -/
-macro "let " c:letConfig d:letDecl : tactic => `(tactic| refine_lift let $c:letConfig $d:letDecl; ?_)
+macro "let" c:letConfig ppSpace d:letDecl : tactic => `(tactic| refine_lift let $c:letConfig $d:letDecl; ?_)
 
 /-- `let rec f : t := e` adds a recursive definition `f` to the current goal.
 The syntax is the same as term-mode `let rec`. -/
@@ -895,7 +895,7 @@ set_option linter.missingDocs false in -- OK, because `tactic_alt` causes inheri
 macro (priority := high) "have'" x:ident " := " p:term : tactic => `(tactic| have' $x:ident : _ := $p)
 attribute [tactic_alt tacticHave'] «tacticHave'_:=_»
 /-- Similar to `let`, but using `refine'` -/
-macro "let' " c:letConfig d:letDecl : tactic => `(tactic| refine_lift' let $c:letConfig $d:letDecl; ?_)
+macro "let'" c:letConfig ppSpace d:letDecl : tactic => `(tactic| refine_lift' let $c:letConfig $d:letDecl; ?_)
 
 /--
 The left hand side of an induction arm, `| foo a b c` or `| @foo a b c`
@@ -1282,10 +1282,10 @@ syntax (name := substEqs) "subst_eqs" : tactic
 syntax (name := runTac) "run_tac " doSeq : tactic
 
 /-- `haveI` behaves like `have`, but inlines the value instead of producing a `have` term. -/
-macro "haveI" c:letConfig d:letDecl : tactic => `(tactic| refine_lift haveI $c:letConfig $d:letDecl; ?_)
+macro "haveI" c:letConfig ppSpace d:letDecl : tactic => `(tactic| refine_lift haveI $c:letConfig $d:letDecl; ?_)
 
 /-- `letI` behaves like `let`, but inlines the value instead of producing a `let` term. -/
-macro "letI" c:letConfig d:letDecl : tactic => `(tactic| refine_lift letI $c:letConfig $d:letDecl; ?_)
+macro "letI" c:letConfig ppSpace d:letDecl : tactic => `(tactic| refine_lift letI $c:letConfig $d:letDecl; ?_)
 
 /--
 Configuration for the `decide` tactic family.
