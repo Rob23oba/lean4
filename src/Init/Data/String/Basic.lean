@@ -352,8 +352,13 @@ def next' (s : @& String) (p : @& Pos) (h : ¬ s.atEnd p) : Pos :=
   let c := get s p
   p + c
 
+@[simp]
 theorem _root_.Char.utf8Size_pos (c : Char) : 0 < c.utf8Size := by
   repeat first | apply iteInduction (motive := (0 < ·)) <;> intros | decide
+
+@[simp]
+theorem Char.utf8Size_ne_zero (c : Char) : c.utf8Size ≠ 0 :=
+  Nat.ne_of_gt c.utf8Size_pos
 
 theorem _root_.Char.utf8Size_le_four (c : Char) : c.utf8Size ≤ 4 := by
   repeat first | apply iteInduction (motive := (· ≤ 4)) <;> intros | decide
@@ -361,6 +366,7 @@ theorem _root_.Char.utf8Size_le_four (c : Char) : c.utf8Size ≤ 4 := by
 @[deprecated Char.utf8Size_pos (since := "2026-06-04")] abbrev one_le_csize := Char.utf8Size_pos
 
 @[simp] theorem pos_lt_eq (p₁ p₂ : Pos) : (p₁ < p₂) = (p₁.1 < p₂.1) := rfl
+@[simp] theorem pos_le_eq (p₁ p₂ : Pos) : (p₁ ≤ p₂) = (p₁.1 ≤ p₂.1) := rfl
 
 @[simp] theorem pos_add_char (p : Pos) (c : Char) : (p + c).byteIdx = p.byteIdx + c.utf8Size := rfl
 
@@ -1943,6 +1949,50 @@ Examples:
 def stripSuffix (s : String) (suff : String) : String :=
   s.dropSuffix? suff |>.map Substring.toString |>.getD s
 
+@[expose]
+def nthPosAux (cs : List Char) (i : Nat) : String.Pos :=
+  match i, cs with
+  | 0, _ => 0
+  | k + 1, [] => ⟨k + 1⟩
+  | k + 1, c :: cs => nthPosAux cs k + c
+termination_by structural i
+
+/--
+Returns the `n`th position in the string `s`.
+
+This function takes `O(n)` to run and is mostly meant to be used in proofs. Prefer `String.next`
+when possible.
+
+Examples:
+ * `"L∃∀N".nthPos 0 = ⟨0⟩`
+ * `"L∃∀N".nthPos 4 = test.endPos`
+ * `"L∃∀N".get ("L∃∀N".nthPos 2) = '∀'`
+-/
+@[expose]
+def nthPos (s : String) (n : Nat) : String.Pos :=
+  nthPosAux s.data n
+
+@[expose]
+def posToIdxAux? (cs : List Char) (i p : Pos) : Option Nat :=
+  match cs with
+  | [] => none
+  | c :: cs => if i = p then some 0 else (posToIdxAux? cs (i + c) p).map (· + 1)
+
+/--
+If `p` points to a character in `s`, returns the index of that character. Otherwise returns `none`.
+
+This function takes `O(p.byteIdx)` to run and is mostly meant to be used in proofs.
+
+Examples:
+ * `"test".posToIdx? 0 = 0`
+ * `"test".posToIdx? 3 = 3`
+ * `"test".posToIdx? 4 = none`
+ * `"L∃∀N".posToIdx? 2 = none`
+-/
+@[expose]
+def posToIdx? (s : String) (p : String.Pos) : Option Nat :=
+  posToIdxAux? s.data 0 p
+
 end String
 
 namespace Char
@@ -2070,9 +2120,9 @@ theorem lt_next' (s : String) (p : Pos) : p < next s p := lt_next ..
   cases s with | mk cs
   cases cs
   next => rfl
-  next => simp [prev, utf8PrevAux, Pos.le_iff]
+  next => simp [prev, utf8PrevAux]
 
-@[simp] theorem get'_eq (s : String) (p : Pos) (h) : get' s p h = get s p := rfl
+theorem get'_eq (s : String) (p : Pos) (h) : get' s p h = get s p := rfl
 
 @[simp] theorem next'_eq (s : String) (p : Pos) (h) : next' s p h = next s p := rfl
 

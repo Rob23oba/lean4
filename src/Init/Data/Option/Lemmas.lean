@@ -788,6 +788,14 @@ theorem get_merge {o o' : Option α} {f : α → α → α} {i : α} [Std.Lawful
 
 @[simp, grind] theorem elim_some (x : β) (f : α → β) (a : α) : (some a).elim x f = f a := rfl
 
+theorem apply_elim (f : β → γ) (o : Option α) (x : β) (g : α → β) :
+    f (o.elim x g) = o.elim (f x) (fun x => f (g x)) := by
+  cases o <;> rfl
+
+@[simp, grind] theorem elim_map {o : Option α} {b : β} :
+    Option.elim (Option.map f o) b g = Option.elim o b (fun x => g (f x)) := by
+  cases o <;> rfl
+
 @[grind =] theorem elim_filter {o : Option α} {b : β} :
     Option.elim (Option.filter p o) b f = Option.elim o b (fun a => if p a then f a else b) :=
   match o with
