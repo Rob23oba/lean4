@@ -119,12 +119,20 @@ partial def instantiatePatternMVars : Pattern → MetaM Pattern
   | Pattern.ctor n us ps fields => return Pattern.ctor n us (← ps.mapM instantiateMVars) (← fields.mapM instantiatePatternMVars)
   | Pattern.as x p h            => return Pattern.as x (← instantiatePatternMVars p) h
   | Pattern.arrayLit t xs       => return Pattern.arrayLit (← instantiateMVars t) (← xs.mapM instantiatePatternMVars)
-  | p                   => return p
+  | p                           => return p
 
 structure AltLHS where
+  /-- `Syntax` object for position information. -/
   ref        : Syntax
-  fvarDecls  : List LocalDecl -- Free variables used in the patterns.
-  patterns   : List Pattern   -- We use `List Pattern` since we have nary match-expressions.
+  /-- `LocalDecl`s containing the free variables used in the patterns. -/
+  fvarDecls  : List LocalDecl
+  /-- Normalized patterns per discriminant. -/
+  patterns   : List Pattern
+  /--
+  Unnormalized pattern expressions per discriminant as provided by the user.
+  These should be definitionally equivalent to `patterns.map (·.toExpr)`.
+  -/
+  exprs      : List Expr
 
 def AltLHS.collectFVars (altLHS: AltLHS) : StateRefT CollectFVars.State MetaM Unit := do
   altLHS.fvarDecls.forM fun fvarDecl => fvarDecl.collectFVars
@@ -133,7 +141,8 @@ def AltLHS.collectFVars (altLHS: AltLHS) : StateRefT CollectFVars.State MetaM Un
 def instantiateAltLHSMVars (altLHS : AltLHS) : MetaM AltLHS :=
   return { altLHS with
     fvarDecls := (← altLHS.fvarDecls.mapM instantiateLocalDeclMVars),
-    patterns  := (← altLHS.patterns.mapM instantiatePatternMVars)
+    patterns  := (← altLHS.patterns.mapM instantiatePatternMVars),
+    exprs     := (← altLHS.exprs.mapM instantiateMVars)
   }
 
 /-- `Match` alternative -/
