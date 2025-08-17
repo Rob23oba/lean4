@@ -1047,6 +1047,14 @@ private def updateTokenCache (startPos : String.Pos) (s : ParserState) : ParserS
       ⟨stack, lhsPrec, pos, ⟨{ startPos := startPos, stopPos := pos, token := tk }, catCache⟩, none, errs⟩
   | other => other
 
+/--
+Parses a single token with trailing whitespace and pushes it onto the syntax stack.
+
+If there is no valid token at this position, `.missing` is pushed instead and an error message is
+produced. However, this function might still produce an error without pushing `.missing` if the
+whitespace parser failed. In these cases, the error should be overridden by "unexpected token"
+errors.
+-/
 def tokenFn (expected : List String := []) : ParserFn := fun c s =>
   let input := c.input
   let i     := s.pos
@@ -1064,10 +1072,8 @@ def peekTokenAux (c : ParserContext) (s : ParserState) : ParserState × Except P
   let iniSz  := s.stackSize
   let iniPos := s.pos
   let s      := tokenFn [] c s
-  if let some _ := s.errorMsg then (s.restore iniSz iniPos, .error s)
-  else
-    let stx := s.stxStack.back
-    (s.restore iniSz iniPos, .ok stx)
+  let stx := s.stxStack.back
+  (s.restore iniSz iniPos, if stx.isMissing then .error s else .ok stx)
 
 def peekToken (c : ParserContext) (s : ParserState) : ParserState × Except ParserState Syntax :=
   let tkc := s.cache.tokenCache
@@ -1086,11 +1092,12 @@ def rawIdentFn : ParserFn := fun c s =>
 def satisfySymbolFn (p : String → Bool) (expected : List String) : ParserFn := fun c s => Id.run do
   let iniPos := s.pos
   let s := tokenFn expected c s
-  if s.hasError then
-    return s
-  if let .atom _ sym := s.stxStack.back then
+  match s.stxStack.back with
+  | .missing => return s
+  | .atom _ sym =>
     if p sym then
       return s
+  | _ => ()
   -- this is a very hot `mkUnexpectedTokenErrors` call, so explicitly pass `iniPos`
   s.mkUnexpectedTokenErrors expected iniPos
 
@@ -1124,9 +1131,8 @@ def checkTailNoWs (prev : Syntax) : Bool :=
     as a token in a Term Syntax would not break the universe Parser). -/
 def nonReservedSymbolFnAux (sym : String) (errorMsg : String) : ParserFn := fun c s => Id.run do
   let s := tokenFn [errorMsg] c s
-  if s.hasError then
-    return s
   match s.stxStack.back with
+  | .missing => return s
   | .atom _ sym' =>
     if sym == sym' then
       return s
@@ -1244,7 +1250,8 @@ def mkAtomicInfo (k : String) : ParserInfo :=
   `desc` is used in error messages as the token kind. -/
 def expectTokenFn (k : SyntaxNodeKind) (desc : String) : ParserFn := fun c s =>
   let s := tokenFn [desc] c s
-  if !s.hasError && !(s.stxStack.back.isOfKind k) then s.mkUnexpectedTokenError desc else s
+  let stx := s.stxStack.back
+  if !stx.isMissing && !(stx.isOfKind k) then s.mkUnexpectedTokenError desc else s
 
 def numLitFn : ParserFn := expectTokenFn numLitKind "numeral"
 
@@ -1294,11 +1301,10 @@ def rawIdentNoAntiquot : Parser := {
 
 def identEqFn (id : Name) : ParserFn := fun c s =>
   let s      := tokenFn ["identifier"] c s
-  if s.hasError then
-    s
-  else match s.stxStack.back with
-    | .ident _ _ val _ => if val != id then s.mkUnexpectedTokenError s!"identifier '{id}'" else s
-    | _ => s.mkUnexpectedTokenError "identifier"
+  match s.stxStack.back with
+  | .missing => s
+  | .ident _ _ val _ => if val != id then s.mkUnexpectedTokenError s!"identifier '{id}'" else s
+  | _ => s.mkUnexpectedTokenError "identifier"
 
 def identEq (id : Name) : Parser := {
   fn   := identEqFn id
@@ -1891,7 +1897,7 @@ def leadingParserAux (kind : Name) (tables : PrattParsingTables) (behavior : Lea
   if ps.isEmpty then
     -- if there are no applicable parsers, consume the leading token and flag it as unexpected at this position
     let s := tokenFn [toString kind] c s
-    if s.hasError then
+    if s.stxStack.back.isMissing then
       return s
     return s.mkUnexpectedTokenError (toString kind)
   let s := longestMatchFn none ps c s
