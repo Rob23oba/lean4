@@ -2535,7 +2535,7 @@ theorem pairwise_fst_eq_false_map_toProd [BEq α] {β : Type v}
   assumption
 
 theorem foldlM_eq_foldlM_toProd {β : Type v} {δ : Type w} {m' : Type w → Type w'} [Monad m']
-    [LawfulMonad m'] {l : List ((_ : α) × β)} {f : δ → (a : α) → β → m' δ} {init : δ} :
+    {l : List ((_ : α) × β)} {f : δ → (a : α) → β → m' δ} {init : δ} :
     l.foldlM (fun a b => f a b.fst b.snd) init =
       (l.map fun x => (x.1, x.2)).foldlM (fun a b => f a b.fst b.snd) init := by
   simp [List.foldlM_map]
@@ -2547,13 +2547,13 @@ theorem foldl_eq_foldl_toProd {β : Type v} {δ : Type w}
   simp [List.foldl_map]
 
 theorem foldrM_eq_foldrM_toProd {β : Type v} {δ : Type w} {m' : Type w → Type w'} [Monad m']
-    [LawfulMonad m'] {l : List ((_ : α) × β)} {f : (a : α) → β → δ → m' δ} {init : δ} :
+    {l : List ((_ : α) × β)} {f : (a : α) → β → δ → m' δ} {init : δ} :
     l.foldrM (fun a b => f a.1 a.2 b) init =
       (l.map fun x => (x.1, x.2)).foldrM (fun a b => f a.1 a.2 b) init := by
   simp [List.foldrM_map]
 
 theorem foldrM_eq_foldrM_toProd' {β : Type v} {δ : Type w} {m' : Type w → Type w'} [Monad m']
-    [LawfulMonad m'] {l : List ((_ : α) × β)} {f : δ → (a : α) → β → m' δ} {init : δ} :
+    {l : List ((_ : α) × β)} {f : δ → (a : α) → β → m' δ} {init : δ} :
     l.foldrM (fun a b => f b a.1 a.2) init =
       (l.map fun x => (x.1, x.2)).foldrM (fun a b => f b a.1 a.2) init := by
   simp [List.foldrM_map]
@@ -2620,6 +2620,40 @@ theorem forIn_eq_forIn_keys {δ : Type w} {m' : Type w → Type w'} [Monad m'] [
     {f : α → δ → m' (ForInStep δ)} {init : δ} {l : List ((a : α) × β a)} :
     ForIn.forIn l init (fun a d => f a.fst d) = ForIn.forIn (keys l) init f := by
   simp [keys_eq_map, List.forIn_map]
+
+/-- Used to define `fold` for `ExtDHashMap` and variants -/
+theorem foldl_eq_of_perm {δ : Type w} {l₁ l₂ : List ((a : α) × β a)}
+    {f : δ → (a : α) → β a → δ} {init : δ}
+    (h : l₁.Perm l₂) (h' : ∀ x k₁ v₁ k₂ v₂, f (f x k₁ v₁) k₂ v₂ = f (f x k₂ v₂) k₁ v₁) :
+    l₁.foldl (fun a b => f a b.1 b.2) init = l₂.foldl (fun a b => f a b.1 b.2) init := by
+  induction h generalizing init with
+  | nil => rfl
+  | @cons k l₁ l₂ h ih => simp [ih]
+  | swap a b l => simp [h']
+  | trans h h' ih ih' => simp [ih, ih']
+
+/-- Used to define `foldM` for `ExtDHashMap` and variants -/
+theorem foldlM_eq_of_perm {δ : Type w} {m : Type w → Type w'} [Monad m] [LawfulMonad m]
+    {l₁ l₂ : List ((a : α) × β a)} {f : δ → (a : α) → β a → m δ} {init : δ}
+    (h : l₁.Perm l₂) (h' : ∀ x k₁ v₁ k₂ v₂, f x k₁ v₁ >>= (f · k₂ v₂) = f x k₂ v₂ >>= (f · k₁ v₁)) :
+    l₁.foldlM (fun a b => f a b.1 b.2) init = l₂.foldlM (fun a b => f a b.1 b.2) init := by
+  induction h generalizing init with
+  | nil => rfl
+  | @cons k l₁ l₂ h ih => simp [ih]
+  | swap a b l => simp only [List.foldlM_cons, ← bind_assoc, h']
+  | trans h h' ih ih' => simp [ih, ih']
+
+theorem foldl_insertEntry [BEq α] {δ : Type w} {l : List ((a : α) × β a)}
+    {f : δ → (a : α) → β a → δ} {init : δ} {k : α} {v : β k}
+    (h : containsKey k l = false)
+    (h' : ∀ x k₁ v₁ k₂ v₂, f (f x k₁ v₁) k₂ v₂ = f (f x k₂ v₂) k₁ v₁) :
+    (insertEntry k v l).foldl (fun a b => f a b.1 b.2) init =
+      l.foldl (fun a b => f a b.1 b.2) (f init k v) := by
+  induction l using assoc_induction with
+  | nil => rfl
+  | cons k v l ih => simp [insertEntry, h]
+
+#exit
 
 /-- Internal implementation detail of the hash map -/
 def insertList [BEq α] (l toInsert : List ((a : α) × β a)) : List ((a : α) × β a) :=

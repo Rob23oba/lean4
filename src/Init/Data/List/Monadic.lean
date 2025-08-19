@@ -205,9 +205,9 @@ theorem foldlM_map [Monad m] {f : β₁ → β₂} {g : α → β₂ → m α} {
     (l.map f).foldlM g init = l.foldlM (fun x y => g x (f y)) init := by
   induction l generalizing g init <;> simp [*]
 
-theorem foldrM_map [Monad m] [LawfulMonad m] {f : β₁ → β₂} {g : β₂ → α → m α} {l : List β₁} {init : α} :
+theorem foldrM_map [Monad m] {f : β₁ → β₂} {g : β₂ → α → m α} {l : List β₁} {init : α} :
     (l.map f).foldrM g init = l.foldrM (fun x y => g (f x) y) init := by
-  induction l generalizing g init <;> simp [*]
+  rw [← List.foldlM_reverse, ← map_reverse, foldlM_map, List.foldlM_reverse]
 
 theorem foldlM_filterMap [Monad m] [LawfulMonad m] {f : α → Option β} {g : γ → β → m γ} {l : List α} {init : γ} :
     (l.filterMap f).foldlM g init =
@@ -267,7 +267,7 @@ theorem foldrM_filter [Monad m] [LawfulMonad m] {p : α → Bool} {g : α → β
     forM (l₁ ++ l₂) f = (do forM l₁ f; forM l₂ f) := by
   induction l₁ <;> simp [*]
 
-@[simp, grind =] theorem forM_map [Monad m] [LawfulMonad m] {l : List α} {g : α → β} {f : β → m PUnit} :
+@[simp, grind =] theorem forM_map [Monad m] {l : List α} {g : α → β} {f : β → m PUnit} :
     forM (l.map g) f = forM l (fun a => f (g a)) := by
   induction l <;> simp [*]
 
@@ -455,7 +455,7 @@ theorem forIn_yield_eq_foldl
       l.foldl (fun b a => f a b) init :=
   forIn_pure_yield_eq_foldl _ _
 
-@[simp, grind =] theorem forIn_map [Monad m] [LawfulMonad m]
+@[simp, grind =] theorem forIn_map [Monad m]
     {l : List α} {g : α → β} {f : β → γ → m (ForInStep γ)} :
     forIn (l.map g) init f = forIn l init fun a y => f (g a) y := by
   induction l generalizing init <;> simp_all
