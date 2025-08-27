@@ -567,35 +567,170 @@ def modifyOp (xs : Array α) (idx : Nat) (f : α → α) : Array α :=
   xs.modify idx f
 
 /--
-  We claim this unsafe implementation is correct because an array cannot have more than `usizeSz` elements in our runtime.
-
-  This kind of low level trick can be removed with a little bit of compiler support. For example, if the compiler simplifies `as.size < usizeSz` to true. -/
-@[inline] unsafe def forIn'Unsafe {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (as : Array α) (b : β) (f : (a : α) → a ∈ as → β → m (ForInStep β)) : m β :=
-  let sz := as.usize
-  let rec @[specialize] loop (i : USize) (b : β) : m β := do
-    if i < sz then
-      let a := as.uget i lcProof
-      match (← f a lcProof b) with
-      | ForInStep.done  b => pure b
-      | ForInStep.yield b => loop (i+1) b
+We claim this unsafe implementation is correct because an array cannot have more than `usizeSz`
+elements in our runtime. This kind of low level trick can be removed with a little bit of compiler
+support. For example, if the compiler simplifies `as.size < usizeSz` to true.
+-/
+@[inline]
+unsafe def cfoldlIdxUnsafe {α : Type u} {β : Sort v} (as : Array α)
+    (f : (i : Nat) → (hi : i < as.size) → (a : α) → (ha : a = as[i]) → (cont : β) → β)
+    (done : β) (start : Nat := 0) (stop : Nat := as.size) : β :=
+  let rec @[specialize] fold (i : USize) (stop : USize) : β :=
+    if i == stop then
+      done
     else
-      pure b
-  loop 0 b
+      f i.toNat lcProof (as.uget i lcProof) rfl (fold (i+1) stop)
+  -- TODO: get the compiler to optimize these away when `start` and `stop` are default values
+  if start ≤ stop then
+    if stop ≤ as.size then
+      fold (USize.ofNat start) (USize.ofNat stop)
+    else
+      done
+  else
+    done
 
-/-- Reference implementation for `forIn'` -/
-@[implemented_by Array.forIn'Unsafe, expose]
-protected def forIn' {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (as : Array α) (b : β) (f : (a : α) → a ∈ as → β → m (ForInStep β)) : m β :=
-  let rec loop (i : Nat) (h : i ≤ as.size) (b : β) : m β := do
-    match i, h with
-    | 0,   _ => pure b
-    | i+1, h =>
-      have h' : i < as.size            := Nat.lt_of_lt_of_le (Nat.lt_succ_self i) h
-      have : as.size - 1 < as.size     := Nat.sub_lt (Nat.zero_lt_of_lt h') (by decide)
-      have : as.size - 1 - i < as.size := Nat.lt_of_le_of_lt (Nat.sub_le (as.size - 1) i) this
-      match (← f as[as.size - 1 - i] (getElem_mem this) b) with
-      | ForInStep.done b  => pure b
-      | ForInStep.yield b => loop i (Nat.le_of_lt h') b
-  loop as.size (Nat.le_refl _) b
+/--
+Left to right continuation fold with index. See `cfoldl` for more information.
+-/
+@[implemented_by cfoldlIdxUnsafe, expose]
+def cfoldlIdx {α : Type u} {β : Sort v} (as : Array α)
+    (f : (i : Nat) → (hi : i < as.size) → (a : α) → (ha : a = as[i]) → (cont : β) → β)
+    (done : β) (start : Nat := 0) (stop : Nat := as.size) : β :=
+  let fold (stop : Nat) (h : stop ≤ as.size) :=
+    let rec loop (i : Nat) (j : Nat) : β :=
+      if hlt : j < stop then
+        match i with
+        | 0    => done
+        | i'+1 =>
+          have : j < as.size := Nat.lt_of_lt_of_le hlt h
+          f j this as[j] rfl (loop i' (j + 1))
+      else
+        done
+    loop (stop - start) start
+  if h : stop ≤ as.size then
+    fold stop h
+  else
+    fold as.size (Nat.le_refl _)
+
+/-- See comment at `cfoldlIdxUnsafe` -/
+@[inline]
+unsafe def cfoldrIdxUnsafe {α : Type u} {β : Sort v} (as : Array α)
+    (f : (i : Nat) → (hi : i < as.size) → (a : α) → (ha : a = as[i]) → (cont : β) → β)
+    (done : β) (start : Nat := as.size) (stop : Nat := 0) : β :=
+  let rec @[specialize] fold (i : USize) (stop : USize) : β :=
+    if i == stop then
+      done
+    else
+      f (i - 1).toNat lcProof (as.uget (i - 1) lcProof) rfl (fold (i-1) stop)
+  -- TODO: get the compiler to optimize these away when `start` and `stop` are default values
+  if start ≤ as.size then
+    if stop < start then
+      fold (USize.ofNat start) (USize.ofNat stop)
+    else
+      done
+  else if stop < as.size then
+    fold (USize.ofNat as.size) (USize.ofNat stop)
+  else
+    done
+
+/--
+Right to left continuation fold with index. See `cfoldr` for more information.
+-/
+@[implemented_by cfoldrIdxUnsafe, expose]
+def cfoldrIdx {α : Type u} {β : Sort v} (as : Array α)
+    (f : (i : Nat) → (hi : i < as.size) → (a : α) → (ha : a = as[i]) → (cont : β) → β)
+    (done : β) (start : Nat := as.size) (stop : Nat := 0) : β :=
+  let rec fold (i : Nat) (h : i ≤ as.size) : β :=
+    if i == stop then
+      done
+    else match i, h with
+      | 0, _   => done
+      | i+1, h =>
+        have : i < as.size := Nat.lt_of_lt_of_le (Nat.lt_succ_self _) h
+        f i this as[i] rfl (fold i (Nat.le_of_lt this))
+  if h : start ≤ as.size then
+    if stop < start then
+      fold start h
+    else
+      done
+  else if stop < as.size then
+    fold as.size (Nat.le_refl _)
+  else
+    done
+
+/--
+Recursively iterates over the array `as` from left to right.
+
+Instead of accumulating values from left to right like the usual fold function, the callback `f`
+receives a "continuation" which corresponds to the result of the fold on the remaining arguments.
+That is:
+```
+#[].cfoldl f done = done
+#[a, b...].cfoldl f done = f a (#[b...].cfoldl f done)
+```
+In this sense it works similarly to structural recursion on `List` and in the same way, this
+function is only tail-recursive if `f` is tail-recursive.
+
+Such a continuation fold can be used to implement more complex iteration patterns than `foldl`
+allows, in particular, it is possible to short-circuit iteration, as seen in this example:
+```
+/-- Sums up all values until the first zero -/
+def sumUntil (as : Array Nat) : Nat :=
+  as.cfoldl (acc := 0)
+    (fun n cont acc => if n = 0 then acc else cont (acc + n))
+    (fun acc => acc)
+```
+Additionally, it can be used to fold within a `ReaderT` with the ability to change the context:
+```
+def withSumAdded {m α} (as : Array Nat) (k : ReaderT Nat m α) : ReaderT Nat m α :=
+  as.cfoldl (fun n cont => withReader (· + n) cont) k
+```
+-/
+@[macro_inline, expose]
+def cfoldl {α : Type u} {β : Sort v} (as : Array α)
+    (f : α → β → β) (done : β) (start : Nat := 0) (stop : Nat := as.size) : β :=
+  cfoldlIdx as (fun _ _ a _ => f a) done start stop
+
+/--
+Recursively iterates over the array `as` from right to left.
+
+Instead of accumulating values from right to left like the usual fold function, the callback `f`
+receives a "continuation" which corresponds to the result of the fold on the remaining arguments.
+That is:
+```
+#[].cfoldr f done = done
+#[a..., b].cfoldr f done = f b (#[a...].cfoldr f done)
+```
+In this sense it works similarly to structural recursion on a reversed `List` and in the same way,
+this function is only tail-recursive if `f` is tail-recursive.
+
+Such a continuation fold can be used to implement more complex iteration patterns than `foldr`
+allows, in particular, it is possible to short-circuit iteration, as seen in this example:
+```
+/-- Sums up all values from right to left until the first zero -/
+def sumUntil (as : Array Nat) : Nat :=
+  as.cfoldr (acc := 0)
+    (fun n cont acc => if n = 0 then acc else cont (acc + n))
+    (fun acc => acc)
+```
+Additionally, it can be used to fold within a `ReaderT` with the ability to change the context:
+```
+def withSumAdded {m α} (as : Array Nat) (k : ReaderT Nat m α) : ReaderT Nat m α :=
+  as.cfoldr (fun n cont => withReader (· + n) cont) k
+```
+-/
+@[macro_inline, expose]
+def cfoldr {α : Type u} {β : Sort v} (as : Array α)
+    (f : α → β → β) (done : β) (start : Nat := 0) (stop : Nat := as.size) : β :=
+  cfoldrIdx as (fun _ _ a _ => f a) done start stop
+
+@[inline, expose]
+protected def forIn' {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (as : Array α) (b : β)
+    (f : (a : α) → a ∈ as → β → m (ForInStep β)) : m β :=
+  (cfoldlIdx as (fun _ hi a ha cont acc => do
+    match (← f a (ha ▸ Array.getElem_mem hi) acc) with
+    | .done res => pure res
+    | .yield res => cont res) pure) b
 
 instance : ForIn' m (Array α) α inferInstance where
   forIn' := Array.forIn'
@@ -605,24 +740,8 @@ instance : ForIn' m (Array α) α inferInstance where
 -- We simplify `Array.forIn'` to `forIn'`.
 @[simp] theorem forIn'_eq_forIn' [Monad m] : @Array.forIn' α β m _ = forIn' := rfl
 
-/-- See comment at `forIn'Unsafe` -/
-@[inline]
-unsafe def foldlMUnsafe {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (f : β → α → m β) (init : β) (as : Array α) (start := 0) (stop := as.size) : m β :=
-  let rec @[specialize] fold (i : USize) (stop : USize) (b : β) : m β := do
-    if i == stop then
-      pure b
-    else
-      fold (i+1) stop (← f b (as.uget i lcProof))
-  if start < stop then
-    if stop ≤ as.size then
-      fold (USize.ofNat start) (USize.ofNat stop) init
-    else
-      pure init
-  else
-    pure init
-
 /--
-Folds a monadic function over a list from the left, accumulating a value starting with `init`. The
+Folds a monadic function over an array from the left, accumulating a value starting with `init`. The
 accumulated value is combined with the each element of the list in order, using `f`.
 
 The optional parameters `start` and `stop` control the region of the array to be folded. Folding
@@ -649,42 +768,10 @@ example [Monad m] (f : α → β → m α) :
   := by rfl
 ```
 -/
--- Reference implementation for `foldlM`
-@[implemented_by foldlMUnsafe, expose]
-def foldlM {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (f : β → α → m β) (init : β) (as : Array α) (start := 0) (stop := as.size) : m β :=
-  let fold (stop : Nat) (h : stop ≤ as.size) :=
-    let rec loop (i : Nat) (j : Nat) (b : β) : m β := do
-      if hlt : j < stop then
-        match i with
-        | 0    => pure b
-        | i'+1 =>
-          have : j < as.size := Nat.lt_of_lt_of_le hlt h
-          loop i' (j+1) (← f b as[j])
-      else
-        pure b
-    loop (stop - start) start init
-  if h : stop ≤ as.size then
-    fold stop h
-  else
-    fold as.size (Nat.le_refl _)
-
-/-- See comment at `forIn'Unsafe` -/
-@[inline]
-unsafe def foldrMUnsafe {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (f : α → β → m β) (init : β) (as : Array α) (start := as.size) (stop := 0) : m β :=
-  let rec @[specialize] fold (i : USize) (stop : USize) (b : β) : m β := do
-    if i == stop then
-      pure b
-    else
-      fold (i-1) stop (← f (as.uget (i-1) lcProof) b)
-  if start ≤ as.size then
-    if stop < start then
-      fold (USize.ofNat start) (USize.ofNat stop) init
-    else
-      pure init
-  else if stop < as.size then
-    fold (USize.ofNat as.size) (USize.ofNat stop) init
-  else
-    pure init
+@[inline, expose]
+def foldlM {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (f : β → α → m β) (init : β)
+    (as : Array α) (start := 0) (stop := as.size) : m β :=
+  cfoldl as (fun x cont acc => f acc x >>= cont) pure start stop init
 
 /--
 Folds a monadic function over an array from the right, accumulating a value starting with `init`.
@@ -714,28 +801,11 @@ example [Monad m] (f : α → β → m β) :
   := by rfl
 ```
 -/
--- Reference implementation for `foldrM`
-@[implemented_by foldrMUnsafe, expose]
+@[inline, expose]
 def foldrM {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (f : α → β → m β) (init : β) (as : Array α) (start := as.size) (stop := 0) : m β :=
-  let rec fold (i : Nat) (h : i ≤ as.size) (b : β) : m β := do
-    if i == stop then
-      pure b
-    else match i, h with
-      | 0, _   => pure b
-      | i+1, h =>
-        have : i < as.size := Nat.lt_of_lt_of_le (Nat.lt_succ_self _) h
-        fold i (Nat.le_of_lt this) (← f as[i] b)
-  if h : start ≤ as.size then
-    if stop < start then
-      fold start h init
-    else
-      pure init
-  else if stop < as.size then
-    fold as.size (Nat.le_refl _) init
-  else
-    pure init
+  cfoldr as (fun x cont acc => f x acc >>= cont) pure start stop init
 
-/-- See comment at `forIn'Unsafe` -/
+/-- See comment at `cfoldlIdxUnsafe` -/
 @[inline]
 unsafe def mapMUnsafe {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (f : α → m β) (as : Array α) : m (Array β) :=
   let sz := as.usize
@@ -807,15 +877,7 @@ Examples:
 -/
 @[inline]
 def firstM {α : Type u} {m : Type v → Type w} [Alternative m] (f : α → m β) (as : Array α) : m β :=
-  go 0
-where
-  go (i : Nat) : m β :=
-    if hlt : i < as.size then
-      f as[i] <|> go (i+1)
-    else
-      failure
-  termination_by as.size - i
-  decreasing_by exact Nat.sub_succ_lt_self as.size i hlt
+  as.cfoldl (fun x cont => f x <|> cont) failure
 
 /--
 Returns the first non-`none` result of applying the monadic function `f` to each element of the
@@ -839,12 +901,11 @@ some 10
 ```
 -/
 @[inline, expose]
-def findSomeM? {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (f : α → m (Option β)) (as : Array α) : m (Option β) := do
-  for a in as do
-    match (← f a) with
-    | some b => return some b
-    | _      => pure ⟨⟩
-  return none
+def findSomeM? {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (f : α → m (Option β))
+    (as : Array α) : m (Option β) :=
+  as.cfoldl (fun a cont => do
+    let x ← f a
+    if x.isSome then return x else cont) (return none)
 
 /--
 Returns the first element of the array for which the monadic predicate `p` returns `true`, or `none`
@@ -870,11 +931,10 @@ some 1
 ```
 -/
 @[inline]
-def findM? {α : Type} [Monad m] (p : α → m Bool) (as : Array α) : m (Option α) := do
-  for a in as do
-    if (← p a) then
-      return some a
-  return none
+def findM? {α : Type} [Monad m] (p : α → m Bool) (as : Array α) : m (Option α) :=
+  as.cfoldl (fun a cont => do
+    let x ← p a
+    if x then return some a else cont) (return none)
 
 /--
 Finds the index of the first element of an array for which the monadic predicate `p` returns `true`.
@@ -883,31 +943,9 @@ satisfies `p` is found. If no such element exists in the array, then `none` is r
 -/
 @[inline]
 def findIdxM? [Monad m] (p : α → m Bool) (as : Array α) : m (Option Nat) := do
-  let mut i := 0
-  for a in as do
-    if (← p a) then
-      return some i
-    i := i + 1
-  return none
-
-@[inline]
-unsafe def anyMUnsafe {α : Type u} {m : Type → Type w} [Monad m] (p : α → m Bool) (as : Array α) (start := 0) (stop := as.size) : m Bool :=
-  let rec @[specialize] any (i : USize) (stop : USize) : m Bool := do
-    if i == stop then
-      pure false
-    else
-      if (← p (as.uget i lcProof)) then
-        pure true
-      else
-        any (i+1) stop
-  if start < stop then
-    let stop' := min stop as.size
-    if start < stop' then
-      any (USize.ofNat start) (USize.ofNat stop')
-    else
-      pure false
-  else
-    pure false
+  as.cfoldlIdx (fun i _ a _ cont => do
+    let x ← p a
+    if x then return some i else cont) (return none)
 
 /--
 Returns `true` if the monadic predicate `p` returns `true` for any element of `as`.
@@ -919,25 +957,9 @@ The optional parameters `start` and `stop` control the region of the array to be
 elements with indices from `start` (inclusive) to `stop` (exclusive) are checked. By default, the
 entire array is checked.
 -/
-@[implemented_by anyMUnsafe, expose]
+@[inline, expose]
 def anyM {α : Type u} {m : Type → Type w} [Monad m] (p : α → m Bool) (as : Array α) (start := 0) (stop := as.size) : m Bool :=
-  let any (stop : Nat) (h : stop ≤ as.size) :=
-    let rec @[semireducible] -- This is otherwise irreducible because it uses well-founded recursion.
-    loop (j : Nat) : m Bool := do
-      if hlt : j < stop then
-        have : j < as.size := Nat.lt_of_lt_of_le hlt h
-        if (← p as[j]) then
-          pure true
-        else
-          loop (j+1)
-      else
-        pure false
-      decreasing_by simp_wf; decreasing_trivial_pre_omega
-    loop start
-  if h : stop ≤ as.size then
-    any stop h
-  else
-    any as.size (Nat.le_refl _)
+  as.cfoldl (fun x cont => p x <||> cont) (return false) start stop
 
 /--
 Returns `true` if the monadic predicate `p` returns `true` for every element of `as`.
@@ -951,7 +973,7 @@ entire array is checked.
 -/
 @[inline]
 def allM {α : Type u} {m : Type → Type w} [Monad m] (p : α → m Bool) (as : Array α) (start := 0) (stop := as.size) : m Bool :=
-  return !(← as.anyM (start := start) (stop := stop) fun v => return !(← p v))
+  as.cfoldl (fun x cont => p x <&&> cont) (return true) start stop
 
 /--
 Returns the first non-`none` result of applying the monadic function `f` to each element of the
@@ -980,17 +1002,9 @@ Except.error "Zero!"
 -/
 @[inline]
 def findSomeRevM? {α : Type u} {β : Type v} {m : Type v → Type w} [Monad m] (f : α → m (Option β)) (as : Array α) : m (Option β) :=
-  let rec @[specialize] find : (i : Nat) → i ≤ as.size → m (Option β)
-    | 0,   _ => pure none
-    | i+1, h => do
-      have : i < as.size := Nat.lt_of_lt_of_le (Nat.lt_succ_self _) h
-      let r ← f as[i]
-      match r with
-      | some _ => pure r
-      | none   =>
-        have : i ≤ as.size := Nat.le_of_lt this
-        find i this
-  find as.size (Nat.le_refl _)
+  as.cfoldr (fun a cont => do
+    let x ← f a
+    if x.isSome then return x else cont) (return none)
 
 /--
 Returns the last element of the array for which the monadic predicate `p` returns `true`, or `none`
@@ -1017,7 +1031,9 @@ some 2
 -/
 @[inline]
 def findRevM? {α : Type} {m : Type → Type w} [Monad m] (p : α → m Bool) (as : Array α) : m (Option α) :=
-  as.findSomeRevM? fun a => return if (← p a) then some a else none
+  as.cfoldr (fun a cont => do
+    let x ← p a
+    if x then return some a else cont) (return none)
 
 /--
 Applies the monadic action `f` to each element of an array, in order.
@@ -1062,8 +1078,8 @@ Examples:
  * `#[1, 2, 3].foldl (s!"({·} {·})") "" = "((( 1) 2) 3)"`
 -/
 @[inline, expose]
-def foldl {α : Type u} {β : Type v} (f : β → α → β) (init : β) (as : Array α) (start := 0) (stop := as.size) : β :=
-  Id.run <| as.foldlM (pure <| f · ·) init start stop
+def foldl {α : Type u} {β : Sort v} (f : β → α → β) (init : β) (as : Array α) (start := 0) (stop := as.size) : β :=
+  as.cfoldl (fun x cont acc => cont (f acc x)) (fun acc => acc) start stop init
 
 /--
 Folds a function over an array from the right, accumulating a value starting with `init`. The
@@ -1080,7 +1096,7 @@ Examples:
 -/
 @[inline, expose]
 def foldr {α : Type u} {β : Type v} (f : α → β → β) (init : β) (as : Array α) (start := as.size) (stop := 0) : β :=
-  Id.run <| as.foldrM (pure <| f · ·) init start stop
+  as.cfoldr (fun x cont acc => cont (f x acc)) (fun acc => acc) start stop init
 
 /--
 Computes the sum of the elements of an array.
@@ -1179,11 +1195,7 @@ Examples:
 -/
 @[inline, expose]
 def find? {α : Type u} (p : α → Bool) (as : Array α) : Option α :=
-  Id.run do
-    for a in as do
-      if p a then
-        return some a
-    return none
+  as.cfoldl (fun a cont => if p a then some a else cont) none
 
 /--
 Returns the first non-`none` result of applying the function `f` to each element of the
@@ -1261,13 +1273,7 @@ Examples:
 -/
 @[inline, expose]
 def findIdx? {α : Type u} (p : α → Bool) (as : Array α) : Option Nat :=
-  let rec @[semireducible] -- This is otherwise irreducible because it uses well-founded recursion.
-  loop (j : Nat) :=
-    if h : j < as.size then
-      if p as[j] then some j else loop (j + 1)
-    else none
-    decreasing_by simp_wf; decreasing_trivial_pre_omega
-  loop 0
+  as.cfoldlIdx (fun i _ a _ cont => if p a then some i else cont) none
 
 /--
 Returns the index of the first element for which `p` returns `true`, or `none` if there is no such
@@ -1279,14 +1285,10 @@ Examples:
 -/
 @[inline]
 def findFinIdx? {α : Type u} (p : α → Bool) (as : Array α) : Option (Fin as.size) :=
-  let rec @[semireducible] -- This is otherwise irreducible because it uses well-founded recursion.
-  loop (j : Nat) :=
-    if h : j < as.size then
-      if p as[j] then some ⟨j, h⟩ else loop (j + 1)
-    else none
-    decreasing_by simp_wf; decreasing_trivial_pre_omega
-  loop 0
+  as.cfoldlIdx (fun i hi a _ cont => if p a then some ⟨i, hi⟩ else cont) none
 
+-- TODO: move somewhere else
+/-
 private theorem findIdx?_loop_eq_map_findFinIdx?_loop_val {xs : Array α} {p : α → Bool} {j} :
     findIdx?.loop p xs j = (findFinIdx?.loop p xs j).map (·.val) := by
   unfold findIdx?.loop
@@ -1303,7 +1305,8 @@ termination_by xs.size - j
 
 theorem findIdx?_eq_map_findFinIdx?_val {xs : Array α} {p : α → Bool} :
     xs.findIdx? p = (xs.findFinIdx? p).map (·.val) := by
-  simp [findIdx?, findFinIdx?, findIdx?_loop_eq_map_findFinIdx?_loop_val]
+  simp [findIdx?, findFinIdx?]
+-/
 
 /--
 Returns the index of the first element for which `p` returns `true`, or the size of the array if
@@ -1316,15 +1319,8 @@ Examples:
 @[inline, expose]
 def findIdx (p : α → Bool) (as : Array α) : Nat := (as.findIdx? p).getD as.size
 
-@[semireducible] -- This is otherwise irreducible because it uses well-founded recursion.
 def idxOfAux [BEq α] (xs : Array α) (v : α) (i : Nat) : Option (Fin xs.size) :=
-  if h : i < xs.size then
-    if xs[i] == v then some ⟨i, h⟩
-    else idxOfAux xs v (i+1)
-  else none
-decreasing_by simp_wf; decreasing_trivial_pre_omega
-
-
+  xs.cfoldlIdx (fun i hi a _ cont => if a == v then some ⟨i, hi⟩ else cont) none i
 
 /--
 Returns the index of the first element equal to `a`, or the size of the array if no element is equal
