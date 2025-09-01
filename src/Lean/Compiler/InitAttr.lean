@@ -41,30 +41,16 @@ unsafe opaque runInit (env : @& Environment) (opts : @& Options) (decl initDecl 
 /-- Set of modules for which we have already run the module initializer in the interpreter. -/
 builtin_initialize interpretedModInits : IO.Ref NameSet ← IO.mkRef {}
 
-unsafe def registerInitAttrUnsafe (attrName : Name) (runAfterImport : Bool) (ref : Name) : IO (ParametricAttribute Name) :=
-  registerParametricAttribute {
-    ref := ref
-    name := attrName
-    descr := "initialization procedure for global references"
-    getParam := fun declName stx => do
-      let decl ← getConstInfo declName
-      match (← Attribute.Builtin.getIdent? stx) with
-      | some initFnName =>
-        let initFnName ← Elab.realizeGlobalConstNoOverloadWithInfo initFnName
-        let initDecl ← getConstInfo initFnName
-        match getIOTypeArg initDecl.type with
-        | none => throwError "initialization function `{initFnName}` must have type of the form `IO <type>`"
-        | some initTypeArg =>
-          if decl.type == initTypeArg then pure initFnName
-          else throwError "initialization function `{initFnName}` type mismatch"
-      | none =>
-        if isIOUnit decl.type then pure Name.anonymous
-        else throwError "initialization function must have type `IO Unit`"
-    afterImport := fun entries => do
+abbrev InitExtension := PersistentEnvExtension (Name × Name) (Name × Name) (Array (Name × Name))
+
+unsafe def registerInitAttrUnsafe (attrName : Name) (runAfterImport : Bool) (ref : Name) :
+    IO InitExtension := do
+  let ext ← registerPersistentEnvExtension {
+    mkInitial := pure #[]
+    addImportedFn entries := do
       let ctx ← read
       if runAfterImport && (← isInitializerExecutionEnabled) then
         for mod in ctx.env.header.moduleNames,
-            modData in ctx.env.header.moduleData,
             modEntries in entries do
           -- any native Lean code reachable by the interpreter (i.e. from shared
           -- libraries with their corresponding module in the Environment) must
@@ -83,22 +69,46 @@ unsafe def registerInitAttrUnsafe (attrName : Name) (runAfterImport : Bool) (ref
           if (← interpretedModInits.get).contains mod then
             continue
           interpretedModInits.modify (·.insert mod)
-          for c in modData.constNames do
-            -- make sure to run initializers in declaration order, not extension state order, to respect dependencies
-            if let some (decl, initDecl) := modEntries.binSearch (c, default) (Name.quickLt ·.1 ·.1) then
-              if initDecl.isAnonymous then
-                let initFn ← IO.ofExcept <| ctx.env.evalConst (IO Unit) ctx.opts decl
-                initFn
-              else
-                runInit ctx.env ctx.opts decl initDecl
+          for (decl, initDecl) in modEntries do
+            if initDecl.isAnonymous then
+              let initFn ← IO.ofExcept <| ctx.env.evalConst (IO Unit) ctx.opts decl
+              initFn
+            else
+              runInit ctx.env ctx.opts decl initDecl
+      return #[]
+    addEntryFn arr x := arr.push x
+    exportEntriesFn arr := arr
   }
-
-@[implemented_by registerInitAttrUnsafe]
-private opaque registerInitAttrInner (attrName : Name) (runAfterImport : Bool) (ref : Name) : IO (ParametricAttribute Name)
+  registerBuiltinAttribute {
+    ref := ref
+    name := attrName
+    descr := "initialization procedure for global references"
+    add declName stx kind := do
+      unless kind == AttributeKind.global do throwAttrMustBeGlobal attrName kind
+      let env ← getEnv
+      unless (env.getModuleIdxFor? declName).isNone do
+        throwAttrDeclInImportedModule attrName declName
+      let decl ← getConstInfo declName
+      let val ← match (← Attribute.Builtin.getIdent? stx) with
+      | some initFnName =>
+        let initFnName ← Elab.realizeGlobalConstNoOverloadWithInfo initFnName
+        let initDecl ← getConstInfo initFnName
+        match getIOTypeArg initDecl.type with
+        | none => throwError "initialization function `{initFnName}` must have type of the form `IO <type>`"
+        | some initTypeArg =>
+          if decl.type == initTypeArg then pure initFnName
+          else throwError "initialization function `{initFnName}` type mismatch"
+      | none =>
+        if isIOUnit decl.type then pure Name.anonymous
+        else throwError "initialization function must have type `IO Unit`"
+      modifyEnv fun env => ext.addEntry (asyncDecl := declName) env (declName, val)
+  }
+  return ext
 
 @[inline]
-def registerInitAttr (attrName : Name) (runAfterImport : Bool) (ref : Name := by exact decl_name%) : IO (ParametricAttribute Name) :=
-  registerInitAttrInner attrName runAfterImport ref
+def registerInitAttr (attrName : Name) (runAfterImport : Bool) (ref : Name := by exact decl_name%) :
+    IO InitExtension :=
+  unsafe registerInitAttrUnsafe attrName runAfterImport ref
 
 /--
 Registers an initialization procedure. Initialization procedures are run in files that import the
@@ -113,7 +123,7 @@ the resulting value and make it accessible through the tagged declaration.
 The `initialize` command should usually be preferred over using this attribute directly.
 -/
 @[builtin_doc]
-builtin_initialize regularInitAttr : ParametricAttribute Name ← registerInitAttr `init true
+builtin_initialize regularInitExt : InitExtension ← registerInitAttr `init true
 
 /--
 Registers a builtin initialization procedure.
@@ -122,35 +132,42 @@ This attribute is used internally to define builtin initialization procedures fo
 should not be used otherwise.
 -/
 @[builtin_doc]
-builtin_initialize builtinInitAttr : ParametricAttribute Name ← registerInitAttr `builtin_init false
+builtin_initialize builtinInitExt : InitExtension ← registerInitAttr `builtin_init false
 
-def getInitFnNameForCore? (env : Environment) (attr : ParametricAttribute Name) (fn : Name) : Option Name :=
-  match attr.getParam? env fn with
+def getInitEntryCore? (env : Environment) (ext : InitExtension) (fn : Name) : Option Name :=
+  let entries :=
+    match env.getModuleIdxFor? fn with
+    | some modIdx => ext.getModuleEntries env modIdx
+    | none => ext.getState env
+  entries.findSome? (fun x => if x.1 == fn then x.1 else none)
+
+def getInitFnNameForCore? (env : Environment) (ext : InitExtension) (fn : Name) : Option Name :=
+  match getInitEntryCore? env ext fn with
   | some Name.anonymous => none
   | some n              => some n
   | _                   => none
 
 def getBuiltinInitFnNameFor? (env : Environment) (fn : Name) : Option Name :=
-  getInitFnNameForCore? env builtinInitAttr fn
+  getInitFnNameForCore? env builtinInitExt fn
 
 @[export lean_get_regular_init_fn_name_for]
 def getRegularInitFnNameFor? (env : Environment) (fn : Name) : Option Name :=
-  getInitFnNameForCore? env regularInitAttr fn
+  getInitFnNameForCore? env regularInitExt fn
 
 @[export lean_get_init_fn_name_for]
 def getInitFnNameFor? (env : Environment) (fn : Name) : Option Name :=
   getBuiltinInitFnNameFor? env fn <|> getRegularInitFnNameFor? env fn
 
-def isIOUnitInitFnCore (env : Environment) (attr : ParametricAttribute Name) (fn : Name) : Bool :=
-  match attr.getParam? env fn with
+def isIOUnitInitFnCore (env : Environment) (ext : InitExtension) (fn : Name) : Bool :=
+  match getInitEntryCore? env ext fn with
   | some Name.anonymous => true
   | _ => false
 
 def isIOUnitRegularInitFn (env : Environment) (fn : Name) : Bool :=
-  isIOUnitInitFnCore env regularInitAttr fn
+  isIOUnitInitFnCore env regularInitExt fn
 
 def isIOUnitBuiltinInitFn (env : Environment) (fn : Name) : Bool :=
-  isIOUnitInitFnCore env builtinInitAttr fn
+  isIOUnitInitFnCore env builtinInitExt fn
 
 def isIOUnitInitFn (env : Environment) (fn : Name) : Bool :=
   isIOUnitBuiltinInitFn env fn || isIOUnitRegularInitFn env fn
@@ -159,7 +176,12 @@ def hasInitAttr (env : Environment) (fn : Name) : Bool :=
   (getInitFnNameFor? env fn).isSome
 
 def setBuiltinInitAttr (env : Environment) (declName : Name) (initFnName : Name := Name.anonymous) : Except String Environment :=
-  builtinInitAttr.setParam env declName initFnName
+  if (env.getModuleIdxFor? declName).isSome then
+    Except.error s!"Failed to add `[builtin_init]` attribute to `{declName}`: Declaration is in an imported module"
+  else if (builtinInitExt.getState env).any (·.1 == declName) then
+    Except.error s!"Failed to add `[builtin_init]` attribute to `{declName}`: Attribute has already been set"
+  else
+    Except.ok (builtinInitExt.addEntry env (declName, initFnName))
 
 def declareBuiltin (forDecl : Name) (value : Expr) : CoreM Unit := do
   let name ← mkAuxDeclName (kind := `_regBuiltin ++ forDecl)
