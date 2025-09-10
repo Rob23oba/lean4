@@ -7,7 +7,9 @@ module
 
 prelude
 public import Init.Data.Rat.Lemmas
-public import Init.Grind
+public import Init.Grind.Ordered.Rat
+public import Init.Grind.Ordered.Field
+public import Init.Data.AC
 
 @[expose] public section
 
@@ -260,6 +262,16 @@ protected theorem Rat.le_sub_iff_add_le {a b c : Rat} : a ≤ b - c ↔ a + c �
 protected theorem Rat.eq_sub_iff_add_eq {a b c : Rat} : a = b - c ↔ a + c = b :=
   ⟨(by simpa only [Rat.sub_add_cancel] using congrArg (· + c) ·),
     (by simpa only [Rat.add_sub_cancel] using congrArg (· - c) ·)⟩
+
+protected theorem Rat.neg_le_self_iff {a : Rat} : -a ≤ a ↔ 0 ≤ a := by
+  rw [← Rat.zero_sub, Rat.sub_le_iff_le_add, ← Rat.one_mul a, ← Rat.add_mul,
+    mul_nonneg_iff, show 1 + 1 = (2 : Rat) by decide +kernel]
+  simp +decide
+
+protected theorem Rat.neg_lt_self_iff {a : Rat} : -a < a ↔ 0 < a := by
+  rw [← Rat.zero_sub, Rat.sub_lt_iff_lt_add, ← Rat.one_mul a, ← Rat.add_mul,
+    mul_pos_iff, show 1 + 1 = (2 : Rat) by decide +kernel]
+  simp +decide
 
 protected theorem Rat.div_le_iff {a b c : Rat} (hb : 0 < b) : a / b ≤ c ↔ a ≤ c * b := by
   simpa [Rat.not_lt] using not_congr (Rat.lt_div_iff hb)
@@ -543,6 +555,15 @@ instance : Std.LawfulOrderSup Rat where
     · exact iff_and_self.mpr (Rat.le_trans ‹_›)
     · exact iff_self_and.mpr (Rat.le_trans (Std.le_of_not_ge ‹_›))
 
+theorem Std.le_iff_lt_or_eq {α : Type u} [LE α] [LT α] [IsPartialOrder α] [LawfulOrderLT α]
+    {a b : α} : a ≤ b ↔ a < b ∨ a = b := by
+  constructor
+  · rw [Classical.or_iff_not_imp_right]
+    exact Std.lt_of_le_of_ne
+  · rintro (h | rfl)
+    · exact Std.le_of_lt h
+    · exact Std.le_refl a
+
 protected def Rat.log2 (q : Rat) : Int :=
   let i : Int := q.num.natAbs.log2 - q.den.log2
   if q.den <<< i.toNat ≤ q.num.natAbs <<< (-i).toNat then i else i - 1
@@ -749,6 +770,7 @@ def Rat.ofSign (b : Bool) : Rat :=
 theorem Rat.ofSign_not : ∀ (a : Bool), ofSign (!a) = -ofSign a := by decide
 theorem Rat.ofSign_xor : ∀ (a b : Bool), ofSign (a ^^ b) = ofSign a * ofSign b := by decide +kernel
 theorem Rat.ofSign_bne : ∀ (a b : Bool), ofSign (a != b) = ofSign a * ofSign b := Rat.ofSign_xor
+theorem Rat.ofSign_ne_zero : ∀ (a : Bool), ofSign a ≠ 0 := by decide
 
 namespace Std
 
@@ -799,6 +821,17 @@ deriving Decidable
 def Bounded (m : Nat) (e : Int) :=
   fmt.CanonicalMantissa m e ∧ e ≤ fmt.maxExp - fmt.prec
 deriving Decidable
+
+/-- Discharge linear arithmetic goals related to `fexp` -/
+scoped macro "fexp_trivial" : tactic =>
+  let fmt := Lean.mkIdent `fmt
+  `(tactic| {
+    simp +zetaDelta [FloatFormat.fexp, FloatFormat.minExp, FloatFormat.CanonicalMantissa,
+      FloatFormat.Bounded] at *
+    have := $(fmt).prec_pos
+    have := $(fmt).prec_lt_maxExp
+    omega
+  })
 
 @[simp]
 theorem canonicalMantissa_zero_iff {fmt : FloatFormat} {e : Int} :
@@ -999,18 +1032,45 @@ theorem boundRat_ofSign_mul {b : Bool} {q : Rat} :
     fmt.boundRat (Rat.ofSign b * q) = Rat.ofSign b * fmt.boundRat q := by
   cases b <;> simp [boundRat_neg, Rat.neg_mul]
 
-end FloatFormat
+theorem lt_of_exp_lt_of_canonicalMantissa {m₁ m₂ : Nat} {e₁ e₂ : Int}
+    (h₁ : fmt.CanonicalMantissa m₁ e₁) (h₂ : fmt.CanonicalMantissa m₂ e₂)
+    (hlt : e₁ < e₂) : m₁ * (2 : Rat) ^ e₁ < m₂ * 2 ^ e₂ := by
+  have h : m₁.size + e₁ ≤ (fmt.prec - 1 : Nat) + e₂ := by fexp_trivial
+  rw [← Rat.zpow_le_zpow_iff_right (show 1 < 2 by decide), Rat.zpow_add (by decide),
+    Rat.zpow_add (by decide)] at h
+  apply Std.lt_of_lt_of_le _ (Rat.le_trans h _)
+  · apply Rat.mul_lt_mul_of_pos_right _ (Rat.zpow_pos (by decide))
+    exact_mod_cast Nat.lt_size_self m₁
+  · apply Rat.mul_le_mul_of_nonneg_right _ (Rat.zpow_nonneg (by decide))
+    norm_cast
+    rw [← Nat.lt_size]
+    fexp_trivial
 
-/-- Discharge linear arithmetic goals related to `fexp` -/
-local macro "fexp_trivial" : tactic =>
-  let fmt := Lean.mkIdent `fmt
-  `(tactic| {
-    simp +zetaDelta [FloatFormat.fexp, FloatFormat.minExp, FloatFormat.CanonicalMantissa,
-      FloatFormat.Bounded] at *
-    have := $(fmt).prec_pos
-    have := $(fmt).prec_lt_maxExp
-    omega
-  })
+theorem lt_def_of_canonicalMantissa {m₁ m₂ : Nat} {e₁ e₂ : Int}
+    (h₁ : fmt.CanonicalMantissa m₁ e₁) (h₂ : fmt.CanonicalMantissa m₂ e₂) :
+    e₁ ≤ e₂ ∧ (e₁ < e₂ ∨ m₁ < m₂) ↔ m₁ * (2 : Rat) ^ e₁ < m₂ * 2 ^ e₂ := by
+  obtain h | rfl | h := Int.lt_trichotomy e₁ e₂
+  · simp only [Int.le_of_lt h, h, true_or, and_self, true_iff]
+    exact lt_of_exp_lt_of_canonicalMantissa h₁ h₂ h
+  · simp only [Int.le_refl, Int.lt_irrefl, false_or, true_and, Rat.zpow_pos (show 0 < 2 by decide),
+      mul_lt_mul_iff_of_pos_right, Rat.natCast_lt_natCast]
+  · simp only [Int.not_le_of_gt h, false_and, false_iff, Rat.not_lt]
+    exact Rat.le_of_lt (lt_of_exp_lt_of_canonicalMantissa h₂ h₁ h)
+
+theorem mul_two_pow_inj_of_canonicalMantissa {m₁ m₂ : Nat} {e₁ e₂ : Int}
+    (h₁ : fmt.CanonicalMantissa m₁ e₁) (h₂ : fmt.CanonicalMantissa m₂ e₂) :
+    m₁ * (2 : Rat) ^ e₁ = m₂ * 2 ^ e₂ ↔ m₁ = m₂ ∧ e₁ = e₂ := by
+  constructor
+  · intro h
+    have he₁ := (h ▸ mt (lt_of_exp_lt_of_canonicalMantissa h₁ h₂)) (Rat.not_lt.mpr Rat.le_refl)
+    have he₂ := (h ▸ mt (lt_of_exp_lt_of_canonicalMantissa h₂ h₁)) (Rat.not_lt.mpr Rat.le_refl)
+    cases Int.le_antisymm (Int.not_lt.mp he₁) (Int.not_lt.mp he₂)
+    rw [Rat.mul_left_inj (Rat.ne_of_gt (Rat.zpow_pos (by decide)))] at h
+    simpa only [and_true, Rat.natCast_inj] using h
+  · rintro ⟨rfl, rfl⟩
+    rfl
+
+end FloatFormat
 
 /-- Home-made `positivity` tactic -/
 local syntax "pos" : tactic
@@ -1044,10 +1104,14 @@ deriving DecidableEq
 
 namespace BinaryFloat
 
+open scoped FloatFormat
+
 variable {fmt : FloatFormat}
 
 inductive IsFinite : BinaryFloat fmt → Prop where
   | finite (s m e h) : BinaryFloat.IsFinite (.finite s m e h)
+
+attribute [simp] IsFinite.finite
 
 instance (b : BinaryFloat fmt) : Decidable (IsFinite b) :=
   match b with
@@ -1094,12 +1158,37 @@ protected def zero (s : Bool) : BinaryFloat fmt :=
 theorem toRat_zero : toRat (.zero s : BinaryFloat fmt) = 0 := by
   simp [toRat, BinaryFloat.zero]
 
+theorem toRat_lt_two_pow_maxExp {x : BinaryFloat fmt} (h : x.IsFinite) : toRat x < 2 ^ fmt.maxExp := by
+  rcases h with ⟨s, m, e, h⟩
+  have : m.size + e ≤ fmt.maxExp := by fexp_trivial
+  rw [← Rat.zpow_le_zpow_iff_right (show 1 < 2 by decide)] at this
+  apply Std.lt_of_lt_of_le _ this
+  cases s
+  · rw [toRat_finite_false, Rat.zpow_add (by decide)]
+    apply Rat.mul_lt_mul_of_pos_right _ (by pos)
+    exact_mod_cast m.lt_size_self
+  · simp only [toRat_finite_true]
+    exact Std.lt_of_le_of_lt (b := 0) (neg_le_iff.mp (Rat.mul_nonneg (by pos) (by pos))) (by pos)
+
+theorem toRat_le_two_pow_maxExp (x : BinaryFloat fmt) : toRat x ≤ 2 ^ fmt.maxExp := by
+  rcases x with _ | ⟨s⟩ | _
+  · rw [toRat_nan]
+    pos
+  · cases s
+    · simp [Rat.le_refl]
+    · simp only [toRat_inf_true, Rat.neg_le_self_iff]; pos
+  · exact Rat.le_of_lt (toRat_lt_two_pow_maxExp (IsFinite.finite ..))
+
 protected def neg : BinaryFloat fmt → BinaryFloat fmt
   | .nan => .nan
   | .inf s => .inf (!s)
   | .finite s m e h => .finite (!s) m e h
 
 instance : Neg (BinaryFloat fmt) := ⟨BinaryFloat.neg⟩
+
+theorem IsFinite.neg {x : BinaryFloat fmt} (h : IsFinite x) : IsFinite (-x) := by
+  cases h
+  apply IsFinite.finite
 
 @[simp]
 theorem neg_nan : -nan = (nan : BinaryFloat fmt) := rfl
@@ -1111,7 +1200,7 @@ theorem neg_inf : -inf s = (inf !s : BinaryFloat fmt) := rfl
 theorem neg_finite : -finite s m e h = (finite (!s) m e h : BinaryFloat fmt) := rfl
 
 @[simp]
-theorem neg_zero : -.zero s = (.zero (!s) : BinaryFloat fmt) := rfl
+protected theorem neg_zero : -.zero s = (.zero (!s) : BinaryFloat fmt) := rfl
 
 @[simp]
 theorem toRat_neg (x : BinaryFloat fmt) : (-x).toRat = -x.toRat := by
@@ -1119,6 +1208,134 @@ theorem toRat_neg (x : BinaryFloat fmt) : (-x).toRat = -x.toRat := by
   · rfl
   · cases s <;> simp
   · cases s <;> simp
+
+theorem neg_two_pow_maxExp_lt_toRat {x : BinaryFloat fmt} (h : x.IsFinite) :
+    -2 ^ fmt.maxExp < toRat x := by
+  rw [neg_lt_iff, ← toRat_neg]
+  exact toRat_lt_two_pow_maxExp h.neg
+
+theorem neg_two_pow_maxExp_le_toRat (x : BinaryFloat fmt) :
+    -2 ^ fmt.maxExp ≤ toRat x := by
+  rw [neg_le_iff, ← toRat_neg]
+  exact (-x).toRat_le_two_pow_maxExp
+
+protected def blt : BinaryFloat fmt → BinaryFloat fmt → Bool
+  | .nan, _ => false
+  | _, .nan => false
+  | .inf s₁, .inf s₂ => s₁ && !s₂
+  | .inf s, .finite _ _ _ _ => s
+  | .finite _ _ _ _, .inf s => !s
+  | .finite s₁ m₁ e₁ _, .finite s₂ m₂ e₂ _ =>
+    match s₁, s₂ with
+    | false, false => e₁ ≤ e₂ ∧ (e₁ < e₂ ∨ m₁ < m₂)
+    | false, true => false
+    | true, false => ¬(m₁ = 0 ∧ m₂ = 0)
+    | true, true => e₂ ≤ e₁ ∧ (e₂ < e₁ ∨ m₂ < m₁)
+
+protected def beq : BinaryFloat fmt → BinaryFloat fmt → Bool
+  | .nan, _ => false
+  | _, .nan => false
+  | .inf s₁, .inf s₂ => s₁ == s₂
+  | .inf _, .finite _ _ _ _ => false
+  | .finite _ _ _ _, .inf _ => false
+  | .finite s₁ m₁ e₁ _, .finite s₂ m₂ e₂ _ =>
+    (m₁ == 0 && m₂ == 0) || s₁ == s₂ && m₁ == m₂ && e₁ == e₂
+
+protected def ble (a b : BinaryFloat fmt) : Bool :=
+  a.blt b || a.beq b
+
+instance : LT (BinaryFloat fmt) := ⟨fun a b => BinaryFloat.blt a b⟩
+instance : LE (BinaryFloat fmt) := ⟨fun a b => BinaryFloat.ble a b⟩
+instance : BEq (BinaryFloat fmt) := ⟨fun a b => BinaryFloat.beq a b⟩
+instance : DecidableLT (BinaryFloat fmt) := fun _ _ => inferInstanceAs (Decidable (_ = _))
+instance : DecidableLE (BinaryFloat fmt) := fun _ _ => inferInstanceAs (Decidable (_ = _))
+
+theorem lt_def {a b : BinaryFloat fmt} : a < b ↔ a ≠ nan ∧ b ≠ nan ∧ a.toRat < b.toRat := by
+  change a.blt b ↔ _
+  unfold BinaryFloat.blt
+  split
+  · simp
+  · simp
+  · rename_i s s'
+    have : -(2 : Rat) ^ fmt.maxExp < 2 ^ fmt.maxExp :=
+      Std.lt_of_lt_of_le (b := 0) (neg_lt_iff.mp (Rat.pow_pos (by decide))) (by pos)
+    cases s <;> cases s' <;> simp [Rat.lt_irrefl, this, Std.Asymm.asymm _ _ this]
+  · rename_i s _ _ _ _
+    cases s
+    · simp [Rat.not_lt, toRat_le_two_pow_maxExp]
+    · simp [neg_two_pow_maxExp_lt_toRat]
+  · rename_i s
+    cases s
+    · simp [toRat_lt_two_pow_maxExp]
+    · simp [Rat.not_lt, neg_two_pow_maxExp_le_toRat]
+  · rename_i s₁ m₁ e₁ h₁ s₂ m₂ e₂ h₂
+    simp only [ne_eq, reduceCtorEq, not_false_eq_true, true_and]
+    split
+    · simp [fmt.lt_def_of_canonicalMantissa h₁.1 h₂.1]
+    · simp only [Bool.false_eq_true, toRat_finite_false, toRat_finite_true, false_iff, Rat.not_lt]
+      exact Rat.le_trans (b := 0) (neg_le_iff.mp (mul_nonneg (by pos) (by pos))) (by pos)
+    · simp only [decide_eq_true_eq, toRat_finite_true, toRat_finite_false,
+        Decidable.not_iff_comm (a := _ ∧ _), Rat.not_lt]
+      constructor
+      · intro h
+        have h' : 0 ≤ m₂ * (2 : Rat) ^ e₂ := by pos
+        have h'' : 0 ≤ m₁ * (2 : Rat) ^ e₁ := by pos
+        have h''' : -(m₁ * (2 : Rat) ^ e₁) ≤ 0 := neg_le_iff.mpr <| by rw [Rat.neg_zero]; pos
+        have heq₁ := Rat.le_antisymm (neg_nonneg_iff.mp (Rat.le_trans h' h)) h''
+        have heq₂ := Rat.le_antisymm (Rat.le_trans h h''') h'
+        simp_all [Rat.mul_eq_zero, Rat.ne_of_gt (Rat.zpow_pos (show 0 < 2 by decide))]
+      · intro ⟨h₁, h₂⟩
+        simp [h₁, h₂, Rat.le_refl]
+    · simp [fmt.lt_def_of_canonicalMantissa h₂.1 h₁.1, neg_lt_iff (a := (m₁ : Rat) * _)]
+
+theorem beq_def {a b : BinaryFloat fmt} : a == b ↔ a ≠ nan ∧ b ≠ nan ∧ a.toRat = b.toRat := by
+  change a.beq b ↔ _
+  unfold BinaryFloat.beq
+  split
+  · simp
+  · simp
+  · rename_i s s'
+    have : -(2 : Rat) ^ fmt.maxExp ≠ 2 ^ fmt.maxExp :=
+      Rat.ne_of_lt <| Std.lt_of_lt_of_le (b := 0) (neg_lt_iff.mp (Rat.pow_pos (by decide))) (by pos)
+    cases s <;> cases s' <;> simp [this, this.symm]
+  · rename_i s _ _ _ _
+    cases s
+    · simp [Rat.ne_of_gt, toRat_lt_two_pow_maxExp]
+    · simp [Rat.ne_of_lt, neg_two_pow_maxExp_lt_toRat]
+  · rename_i s
+    cases s
+    · simp [Rat.ne_of_lt, toRat_lt_two_pow_maxExp]
+    · simp [Rat.ne_of_gt, neg_two_pow_maxExp_lt_toRat]
+  · rename_i s₁ m₁ e₁ h₁ s₂ m₂ e₂ h₂
+    simp only [Bool.or_eq_true, Bool.and_eq_true, beq_iff_eq, ne_eq, reduceCtorEq,
+      not_false_eq_true, true_and]
+    by_cases hm : m₁ = 0 ∧ m₂ = 0
+    · simp [hm, toRat_finite]
+    · simp only [hm, false_or, toRat_finite]
+      by_cases hs : s₁ = s₂
+      · simp only [hs, true_and, Rat.mul_assoc (Rat.ofSign _), Rat.mul_comm (Rat.ofSign _) (_ * _),
+          Rat.mul_left_inj (Rat.ofSign_ne_zero _), fmt.mul_two_pow_inj_of_canonicalMantissa h₁.1 h₂.1]
+      · replace hs := Bool.eq_not_of_ne hs
+        simp only [hs, Bool.not_eq_eq_eq_not, Bool.eq_not_self, false_and, Rat.ofSign_not,
+          Rat.neg_mul (Rat.ofSign _), ← Rat.mul_neg, Rat.mul_assoc (Rat.ofSign _), false_iff, ne_eq,
+          Rat.mul_comm (Rat.ofSign _) (_ * _), Rat.mul_left_inj (Rat.ofSign_ne_zero _)]
+        intro h
+        rw [Rat.neg_mul] at h
+        have h' : 0 ≤ m₁ * (2 : Rat) ^ e₁ := by pos
+        have h'' : 0 ≤ m₂ * (2 : Rat) ^ e₂ := by pos
+        have heq₁ := Rat.le_antisymm (h ▸ neg_le_iff.mp h') h''
+        have heq₂ := Rat.le_antisymm (neg_nonneg_iff.mp (h ▸ h'')) h'
+        simp only [Rat.mul_eq_zero, Rat.natCast_eq_zero_iff,
+          Rat.ne_of_gt (Rat.zpow_pos (show 0 < 2 by decide)), or_false] at heq₁ heq₂
+        exact absurd ⟨heq₂, heq₁⟩ hm
+
+theorem le_iff_lt_or_beq {a b : BinaryFloat fmt} : a ≤ b ↔ a < b ∨ a == b := by
+  change a.ble b ↔ a.blt b ∨ a.beq b
+  simp [BinaryFloat.ble]
+
+theorem le_def {a b : BinaryFloat fmt} : a ≤ b ↔ a ≠ nan ∧ b ≠ nan ∧ a.toRat ≤ b.toRat := by
+  rw [le_iff_lt_or_beq, lt_def, beq_def, ← and_assoc, ← and_assoc, ← and_assoc, ← and_or_left,
+    Std.le_iff_lt_or_eq]
 
 def incMantissa : BinaryFloat fmt → BinaryFloat fmt
   | .nan => .nan
