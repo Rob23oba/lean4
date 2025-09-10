@@ -1533,8 +1533,8 @@ protected def mul (a b : BinaryFloat fmt) : BinaryFloat fmt :=
   | .nan, _ => a
   | _, .nan => b
   | .inf s, .inf s' => .inf (s ^^ s')
-  | .inf s, .finite s' _ _ _ => .inf (s ^^ s')
-  | .finite s _ _ _, .inf s' => .inf (s ^^ s')
+  | .inf s, .finite s' m _ _ => if m = 0 then .nan else .inf (s ^^ s')
+  | .finite s m _ _, .inf s' => if m = 0 then .nan else .inf (s ^^ s')
   | .finite s₁ m₁ e₁ h₁, .finite s₂ m₂ e₂ h₂ =>
     if h : m₁ * m₂ = 0 then .zero (s₁ ^^ s₂)
     else binaryRoundAux (s₁ ^^ s₂) (m₁ * m₂ * 2) (e₁ + e₂ - 1) true ?_
