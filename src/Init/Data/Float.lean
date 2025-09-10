@@ -6,29 +6,20 @@ Authors: Leonardo de Moura
 module
 
 prelude
-public import Init.Core
-public import Init.Data.Int.Basic
-public import Init.Data.ToString.Basic
+public import Init.Data.BinaryFloat.Basic
 
-public section
+@[expose] public section
 
-structure FloatSpec where
-  float : Type
-  val   : float
-  lt    : float → float → Prop
-  le    : float → float → Prop
-  decLt : DecidableRel lt
-  decLe : DecidableRel le
+/-
+Note regarding correctness of floating point definitions:
 
--- Just show FloatSpec is inhabited.
-opaque floatSpec : FloatSpec := {
-  float := Unit,
-  val   := (),
-  lt    := fun _ _ => True,
-  le    := fun _ _ => True,
-  decLt := fun _ _ => inferInstanceAs (Decidable True),
-  decLe := fun _ _ => inferInstanceAs (Decidable True)
-}
+The definitions for `Float`, specifically, modelling it using `BinaryFloat`, rely on the fact that
+the native floating point type conforms to the IEEE 754 standard and uses default flags (e.g. the
+rounding mode being round to nearest, ties to even). While all supported platforms use IEEE 754
+floating point, they also expose functions to e.g. change the rounding mode. To preserve soundness
+of these definitions and to make sure that you can't observe a pure function change value,
+functions called using FFI should thus not change any floating point flags.
+-/
 
 /--
 64-bit floating-point numbers.
@@ -48,9 +39,9 @@ Their special values are:
    values by zero.
 -/
 structure Float where
-  val : floatSpec.float
+  val : Std.BinaryFloat .binary64
 
-instance : Nonempty Float := ⟨{ val := floatSpec.val }⟩
+instance : Nonempty Float := ⟨{ val := .zero false }⟩
 
 /--
 Adds two 64-bit floating-point numbers according to IEEE 754. Typically used via the `+` operator.
@@ -58,18 +49,22 @@ Adds two 64-bit floating-point numbers according to IEEE 754. Typically used via
 This function does not reduce in the kernel. It is compiled to the C addition operator.
 -/
 @[extern "lean_float_add"] opaque Float.add : Float → Float → Float
+
 /--
 Subtracts 64-bit floating-point numbers according to IEEE 754. Typically used via the `-` operator.
 
 This function does not reduce in the kernel. It is compiled to the C subtraction operator.
 -/
 @[extern "lean_float_sub"] opaque Float.sub : Float → Float → Float
+
 /--
 Multiplies 64-bit floating-point numbers according to IEEE 754. Typically used via the `*` operator.
 
-This function does not reduce in the kernel. It is compiled to the C multiplication operator.
+This function is compiled to the C multiplication operator.
 -/
-@[extern "lean_float_mul"] opaque Float.mul : Float → Float → Float
+@[extern "lean_float_mul"] def Float.mul : Float → Float → Float
+  | ⟨a⟩, ⟨b⟩ => ⟨a * b⟩
+
 /--
 Divides 64-bit floating-point numbers according to IEEE 754. Typically used via the `/` operator.
 
@@ -79,27 +74,27 @@ In Lean, division by zero typically yields zero. For `Float`, it instead yields 
 This function does not reduce in the kernel. It is compiled to the C division operator.
 -/
 @[extern "lean_float_div"] opaque Float.div : Float → Float → Float
+
 /--
 Negates 64-bit floating-point numbers according to IEEE 754. Typically used via the `-` prefix
 operator.
 
-This function does not reduce in the kernel. It is compiled to the C negation operator.
+This function is compiled to the C negation operator.
 -/
-@[extern "lean_float_negate"] opaque Float.neg : Float → Float
+@[extern "lean_float_negate"] def Float.neg : Float → Float
+  | ⟨a⟩ => ⟨-a⟩
 
-set_option bootstrap.genMatcherCode false
 /--
 Strict inequality of floating-point numbers. Typically used via the `<` operator.
 -/
 def Float.lt : Float → Float → Prop := fun a b =>
-  match a, b with
-  | ⟨a⟩, ⟨b⟩ => floatSpec.lt a b
+  a.val < b.val
 
 /--
 Non-strict inequality of floating-point numbers. Typically used via the `≤` operator.
 -/
 def Float.le : Float → Float → Prop := fun a b =>
-  floatSpec.le a.val b.val
+  a.val ≤ b.val
 
 /--
 Bit-for-bit conversion from `UInt64`. Interprets a `UInt64` as a `Float`, ignoring the numeric value
@@ -139,31 +134,28 @@ Floating-point equality does not correspond with propositional equality. In part
 reflexive since `NaN != NaN`, and it is not a congruence because `0.0 == -0.0`, but
 `1.0 / 0.0 != 1.0 / -0.0`.
 
-This function does not reduce in the kernel. It is compiled to the C equality operator.
+This function is compiled to the C equality operator.
 -/
-@[extern "lean_float_beq"] opaque Float.beq (a b : Float) : Bool
+@[extern "lean_float_beq"] def Float.beq (a b : Float) : Bool :=
+  a.val == b.val
 
 instance : BEq Float := ⟨Float.beq⟩
 
 /--
 Compares two floating point numbers for strict inequality.
 
-This function does not reduce in the kernel. It is compiled to the C inequality operator.
+This function is compiled to the C inequality operator.
 -/
-@[extern "lean_float_decLt"] opaque Float.decLt (a b : Float) : Decidable (a < b) :=
-  match a, b with
-  | ⟨a⟩, ⟨b⟩ => floatSpec.decLt a b
+@[extern "lean_float_decLt"] instance Float.decLt (a b : Float) : Decidable (a < b) :=
+  inferInstanceAs (Decidable ((_ : Std.BinaryFloat _) < _))
 
 /--
 Compares two floating point numbers for non-strict inequality.
 
-This function does not reduce in the kernel. It is compiled to the C inequality operator.
+This function is compiled to the C inequality operator.
 -/
-@[extern "lean_float_decLe"] opaque Float.decLe (a b : Float) : Decidable (a ≤ b) :=
-  match a, b with
-  | ⟨a⟩, ⟨b⟩ => floatSpec.decLe a b
-
-attribute [instance] Float.decLt Float.decLe
+@[extern "lean_float_decLe"] instance Float.decLe (a b : Float) : Decidable (a ≤ b) :=
+  inferInstanceAs (Decidable ((_ : Std.BinaryFloat _) ≤ _))
 
 /--
 Converts a floating-point number to a string.
@@ -500,3 +492,56 @@ This function does not reduce in the kernel.
 -/
 @[extern "lean_float_scaleb"]
 opaque Float.scaleB (x : Float) (i : @& Int) : Float
+
+/-- Computes `m * 2^e`. -/
+def Float.ofBinaryScientific (m : Nat) (e : Int) : Float :=
+  let s := m.log2 - 63
+  let m := (m >>> s).toUInt64
+  let e := e + s
+  m.toFloat.scaleB e
+
+/--
+Constructs a `Float` from the given mantissa, sign, and exponent values.
+
+This function is part of the implementation of the `OfScientific Float` instance that is used to
+interpret floating-point literals.
+-/
+protected opaque Float.ofScientific (m : Nat) (s : Bool) (e : Nat) : Float :=
+  if s then
+    let s := 64 - m.log2 -- ensure we have 64 bits of mantissa left after division
+    let m := (m <<< (3 * e + s)) / 5^e
+    Float.ofBinaryScientific m (-4 * e - s)
+  else
+    Float.ofBinaryScientific (m * 5^e) e
+
+/--
+  The `OfScientific Float` must have priority higher than `mid` since
+  the default instance `Neg Int` has `mid` priority.
+  ```
+  #check -42.0 -- must be Float
+  ```
+-/
+@[default_instance mid+1]
+instance : OfScientific Float where
+  ofScientific := Float.ofScientific
+
+/--
+Converts a natural number into the closest-possible 64-bit floating-point number, or an infinite
+floating-point value if the range of `Float` is exceeded.
+-/
+@[export lean_float_of_nat]
+def Float.ofNat (n : Nat) : Float :=
+  OfScientific.ofScientific n false 0
+
+/--
+Converts an integer into the closest-possible 64-bit floating-point number, or positive or negative
+infinite floating-point value if the range of `Float` is exceeded.
+-/
+def Float.ofInt : Int → Float
+  | Int.ofNat n => Float.ofNat n
+  | Int.negSucc n => Float.neg (Float.ofNat (Nat.succ n))
+
+instance : OfNat Float n   := ⟨Float.ofNat n⟩
+
+@[inherit_doc Float.ofNat] abbrev Nat.toFloat (n : Nat) : Float :=
+  Float.ofNat n

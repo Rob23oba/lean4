@@ -6,22 +6,20 @@ Authors: Leonardo de Moura
 module
 
 prelude
-public import Init.Core
-public import Init.Data.Int.Basic
-public import Init.Data.ToString.Basic
 public import Init.Data.Float
 
-public section
+@[expose] public section
 
--- Just show FloatSpec is inhabited.
-opaque float32Spec : FloatSpec := {
-  float := Unit,
-  val   := (),
-  lt    := fun _ _ => True,
-  le    := fun _ _ => True,
-  decLt := fun _ _ => inferInstanceAs (Decidable True),
-  decLe := fun _ _ => inferInstanceAs (Decidable True)
-}
+/-
+Note regarding correctness of floating point definitions:
+
+The definitions for `Float`, specifically, modelling it using `BinaryFloat`, rely on the fact that
+the native floating point type conforms to the IEEE 754 standard and uses default flags (e.g. the
+rounding mode being round to nearest, ties to even). While all supported platforms use IEEE 754
+floating point, they also expose functions to e.g. change the rounding mode. To preserve soundness
+of these definitions and to make sure that you can't observe a pure function change value,
+functions called using FFI should thus not change any floating point flags.
+-/
 
 /--
 32-bit floating-point numbers.
@@ -39,12 +37,11 @@ Their special values are:
    dividing zero by zero, and
  * `Inf` and `-Inf`, which represent positive and infinities that result from dividing non-zero
    values by zero.
-
 -/
 structure Float32 where
-  val : float32Spec.float
+  val : Std.BinaryFloat .binary32
 
-instance : Nonempty Float32 := ⟨{ val := float32Spec.val }⟩
+instance : Nonempty Float32 := ⟨{ val := .zero false }⟩
 
 /--
 Adds two 32-bit floating-point numbers according to IEEE 754. Typically used via the `+` operator.
@@ -58,12 +55,15 @@ Subtracts 32-bit floating-point numbers according to IEEE 754. Typically used vi
 This function does not reduce in the kernel. It is compiled to the C subtraction operator.
 -/
 @[extern "lean_float32_sub"] opaque Float32.sub : Float32 → Float32 → Float32
+
 /--
 Multiplies 32-bit floating-point numbers according to IEEE 754. Typically used via the `*` operator.
 
-This function does not reduce in the kernel. It is compiled to the C multiplication operator.
+This function is compiled to the C multiplication operator.
 -/
-@[extern "lean_float32_mul"] opaque Float32.mul : Float32 → Float32 → Float32
+@[extern "lean_float32_mul"] def Float32.mul : Float32 → Float32 → Float32
+  | ⟨a⟩, ⟨b⟩ => ⟨a * b⟩
+
 /--
 Divides 32-bit floating-point numbers according to IEEE 754. Typically used via the `/` operator.
 
@@ -73,27 +73,27 @@ In Lean, division by zero typically yields zero. For `Float32`, it instead yield
 This function does not reduce in the kernel. It is compiled to the C division operator.
 -/
 @[extern "lean_float32_div"] opaque Float32.div : Float32 → Float32 → Float32
+
 /--
 Negates 32-bit floating-point numbers according to IEEE 754. Typically used via the `-` prefix
 operator.
 
-This function does not reduce in the kernel. It is compiled to the C negation operator.
+This function is compiled to the C negation operator.
 -/
-@[extern "lean_float32_negate"] opaque Float32.neg : Float32 → Float32
+@[extern "lean_float32_negate"] def Float32.neg : Float32 → Float32
+  | ⟨a⟩ => ⟨-a⟩
 
-set_option bootstrap.genMatcherCode false
 /--
 Strict inequality of floating-point numbers. Typically used via the `<` operator.
 -/
 def Float32.lt : Float32 → Float32 → Prop := fun a b =>
-  match a, b with
-  | ⟨a⟩, ⟨b⟩ => float32Spec.lt a b
+  a.val < b.val
 
 /--
 Non-strict inequality of floating-point numbers. Typically used via the `≤` operator.
 -/
 def Float32.le : Float32 → Float32 → Prop := fun a b =>
-  float32Spec.le a.val b.val
+  a.val ≤ b.val
 
 /--
 Bit-for-bit conversion from `UInt32`. Interprets a `UInt32` as a `Float32`, ignoring the numeric
@@ -136,29 +136,28 @@ Floating-point equality does not correspond with propositional equality. In part
 reflexive since `NaN != NaN`, and it is not a congruence because `0.0 == -0.0`, but
 `1.0 / 0.0 != 1.0 / -0.0`.
 
-This function does not reduce in the kernel. It is compiled to the C equality operator.
+This function is compiled to the C equality operator.
 -/
-@[extern "lean_float32_beq"] opaque Float32.beq (a b : Float32) : Bool
+@[extern "lean_float32_beq"] def Float32.beq (a b : Float32) : Bool :=
+  a.val == b.val
 
 instance : BEq Float32 := ⟨Float32.beq⟩
 
 /--
 Compares two floating point numbers for strict inequality.
 
-This function does not reduce in the kernel. It is compiled to the C inequality operator.
+This function is compiled to the C inequality operator.
 -/
-@[extern "lean_float32_decLt", instance] opaque Float32.decLt (a b : Float32) : Decidable (a < b) :=
-  match a, b with
-  | ⟨a⟩, ⟨b⟩ => float32Spec.decLt a b
+@[extern "lean_float32_decLt"] instance Float32.decLt (a b : Float32) : Decidable (a < b) :=
+  inferInstanceAs (Decidable ((_ : Std.BinaryFloat _) < _))
 
 /--
 Compares two floating point numbers for non-strict inequality.
 
-This function does not reduce in the kernel. It is compiled to the C inequality operator.
+This function is compiled to the C inequality operator.
 -/
-@[extern "lean_float32_decLe", instance] opaque Float32.decLe (a b : Float32) : Decidable (a ≤ b) :=
-  match a, b with
-  | ⟨a⟩, ⟨b⟩ => float32Spec.decLe a b
+@[extern "lean_float32_decLe"] instance Float32.decLe (a b : Float32) : Decidable (a ≤ b) :=
+  inferInstanceAs (Decidable ((_ : Std.BinaryFloat _) ≤ _))
 
 /--
 Converts a floating-point number to a string.
@@ -513,3 +512,48 @@ This may lose precision.
 This function does not reduce in the kernel.
 -/
 @[extern "lean_float_to_float32"] opaque Float.toFloat32 : Float → Float32
+
+/-- Computes `m * 2^e`. -/
+def Float32.ofBinaryScientific (m : Nat) (e : Int) : Float32 :=
+  let s := m.log2 - 63
+  let m := (m >>> s).toUInt64
+  let e := e + s
+  m.toFloat32.scaleB e
+
+/--
+Constructs a `Float32` from the given mantissa, sign, and exponent values.
+
+This function is part of the implementation of the `OfScientific Float32` instance that is used to
+interpret floating-point literals.
+-/
+protected opaque Float32.ofScientific (m : Nat) (s : Bool) (e : Nat) : Float32 :=
+  if s then
+    let s := 64 - m.log2 -- ensure we have 64 bits of mantissa left after division
+    let m := (m <<< (3 * e + s)) / 5^e
+    Float32.ofBinaryScientific m (-4 * e - s)
+  else
+    Float32.ofBinaryScientific (m * 5^e) e
+
+instance : OfScientific Float32 where
+  ofScientific := Float32.ofScientific
+
+/--
+Converts a natural number into the closest-possible 32-bit floating-point number, or an infinite
+floating-point value if the range of `Float32` is exceeded.
+-/
+@[export lean_float32_of_nat]
+def Float32.ofNat (n : Nat) : Float32 :=
+  OfScientific.ofScientific n false 0
+
+/--
+Converts an integer into the closest-possible 32-bit floating-point number, or positive or negative
+infinite floating-point value if the range of `Float32` is exceeded.
+-/
+def Float32.ofInt : Int → Float32
+  | Int.ofNat n => Float32.ofNat n
+  | Int.negSucc n => Float32.neg (Float32.ofNat (Nat.succ n))
+
+instance : OfNat Float32 n   := ⟨Float32.ofNat n⟩
+
+@[inherit_doc Float32.ofNat] abbrev Nat.toFloat32 (n : Nat) : Float32 :=
+  Float32.ofNat n
