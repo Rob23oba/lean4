@@ -1356,5 +1356,6 @@ theorem toRat_mul {a b : BinaryFloat fmt} (ha : a.IsFinite) (hb : b.IsFinite) :
       conv => lhs; apply (Rat.add_zero _).symm
       rw [Rat.add_lt_add_iff_left]
       pos
+    · simp
 
 end BinaryFloat
