@@ -7,6 +7,7 @@ module
 
 prelude
 public import Init.Data.Rat.Lemmas
+public import Init.Data.BitVec.Lemmas
 public import Init.Grind.Ordered.Rat
 public import Init.Grind.Ordered.Field
 public import Init.Data.AC
@@ -17,6 +18,23 @@ open Lean.Grind.AddCommGroup
 open Lean.Grind.OrderedAdd
 open Lean.Grind.OrderedRing
 open Lean.Grind.Field.IsOrdered
+
+@[simp]
+theorem BitVec.extractLsb'_cast {n m : Nat} {start len : Nat} {x : BitVec n} (h : n = m) :
+    extractLsb' start len (x.cast h) = extractLsb' start len x := by
+  simp [extractLsb']
+
+@[simp]
+theorem BitVec.zero_eq_allOnes_iff {n : Nat} : 0#n = allOnes n ↔ n = 0 := by
+  constructor
+  · intro h
+    simpa using congrArg (·.getLsbD 0) h
+  · rintro rfl
+    rfl
+
+@[simp]
+theorem BitVec.allOnes_eq_zero_iff {n : Nat} : allOnes n = 0#n ↔ n = 0 :=
+  eq_comm.trans BitVec.zero_eq_allOnes_iff
 
 def Nat.size (n : Nat) : Nat :=
   if n = 0 then 0 else n.log2 + 1
@@ -43,6 +61,11 @@ theorem Nat.size_eq_iff {a b : Nat} : a.size = b ↔ 2 ^ b / 2 ≤ a ∧ a < 2 ^
   rcases b with _ | b
   · simp
   · simp [Nat.add_one_le_iff, Nat.pow_succ, Nat.lt_size]
+
+theorem Nat.size_eq_iff' {a b : Nat} (h : b ≠ 0) :
+    a.size = b ↔ 2 ^ (b - 1) ≤ a ∧ a < 2 ^ b := by
+  rw [← Nat.pow_div (Nat.pos_of_ne_zero h) (by decide)]
+  exact Nat.size_eq_iff
 
 @[simp]
 theorem Nat.size_eq_zero_iff {a : Nat} : a.size = 0 ↔ a = 0 := by
@@ -826,7 +849,7 @@ deriving Decidable
 scoped macro "fexp_trivial" : tactic =>
   let fmt := Lean.mkIdent `fmt
   `(tactic| {
-    simp +zetaDelta [FloatFormat.fexp, FloatFormat.minExp, FloatFormat.CanonicalMantissa,
+    try simp +zetaDelta [FloatFormat.fexp, FloatFormat.minExp, FloatFormat.CanonicalMantissa,
       FloatFormat.Bounded] at *
     have := $(fmt).prec_pos
     have := $(fmt).prec_lt_maxExp
@@ -836,17 +859,16 @@ scoped macro "fexp_trivial" : tactic =>
 @[simp]
 theorem canonicalMantissa_zero_iff {fmt : FloatFormat} {e : Int} :
     fmt.CanonicalMantissa 0 e ↔ e = fmt.minExp := by
-  simp only [CanonicalMantissa, fexp, Nat.size_zero, Int.cast_ofNat_Int, Int.zero_add]
-  have := fmt.prec_pos
-  omega
+  fexp_trivial
 
 @[simp]
 theorem bounded_zero_iff {fmt : FloatFormat} {e : Int} :
     fmt.Bounded 0 e ↔ e = fmt.minExp := by
-  simp only [Bounded, canonicalMantissa_zero_iff, minExp, and_iff_left_iff_imp]
-  have := fmt.prec_pos
-  have := fmt.prec_lt_maxExp
-  omega
+  fexp_trivial
+
+theorem eq_minExp_of_size_lt_prec {m : Nat} {e : Int} (h : fmt.CanonicalMantissa m e)
+    (h' : m.size < fmt.prec) : e = fmt.minExp := by
+  fexp_trivial
 
 def roundRatEven (q : Rat) : Rat :=
   let fexp := fmt.fexp (q.log2 + 1)
@@ -858,9 +880,10 @@ def boundRat (q : Rat) : Rat :=
 variable {fmt}
 
 theorem minExp_lt_maxExp : fmt.minExp < fmt.maxExp := by
-  cases fmt
-  simp [minExp]
-  omega
+  fexp_trivial
+
+theorem maxExp_pos : 0 < fmt.maxExp := by
+  fexp_trivial
 
 theorem minExp_le_maxExp : fmt.minExp ≤ fmt.maxExp := Int.le_of_lt minExp_lt_maxExp
 
@@ -1178,6 +1201,11 @@ theorem toRat_le_two_pow_maxExp (x : BinaryFloat fmt) : toRat x ≤ 2 ^ fmt.maxE
     · simp [Rat.le_refl]
     · simp only [toRat_inf_true, Rat.neg_le_self_iff]; pos
   · exact Rat.le_of_lt (toRat_lt_two_pow_maxExp (IsFinite.finite ..))
+
+protected def sign : BinaryFloat fmt → Bool
+  | .nan => false
+  | .inf s => s
+  | .finite s _ _ _ => s
 
 protected def neg : BinaryFloat fmt → BinaryFloat fmt
   | .nan => .nan
@@ -1574,5 +1602,98 @@ theorem toRat_mul {a b : BinaryFloat fmt} (ha : a.IsFinite) (hb : b.IsFinite) :
       rw [Rat.add_lt_add_iff_left]
       pos
     · simp
+
+def encode (x : BinaryFloat fmt) : BitVec (1 + fmt.maxExp.log2 + fmt.prec) :=
+  let sign : BitVec 1 := BitVec.ofBool x.sign
+  let exp : BitVec (1 + fmt.maxExp.log2) :=
+    match x with
+    | .nan | .inf _ => BitVec.allOnes _
+    | .finite _ m e _ =>
+      if m.size < fmt.prec then
+        0#_
+      else
+        BitVec.ofInt _ (e + fmt.prec + fmt.maxExp - 2)
+  let mant : BitVec (fmt.prec - 1) :=
+    match x with
+    | .nan => BitVec.ofNat _ (2 ^ (fmt.prec - 2))
+    | .inf _ => 0#_
+    | .finite _ m _ _ => BitVec.ofNat _ m
+  (sign ++ exp ++ mant).cast (by fexp_trivial)
+
+def decode (x : BitVec (1 + fmt.maxExp.log2 + fmt.prec)) : BinaryFloat fmt :=
+  let sign := x.msb
+  let exp := x.extractLsb' (fmt.prec - 1) (1 + fmt.maxExp.log2)
+  let mant := x.extractLsb' 0 (fmt.prec - 1)
+  if h : exp = .allOnes _ then
+    if mant = 0 then
+      .inf sign
+    else
+      .nan
+  else if h' : exp = 0 then
+    .finite sign mant.toNat fmt.minExp ?subnormal
+  else
+    .finite sign (mant.toNat + 1 <<< (fmt.prec - 1)) (exp.toNat + 2 - fmt.maxExp - fmt.prec) ?normal
+where finally
+  case subnormal =>
+    have : mant.toNat.size ≤ fmt.prec - 1 := Nat.size_le.mpr mant.isLt
+    fexp_trivial
+  case normal =>
+    simp only [← BitVec.lt_allOnes_iff, BitVec.lt_def, BitVec.toNat_allOnes, Nat.pow_add,
+      Nat.pow_one] at h
+    have := Nat.log2_self_le (Nat.ne_of_gt fmt.maxExp_pos)
+    have : (mant.toNat + 1 <<< (fmt.prec - 1)).size = fmt.prec := by
+      rw [Nat.size_eq_iff' (Nat.ne_of_gt fmt.prec_pos), Nat.shiftLeft_eq]
+      conv => enter [2, 2]; rw [← Nat.sub_one_add_one_eq_of_pos fmt.prec_pos, Nat.pow_add_one]
+      omega
+    have : 0 < exp.toNat := by simpa [← BitVec.le_zero_iff] using h'
+    rw [← Nat.sub_one_add_one_eq_of_pos this]
+    constructor <;> fexp_trivial
+
+theorem decode_encode (x : BinaryFloat fmt) (hmax : fmt.maxExp = 2 ^ fmt.maxExp.log2)
+    (hprec : 1 < fmt.prec) : decode (encode x) = x := by
+  change have a := encode x; decode a = x
+  unfold encode
+  unfold decode
+  extract_lets sign exp mant a sign' exp' mant'
+  have hsign : sign' = x.sign := by simp [sign', a, BitVec.msb_append, sign]
+  have hexp : exp' = exp := by simp [exp', a, BitVec.extractLsb'_append_eq_ite]
+  have hmant : mant' = mant := by
+    simp [mant', a, BitVec.extractLsb'_append_eq_ite, Nat.sub_eq_zero_iff_le, Nat.not_le_of_lt hprec]
+  simp only [hexp, hmant, BitVec.ofNat_eq_ofNat, hsign]
+  rcases x with _ | _ | ⟨s, m, e, h⟩
+  · let a := fmt.prec - 2
+    have : fmt.prec = a + 2 := by omega
+    simp [exp, mant, ← BitVec.toNat_inj, this, Nat.pow_add, Nat.mod_mul, Nat.div_self,
+      Nat.two_pow_pos]
+  · simp [exp, mant, BinaryFloat.sign]
+  · by_cases h' : m.size < fmt.prec
+    · cases fmt.eq_minExp_of_size_lt_prec h.1 h'
+      have : m < 2 ^ (fmt.prec - 1) := by
+        rwa [← Nat.le_sub_one_iff_lt fmt.prec_pos, Nat.size_le] at h'
+      simp [h', exp, BinaryFloat.sign, mant, Nat.mod_eq_of_lt this]
+    · have hexp2 : exp.toNat = e + ↑fmt.prec + ↑fmt.maxExp - 2 := by
+        simp only [h', ↓reduceIte, BitVec.toNat_ofInt, Int.natCast_pow, Int.cast_ofNat_Int,
+          Int.ofNat_toNat, ne_eq, Int.reduceEq, not_false_eq_true,
+          Int.max_eq_left (Int.emod_nonneg _ (Int.pow_ne_zero _)), exp]
+        clear hmant hexp hsign mant' exp' sign' a mant exp sign
+        rw [Int.emod_eq_of_lt]
+        · fexp_trivial
+        · rw [Int.pow_add, Int.pow_succ]
+          norm_cast; rw [← hmax]
+          fexp_trivial
+      simp only [← BitVec.toNat_inj, BitVec.toNat_allOnes, BitVec.toNat_ofNat, Nat.zero_mod,
+        BinaryFloat.sign, hexp2, Int.sub_add_cancel, Int.add_sub_cancel]
+      simp only [Nat.pow_add, Nat.pow_one, ← hmax, ← Int.natCast_inj, hexp2, Int.cast_ofNat_Int]
+      rw [dif_neg (by clear hexp2 hmant hexp hsign mant' exp' sign' a mant exp sign; fexp_trivial)]
+      rw [dif_neg (by clear hexp2 hmant hexp hsign mant' exp' sign' a mant exp sign; fexp_trivial)]
+      congr 1
+      simp only [BitVec.toNat_ofNat, Nat.shiftLeft_eq, Nat.one_mul, mant]
+      have : m / 2 ^ (fmt.prec - 1) = 1 := by
+        simp [Nat.div_eq_iff, ← Nat.lt_size, ← Nat.mul_two, ← Nat.pow_succ,
+          Nat.sub_one_add_one_eq_of_pos fmt.prec_pos, Nat.le_sub_one_iff_lt, ← Nat.size_le]
+        clear hexp2 hmant hexp hsign mant' exp' sign' a mant exp sign
+        fexp_trivial
+      conv => enter [1, 2]; rw [← Nat.mul_one (2 ^ _)]; arg 2; rw [← this]
+      rw [Nat.mod_add_div]
 
 end BinaryFloat

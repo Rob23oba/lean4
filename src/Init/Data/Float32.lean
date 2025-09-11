@@ -101,11 +101,9 @@ value and treating the `UInt32`'s bit pattern as a `Float32`.
 
 `Float32`s and `UInt32`s have the same endianness on all supported platforms. IEEE 754 very
 precisely specifies the bit layout of floats.
-
-This function does not reduce in the kernel.
 -/
-@[extern "lean_float32_of_bits"] opaque Float32.ofBits : UInt32 → Float32
-
+@[extern "lean_float32_of_bits"] def Float32.ofBits (bits : UInt32) : Float32 :=
+  ⟨.decode bits.toBitVec⟩
 
 /--
 Bit-for-bit conversion to `UInt32`. Interprets a `Float32` as a `UInt32`, ignoring the numeric value
@@ -119,7 +117,20 @@ than reinterpreting the bit pattern.
 
 This function does not reduce in the kernel.
 -/
-@[extern "lean_float32_to_bits"] opaque Float32.toBits : Float32 → UInt32
+@[extern "lean_float32_to_bits"] def Float32.toBits (x : Float32) : UInt32 :=
+  ⟨x.val.encode⟩
+
+theorem Float32.toBits_inj {x y : Float32} : x.toBits = y.toBits ↔ x = y := by
+  simp only [toBits, UInt32.ofBitVec.injEq]
+  constructor
+  · intro h
+    replace h := congrArg Std.BinaryFloat.decode h
+    rw [Std.BinaryFloat.decode_encode _ rfl (by decide)] at h h
+    exact congrArg Float32.mk h
+  · rintro rfl; rfl
+
+instance : DecidableEq Float32 := fun _ _ =>
+  decidable_of_decidable_of_iff Float32.toBits_inj
 
 instance : Add Float32 := ⟨Float32.add⟩
 instance : Sub Float32 := ⟨Float32.sub⟩
