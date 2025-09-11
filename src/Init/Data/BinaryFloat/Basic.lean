@@ -212,6 +212,30 @@ def binaryRoundAux (s : Bool) (m : Nat) (e : Int) (exact : Bool)
   let addOne := b && (!exact || val % 2 == 1)
   if addOne then res.incMantissa else res
 
+def binaryRound (s : Bool) (m : Nat) (e : Int) : BinaryFloat fmt :=
+  if h : m = 0 then
+    .zero s
+  else if h' : 2 ^ fmt.prec ≤ m then
+    binaryRoundAux s m e true ?big
+  else
+    binaryRoundAux s (m <<< (fmt.prec + 1)) (e - (fmt.prec + 1)) true ?small
+where finally
+  case big =>
+    rw [← Nat.lt_size] at h'
+    fexp_trivial
+  case small =>
+    rw [Nat.size_shiftLeft h]
+    fexp_trivial
+
+def binaryNormalize (m : Int) (e : Int) : BinaryFloat fmt :=
+  binaryRound (m matches .negSucc _) m.natAbs e
+
+protected def ofNat (m : Nat) : BinaryFloat fmt :=
+  binaryRound false m 0
+
+protected def ofInt (m : Int) : BinaryFloat fmt :=
+  binaryNormalize m 0
+
 protected def mul (a b : BinaryFloat fmt) : BinaryFloat fmt :=
   match a, b with
   | .nan, _ => a
@@ -280,6 +304,7 @@ where finally
     rw [← Nat.sub_one_add_one_eq_of_pos this]
     constructor <;> fexp_trivial
 
+-- for `DecidableEq Float`
 theorem decode_encode (x : BinaryFloat fmt) (hmax : fmt.maxExp = 2 ^ fmt.maxExp.log2)
     (hprec : 1 < fmt.prec) : decode (encode x) = x := by
   change have a := encode x; decode a = x

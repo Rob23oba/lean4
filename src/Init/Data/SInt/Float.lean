@@ -68,42 +68,34 @@ This function does not reduce in the kernel.
 -/
 @[extern "lean_float_to_isize"] opaque Float.toISize : Float → ISize
 
-/--
-Obtains the `Float` whose value is the same as the given `Int8`.
+/-- Obtains the `Float` whose value is the same as the given `Int8`. -/
+@[extern "lean_int8_to_float"] def Int8.toFloat (n : Int8) : Float :=
+  ⟨.ofInt n.toInt⟩
 
-This function does not reduce in the kernel.
--/
-@[extern "lean_int8_to_float"] opaque Int8.toFloat (n : Int8) : Float
-/--
-Obtains the `Float` whose value is the same as the given `Int16`.
+/-- Obtains the `Float` whose value is the same as the given `Int16`. -/
+@[extern "lean_int16_to_float"] def Int16.toFloat (n : Int16) : Float :=
+  ⟨.ofInt n.toInt⟩
 
-This function does not reduce in the kernel.
--/
-@[extern "lean_int16_to_float"] opaque Int16.toFloat (n : Int16) : Float
-/--
-Obtains the `Float` whose value is the same as the given `Int32`.
+/-- Obtains the `Float` whose value is the same as the given `Int32`. -/
+@[extern "lean_int32_to_float"] def Int32.toFloat (n : Int32) : Float :=
+  ⟨.ofInt n.toInt⟩
 
-This function does not reduce in the kernel.
--/
-@[extern "lean_int32_to_float"] opaque Int32.toFloat (n : Int32) : Float
 /--
 Obtains a `Float` whose value is near the given `Int64`.
 
 It will be exactly the value of the given `Int64` if such a `Float` exists. If no such `Float`
 exists, the returned value will either be the smallest `Float` that is larger than the given value,
 or the largest `Float` that is smaller than the given value.
-
-
-This function does not reduce in the kernel.
 -/
-@[extern "lean_int64_to_float"] opaque Int64.toFloat (n : Int64) : Float
+@[extern "lean_int64_to_float"] def Int64.toFloat (n : Int64) : Float :=
+  ⟨.ofInt n.toInt⟩
+
 /--
 Obtains a `Float` whose value is near the given `ISize`.
 
 It will be exactly the value of the given `ISize` if such a `Float` exists. If no such `Float`
 exists, the returned value will either be the smallest `Float` that is larger than the given value,
 or the largest `Float` that is smaller than the given value.
-
-This function does not reduce in the kernel.
 -/
-@[extern "lean_isize_to_float"] opaque ISize.toFloat (n : ISize) : Float
+@[extern "lean_isize_to_float"] def ISize.toFloat (n : ISize) : Float :=
+  ⟨.ofInt n.toInt⟩

@@ -599,6 +599,47 @@ theorem toRat_binaryRoundAux {s : Bool} {m : Nat} {e : Int} {exact : Bool}
   · rw [← Bool.not_false, binaryRoundAux_not]
     simp [toRat_binaryRoundAux_false h hme₁ hme₂ hexact, Rat.neg_mul]
 
+theorem toRat_binaryRound (s : Bool) (m : Nat) (e : Int) :
+    toRat (binaryRound s m e : BinaryFloat fmt) =
+      Rat.ofSign s * fmt.boundRat (fmt.roundRatEven (m * 2 ^ e)) := by
+  rw [binaryRound]
+  split
+  · simp_all
+  split
+  · apply toRat_binaryRoundAux
+    · exact Rat.le_refl
+    · simp only [Rat.add_mul, Rat.one_mul]
+      conv => lhs; apply (Rat.add_zero _).symm
+      rw [Rat.add_lt_add_iff_left]
+      pos
+    · simp
+  · rw [toRat_binaryRoundAux (q := (m <<< (fmt.prec + 1)) * 2 ^ (e - (fmt.prec + 1)))]
+    · have : fmt.prec + 1 + (e - (fmt.prec + 1)) = e := by omega
+      simp [Nat.shiftLeft_eq, Rat.mul_assoc, ← Rat.zpow_add, ← Rat.zpow_natCast, this]
+    · exact Rat.le_refl
+    · simp only [Rat.add_mul, Rat.one_mul]
+      conv => lhs; apply (Rat.add_zero _).symm
+      rw [Rat.add_lt_add_iff_left]
+      pos
+    · simp
+
+theorem toRat_binaryNormalize (m : Int) (e : Int) :
+    toRat (binaryNormalize m e : BinaryFloat fmt) =
+      fmt.boundRat (fmt.roundRatEven (m * 2 ^ e)) := by
+  cases m
+  · simp [binaryNormalize, toRat_binaryRound, Rat.intCast_natCast]
+  · have (a : Nat) : Int.natAbs (a + 1) = a + 1 := rfl
+    simp [binaryNormalize, toRat_binaryRound, Int.negSucc_eq, Rat.neg_mul,
+      Rat.intCast_natCast, fmt.boundRat_neg, fmt.roundRatEven_neg, this]
+
+theorem toRat_ofNat (n : Nat) :
+    toRat (BinaryFloat.ofNat n : BinaryFloat fmt) = fmt.boundRat (fmt.roundRatEven n) := by
+  simp [BinaryFloat.ofNat, toRat_binaryRound]
+
+theorem toRat_ofInt (n : Int) :
+    toRat (BinaryFloat.ofInt n : BinaryFloat fmt) = fmt.boundRat (fmt.roundRatEven n) := by
+  simp [BinaryFloat.ofInt, toRat_binaryNormalize]
+
 theorem toRat_mul {a b : BinaryFloat fmt} (ha : a.IsFinite) (hb : b.IsFinite) :
     (a * b).toRat = fmt.boundRat (fmt.roundRatEven (a.toRat * b.toRat)) := by
   cases ha <;> cases hb
