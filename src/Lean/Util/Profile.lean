@@ -6,7 +6,7 @@ Author: Sebastian Ullrich
 module
 
 prelude
-public import Init.Data.OfScientific
+public import Init.Data.Float
 public import Lean.Data.Options
 
 public section
@@ -17,7 +17,7 @@ register_builtin_option profiler : Bool := {
   defValue := false
   group    := "profiler"
   descr    := "show exclusive execution times of various Lean components
-  
+
 See also `trace.profiler` for an alternative profiling system with structured output."
 }
 

@@ -13,7 +13,7 @@ module
 prelude
 public import Init.Data.Range.Polymorphic.Iterators
 public import Init.Data.Range.Polymorphic.Nat
-public import Init.Data.OfScientific
+public import Init.Data.Float
 public import Init.Data.Option.Coe
 public import Init.Data.Range
 import Init.Data.SInt.Basic
