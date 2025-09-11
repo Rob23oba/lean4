@@ -232,25 +232,28 @@ Checks whether a floating point number is `NaN` (“not a number”) value.
 
 `NaN` values result from operations that might otherwise be errors, such as dividing zero by zero.
 
-This function does not reduce in the kernel. It is compiled to the C operator `isnan`.
+This function is compiled to the C operator `isnan`.
 -/
-@[extern "lean_float_isnan"] opaque Float.isNaN : Float → Bool
+@[extern "lean_float_isnan"] def Float.isNaN (x : Float) : Bool :=
+  x.val matches .nan
 
 /--
 Checks whether a floating-point number is finite, that is, whether it is normal, subnormal, or zero,
 but not infinite or `NaN`.
 
-This function does not reduce in the kernel. It is compiled to the C operator `isfinite`.
+This function is compiled to the C operator `isfinite`.
 -/
-@[extern "lean_float_isfinite"] opaque Float.isFinite : Float → Bool
+@[extern "lean_float_isfinite"] def Float.isFinite (x : Float) : Bool :=
+  x.val matches .finite ..
 
 /--
 Checks whether a floating-point number is a positive or negative infinite number, but not a finite
 number or `NaN`.
 
-This function does not reduce in the kernel. It is compiled to the C operator `isinf`.
+This function is compiled to the C operator `isinf`.
 -/
-@[extern "lean_float_isinf"] opaque Float.isInf : Float → Bool
+@[extern "lean_float_isinf"] def Float.isInf (x : Float) : Bool :=
+  x.val matches .inf _
 
 /--
 Splits the given float `x` into a significand/exponent pair `(s, i)` such that `x = s * 2^i` where
@@ -490,13 +493,14 @@ This function does not reduce in the kernel. It is implemented in compiled code 
 `round`.
 -/
 @[extern "round"] opaque Float.round : Float → Float
+
 /--
 Computes the absolute value of a floating-point number.
 
-This function does not reduce in the kernel. It is implemented in compiled code by the C function
-`fabs`.
+This function is implemented in compiled code by the C function `fabs`.
 -/
-@[extern "fabs"] opaque Float.abs : Float → Float
+@[extern "fabs"] def Float.abs : Float → Float
+  | ⟨a⟩ => ⟨a.abs⟩
 
 instance : HomogeneousPow Float := ⟨Float.pow⟩
 

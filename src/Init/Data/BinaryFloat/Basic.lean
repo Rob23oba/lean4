@@ -147,6 +147,11 @@ protected def neg : BinaryFloat fmt → BinaryFloat fmt
 
 instance : Neg (BinaryFloat fmt) := ⟨BinaryFloat.neg⟩
 
+protected def abs : BinaryFloat fmt → BinaryFloat fmt
+  | .nan => .nan
+  | .inf _ => .inf false
+  | .finite _ m e h => .finite false m e h
+
 protected def blt : BinaryFloat fmt → BinaryFloat fmt → Bool
   | .nan, _ => false
   | _, .nan => false

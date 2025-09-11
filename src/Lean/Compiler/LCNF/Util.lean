@@ -7,6 +7,7 @@ module
 
 prelude
 public import Init.Data.FloatArray.Basic
+public import Init.Data.Float32
 public import Lean.CoreM
 public import Lean.MonadEnv
 public import Lean.Util.Recognizers

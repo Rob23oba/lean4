@@ -232,23 +232,29 @@ Checks whether a floating point number is `NaN` ("not a number") value.
 
 `NaN` values result from operations that might otherwise be errors, such as dividing zero by zero.
 
-This function does not reduce in the kernel. It is compiled to the C operator `isnan`.
+This function is compiled to the C operator `isnan`.
 -/
-@[extern "lean_float32_isnan"] opaque Float32.isNaN : Float32 → Bool
+@[extern "lean_float32_isnan"] def Float32.isNaN (x : Float32) : Bool :=
+  x.val matches .nan
+
 /--
 Checks whether a floating-point number is finite, that is, whether it is normal, subnormal, or zero,
 but not infinite or `NaN`.
 
-This function does not reduce in the kernel. It is compiled to the C operator `isfinite`.
+This function is compiled to the C operator `isfinite`.
 -/
-@[extern "lean_float32_isfinite"] opaque Float32.isFinite : Float32 → Bool
+@[extern "lean_float32_isfinite"] def Float32.isFinite (x : Float32) : Bool :=
+  x.val matches .finite ..
+
 /--
 Checks whether a floating-point number is a positive or negative infinite number, but not a finite
 number or `NaN`.
 
-This function does not reduce in the kernel. It is compiled to the C operator `isinf`.
+This function is compiled to the C operator `isinf`.
 -/
-@[extern "lean_float32_isinf"] opaque Float32.isInf : Float32 → Bool
+@[extern "lean_float32_isinf"] def Float32.isInf (x : Float32) : Bool :=
+  x.val matches .inf _
+
 /--
 Splits the given float `x` into a significand/exponent pair `(s, i)` such that `x = s * 2^i` where
 `s ∈ (-1;-0.5] ∪ [0.5; 1)`. Returns an undefined value if `x` is not finite.
@@ -494,13 +500,14 @@ This function does not reduce in the kernel. It is implemented in compiled code 
 `roundf`.
 -/
 @[extern "roundf"] opaque Float32.round : Float32 → Float32
+
 /--
 Computes the absolute value of a floating-point number.
 
-This function does not reduce in the kernel. It is implemented in compiled code by the C function
-`fabsf`.
+This function is implemented in compiled code by the C function `fabsf`.
 -/
-@[extern "fabsf"] opaque Float32.abs : Float32 → Float32
+@[extern "fabsf"] def Float32.abs : Float32 → Float32
+  | ⟨a⟩ => ⟨a.abs⟩
 
 instance : HomogeneousPow Float32 := ⟨Float32.pow⟩
 
