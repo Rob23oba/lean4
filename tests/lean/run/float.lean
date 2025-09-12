@@ -1,4 +1,5 @@
 def nan : Float := Float.ofBits 0x7ff8000000000000
+def nan32 : Float32 := Float32.ofBits 0x7fc00000
 
 /-- info: NaN -/
 #guard_msgs in
@@ -11,16 +12,27 @@ def nan : Float := Float.ofBits 0x7ff8000000000000
 #guard (-0 : Float) ≠ 0
 #guard (-0 : Float) == 0
 
+example : (-0 : Float) == 0 := rfl
+
 example : nan = nan := rfl
 example : nan != nan := rfl
 
-example : (3 : Int64).toFloat * (2 : Int64).toFloat = (6 : Int64).toFloat := rfl
+#reduce 1e100
+#reduce 1e-100
+#print Std.BinaryFloat.mul
+#reduce (1e100 : Float) * 1e-100
+#reduce (1 : Float)
+#reduce (1e-100 : Float32)
+
+example : (1e100 : Float) * 1e-100 = 1.0 := by decide +kernel
+example : (1e100 : Float32) * 1e-100 = nan32 := by decide +kernel
+example : (3 : Float) * 2 = 6 := rfl
 example : (3 : Int64).toFloat * (-2 : Int64).toFloat = (-6 : Int64).toFloat := rfl
 example : (0 : Int64).toFloat * -(0 : Int64).toFloat = -(0 : Int64).toFloat := rfl
 
 def tests : Array Float :=
   #[0.0, -0.0, 1.0, -1.0, 1.0 / 0.0, -1.0 / 0.0, 0.0 / 0.0, 1.3413473814,
-    -1.3413473814, 2.5, 5.3, 1.2, 12, 3141, 3141387813478, 1e100, 1e300, -1e300,
+    -1.3413473814, 2.5, 5.3, 1.2, 12, 3141, 3141387813478, 1e100, 1e300, -1e300, 1e-300,
     24, 347814738, 341893, -134.431478, 0.3, -0.3491934, 1e-200, 1e-30, -1e-30]
 
 def test : IO Unit :=

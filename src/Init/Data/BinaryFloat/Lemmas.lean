@@ -19,6 +19,30 @@ namespace FloatFormat
 
 variable {fmt : FloatFormat}
 
+theorem CanonicalMantissa.lt_two_pow_prec {m : Nat} {e : Int} (h : fmt.CanonicalMantissa m e) :
+    m < 2 ^ fmt.prec := by
+  rw [← Nat.size_le]
+  fexp_trivial
+
+theorem CanonicalMantissa.minExp_le {m : Nat} {e : Int} (h : fmt.CanonicalMantissa m e) :
+    fmt.minExp ≤ e := by
+  fexp_trivial
+
+theorem CanonicalMantissa.eq_minExp_of_lt {m : Nat} {e : Int}
+    (h : fmt.CanonicalMantissa m e) (h' : m < 2 ^ (fmt.prec - 1)) :
+    e = fmt.minExp := by
+  rw [← Nat.size_le] at h'
+  fexp_trivial
+
+theorem Bounded.mul_two_zpow_lt {m : Nat} {e : Int} (h : fmt.Bounded m e) :
+    m * (2 : Rat) ^ e < 2 ^ fmt.maxExp := by
+  have : 0 ≤ fmt.maxExp - e := by fexp_trivial
+  rw [← Rat.lt_div_iff (Rat.zpow_pos (by decide)), ← Rat.zpow_natCast,
+    ← Rat.zpow_sub (by decide), ← Int.toNat_of_nonneg this]
+  norm_cast
+  rw [← Nat.size_le]
+  fexp_trivial
+
 private theorem roundRatEven_mono_on_pos {a b : Rat}
     (ha : 0 < a) (hb : 0 < b) (h' : fmt.fexp (a.log2 + 1) < fmt.fexp (b.log2 + 1)) :
     fmt.roundRatEven a ≤ fmt.roundRatEven b := by
@@ -110,26 +134,35 @@ theorem roundRatEven_mono {a b : Rat} (h : a ≤ b) :
     simp only [fexp]
     omega
 
+theorem roundRatEven_intCast_mul_two_zpow_eq_self {m e : Int}
+    (hm : m.natAbs < 2 ^ fmt.prec) (he : fmt.minExp ≤ e) :
+    fmt.roundRatEven (m * 2 ^ e) = m * 2 ^ e := by
+  by_cases hmz : m = 0
+  · simp [hmz]
+  simp only [roundRatEven, Rat.log2_mul_two_zpow (mod_cast hmz : (m : Rat) ≠ 0),
+    Rat.log2_intCast]
+  rw [← Nat.log2_lt (by simpa)] at hm
+  rw [Rat.mul_div_assoc, ← Rat.zpow_sub (by decide)]
+  have : 0 ≤ e - fmt.fexp (↑m.natAbs.log2 + e + 1) := by fexp_trivial
+  rw [← Int.toNat_of_nonneg this]
+  norm_cast
+  rw [Rat.roundEven_intCast]
+  simp [← Rat.zpow_natCast, Int.toNat_of_nonneg this, Rat.mul_assoc, ← Rat.zpow_add]
+
+theorem roundRatEven_natCast_mul_two_zpow_eq_self {m : Nat} {e : Int}
+    (hm : m < 2 ^ fmt.prec) (he : fmt.minExp ≤ e) :
+    fmt.roundRatEven (m * 2 ^ e) = m * 2 ^ e :=
+  roundRatEven_intCast_mul_two_zpow_eq_self hm he
+
+theorem roundRatEven_intCast_eq_self {i : Int} (hi : i.natAbs < 2 ^ fmt.prec) :
+    fmt.roundRatEven i = i := by
+  rw [← Rat.mul_one i, ← Rat.zpow_zero 2, roundRatEven_intCast_mul_two_zpow_eq_self hi]
+  fexp_trivial
+
 theorem roundRatEven_two_zpow_eq_self {i : Int} (hi : fmt.minExp ≤ i) :
     fmt.roundRatEven (2 ^ i) = 2 ^ i := by
-  simp only [roundRatEven, fexp, Rat.log2_two_zpow]
-  rw [← Rat.zpow_sub (by decide)]
-  by_cases h : i + 1 - fmt.prec ≤ fmt.minExp
-  · rw [Int.max_eq_right h]
-    have : i - fmt.minExp = (i - fmt.minExp).toNat := by omega
-    rw [this]
-    norm_cast
-    rw [Rat.roundEven_natCast]
-    simp [← Rat.zpow_natCast, ← this, ← Rat.zpow_add]
-  · rw [Int.max_eq_left (Int.le_of_not_le h)]
-    have : i - (i + 1 - ↑fmt.prec) = (fmt.prec - 1 : Nat) := by have := fmt.prec_pos; omega
-    rw [this]
-    norm_cast
-    rw [Rat.roundEven_natCast]
-    simp only [Int.natCast_pow, Int.cast_ofNat_Int, Rat.intCast_pow, Rat.intCast_ofNat,
-      ← Rat.zpow_natCast, ne_eq, Rat.ofNat_eq_ofNat, reduceCtorEq, not_false_eq_true,
-      ← Rat.zpow_add]
-    congr 1; omega
+  rw [← Rat.one_mul (2 ^ i), ← Rat.intCast_ofNat, roundRatEven_intCast_mul_two_zpow_eq_self _ hi]
+  exact Nat.size_le.mp fmt.prec_pos
 
 theorem roundRatEven_two_pow_eq_self {i : Nat} (hi : fmt.minExp ≤ i) :
     fmt.roundRatEven (2 ^ i) = 2 ^ i :=
@@ -156,14 +189,17 @@ theorem boundRat_of_le {q : Rat} (h : q ≤ -2 ^ fmt.maxExp) :
   rw [← Rat.mul_one (2 ^ _), ← Rat.mul_add]
   exact Rat.not_le.mpr (Rat.mul_pos (Rat.pow_pos (by decide)) (by decide +kernel))
 
-theorem boundRat_of_le_of_ge {q : Rat} (h : q ≤ 2 ^ fmt.maxExp)
-    (h' : -2 ^ fmt.maxExp ≤ q) :
+theorem boundRat_of_le_of_ge {q : Rat} (h : q ≤ 2 ^ fmt.maxExp) (h' : -2 ^ fmt.maxExp ≤ q) :
     fmt.boundRat q = q := by
   simp only [boundRat, min_eq_if, max_eq_if]
   split
   · cases Rat.le_antisymm h ‹_›
     simp [h']
   · rfl
+
+theorem boundRat_of_abs_le {q : Rat} (h : q.abs ≤ 2 ^ fmt.maxExp) :
+    fmt.boundRat q = q :=
+  boundRat_of_le_of_ge (Rat.abs_le.mp h).2 (Rat.abs_le.mp h).1
 
 @[simp]
 theorem boundRat_zero : fmt.boundRat 0 = 0 := by
@@ -186,6 +222,23 @@ theorem boundRat_neg {q : Rat} :
 theorem boundRat_ofSign_mul {b : Bool} {q : Rat} :
     fmt.boundRat (Rat.ofSign b * q) = Rat.ofSign b * fmt.boundRat q := by
   cases b <;> simp [boundRat_neg, Rat.neg_mul]
+
+theorem boundRat_roundRatEven_intCast_mul_two_zpow_eq_self {m e : Int}
+    (hm : m.natAbs < 2 ^ fmt.prec) (he : fmt.minExp ≤ e) (he' : e ≤ fmt.maxExp - fmt.prec) :
+    fmt.boundRat (fmt.roundRatEven (m * 2 ^ e)) = m * 2 ^ e := by
+  rw [roundRatEven_intCast_mul_two_zpow_eq_self hm he, boundRat_of_abs_le]
+  rw [← Int.add_le_iff_le_sub, ← Rat.zpow_le_zpow_iff_right (show 1 < 2 by decide),
+    Rat.zpow_add (by decide), Rat.mul_comm] at he'
+  rw [Rat.abs_mul, Rat.abs_of_nonneg (Rat.zpow_nonneg (by decide))]
+  apply Rat.le_trans _ he'
+  apply Rat.mul_le_mul_of_nonneg_right _ (Rat.zpow_nonneg (by decide))
+  rw [Rat.abs_intCast]
+  exact_mod_cast Nat.le_of_lt hm
+
+theorem boundRat_roundRatEven_natCast_mul_two_zpow_eq_self {m : Nat} {e : Int}
+    (hm : m < 2 ^ fmt.prec) (he : fmt.minExp ≤ e) (he' : e ≤ fmt.maxExp - fmt.prec) :
+    fmt.boundRat (fmt.roundRatEven (m * 2 ^ e)) = m * 2 ^ e :=
+  boundRat_roundRatEven_intCast_mul_two_zpow_eq_self hm he he'
 
 theorem lt_of_exp_lt_of_canonicalMantissa {m₁ m₂ : Nat} {e₁ e₂ : Int}
     (h₁ : fmt.CanonicalMantissa m₁ e₁) (h₂ : fmt.CanonicalMantissa m₂ e₂)
@@ -290,13 +343,9 @@ theorem toRat_zero : toRat (.zero s : BinaryFloat fmt) = 0 := by
 
 theorem toRat_lt_two_pow_maxExp {x : BinaryFloat fmt} (h : x.IsFinite) : toRat x < 2 ^ fmt.maxExp := by
   rcases h with ⟨s, m, e, h⟩
-  have : m.size + e ≤ fmt.maxExp := by fexp_trivial
-  rw [← Rat.zpow_le_zpow_iff_right (show 1 < 2 by decide)] at this
-  apply Std.lt_of_lt_of_le _ this
   cases s
-  · rw [toRat_finite_false, Rat.zpow_add (by decide)]
-    apply Rat.mul_lt_mul_of_pos_right _ (by pos)
-    exact_mod_cast m.lt_size_self
+  · simp only [toRat_finite_false]
+    exact h.mul_two_zpow_lt
   · simp only [toRat_finite_true]
     exact Std.lt_of_le_of_lt (b := 0) (neg_le_iff.mp (Rat.mul_nonneg (by pos) (by pos))) (by pos)
 
@@ -307,7 +356,7 @@ theorem toRat_le_two_pow_maxExp (x : BinaryFloat fmt) : toRat x ≤ 2 ^ fmt.maxE
   · cases s
     · simp [Rat.le_refl]
     · simp only [toRat_inf_true, Rat.neg_le_self_iff]; pos
-  · exact Rat.le_of_lt (toRat_lt_two_pow_maxExp (IsFinite.finite ..))
+  · exact Rat.le_of_lt (toRat_lt_two_pow_maxExp (.finite ..))
 
 theorem IsFinite.neg {x : BinaryFloat fmt} (h : IsFinite x) : IsFinite (-x) := by
   cases h
@@ -317,13 +366,37 @@ theorem IsFinite.neg {x : BinaryFloat fmt} (h : IsFinite x) : IsFinite (-x) := b
 theorem neg_nan : -nan = (nan : BinaryFloat fmt) := rfl
 
 @[simp]
+theorem abs_nan : nan.abs = (nan : BinaryFloat fmt) := rfl
+
+@[simp]
+theorem sign_nan : (nan : BinaryFloat fmt).sign = false := rfl
+
+@[simp]
 theorem neg_inf : -inf s = (inf !s : BinaryFloat fmt) := rfl
+
+@[simp]
+theorem abs_inf : (inf s).abs = (inf false : BinaryFloat fmt) := rfl
+
+@[simp]
+theorem sign_inf : (inf s : BinaryFloat fmt).sign = s := rfl
 
 @[simp]
 theorem neg_finite : -finite s m e h = (finite (!s) m e h : BinaryFloat fmt) := rfl
 
 @[simp]
+theorem abs_finite : (finite s m e h).abs = (finite false m e h : BinaryFloat fmt) := rfl
+
+@[simp]
+theorem sign_finite : (finite s m e h : BinaryFloat fmt).sign = s := rfl
+
+@[simp]
 protected theorem neg_zero : -.zero s = (.zero (!s) : BinaryFloat fmt) := rfl
+
+@[simp]
+protected theorem abs_zero : (BinaryFloat.zero s).abs = (.zero false : BinaryFloat fmt) := rfl
+
+@[simp]
+theorem sign_zero : (.zero s : BinaryFloat fmt).sign = s := rfl
 
 @[simp]
 theorem toRat_neg (x : BinaryFloat fmt) : (-x).toRat = -x.toRat := by
@@ -420,6 +493,26 @@ theorem beq_def {a b : BinaryFloat fmt} : a == b ↔ a ≠ nan ∧ b ≠ nan ∧
         simp only [Rat.mul_eq_zero, Rat.natCast_eq_zero_iff,
           Rat.ne_of_gt (Rat.zpow_pos (show 0 < 2 by decide)), or_false] at heq₁ heq₂
         exact absurd ⟨heq₂, heq₁⟩ hm
+
+theorem ext_toRat {a b : BinaryFloat fmt} (sign_eq : a.sign = b.sign) (toRat_eq : a.toRat = b.toRat)
+    (hnan : a = nan ↔ b = nan) : a = b := by
+  by_cases hanan : a = nan
+  · simp_all
+  by_cases hbnan : b = nan
+  · simp_all
+  have hbeq : a == b := by
+    simp [beq_def, hanan, hbnan, toRat_eq]
+  change a.beq b = true at hbeq
+  unfold BinaryFloat.beq at hbeq
+  split at hbeq <;> (try simp_all; done)
+  simp_all only [not_false_eq_true, reduceCtorEq, BinaryFloat.sign, BEq.rfl, Bool.true_and,
+    Bool.or_eq_true, Bool.and_eq_true, beq_iff_eq, finite.injEq, true_and]
+  cases hbeq
+  · rename_i m₁ e₁ h₁ _ m₂ e₂ h₂ h
+    rcases h with ⟨rfl, rfl⟩
+    rw [fmt.bounded_zero_iff] at h₁ h₂
+    simp_all
+  · assumption
 
 theorem le_iff_lt_or_beq {a b : BinaryFloat fmt} : a ≤ b ↔ a < b ∨ a == b := by
   change a.ble b ↔ a.blt b ∨ a.beq b
@@ -555,6 +648,7 @@ theorem toRat_binaryRoundAux_false {m : Nat} {e : Int} {exact : Bool}
     · simp [log2q, ← val_eq, res, Rat.intCast_natCast, toRat_incMantissa_finite]
     · simp [log2q, ← val_eq, res, Rat.intCast_natCast, toRat_finite]
 
+@[simp]
 theorem sign_binaryRoundAux {s : Bool} {m : Nat} {e : Int} {exact : Bool}
     (h : e < fmt.fexp (m.size + e)) :
     (binaryRoundAux s m e exact h).sign = s := by
@@ -576,6 +670,7 @@ theorem binaryRoundAux_not {s : Bool} {m : Nat} {e : Int} {exact : Bool}
   · simp
   · split <;> simp [neg_incMantissa]
 
+@[simp]
 theorem binaryRoundAux_ne_nan {m : Nat} {e : Int} {exact : Bool}
     (h : e < fmt.fexp (m.size + e)) :
     binaryRoundAux s m e exact h ≠ nan := by
@@ -598,6 +693,16 @@ theorem toRat_binaryRoundAux {s : Bool} {m : Nat} {e : Int} {exact : Bool}
   · simp [toRat_binaryRoundAux_false h hme₁ hme₂ hexact]
   · rw [← Bool.not_false, binaryRoundAux_not]
     simp [toRat_binaryRoundAux_false h hme₁ hme₂ hexact, Rat.neg_mul]
+
+@[simp]
+theorem sign_binaryRound (s : Bool) (m : Nat) (e : Int) :
+    (binaryRound s m e : BinaryFloat fmt).sign = s := by
+  simp [binaryRound, apply_dite BinaryFloat.sign, sign_binaryRoundAux]
+
+@[simp]
+theorem binaryRound_ne_nan (s : Bool) (m : Nat) (e : Int) :
+    (binaryRound s m e : BinaryFloat fmt) ≠ nan := by
+  simp [binaryRound, apply_dite (· = nan), binaryRoundAux_ne_nan, BinaryFloat.zero]
 
 theorem toRat_binaryRound (s : Bool) (m : Nat) (e : Int) :
     toRat (binaryRound s m e : BinaryFloat fmt) =
@@ -632,13 +737,75 @@ theorem toRat_binaryNormalize (m : Int) (e : Int) :
     simp [binaryNormalize, toRat_binaryRound, Int.negSucc_eq, Rat.neg_mul,
       Rat.intCast_natCast, fmt.boundRat_neg, fmt.roundRatEven_neg, this]
 
+@[simp]
+theorem binaryNormalize_ne_nan (m : Nat) (e : Int) :
+    (binaryNormalize m e : BinaryFloat fmt) ≠ nan := by
+  simp [binaryNormalize]
+
+@[simp]
+theorem sign_binaryNormalize (m : Int) (e : Int) :
+    (binaryNormalize m e : BinaryFloat fmt).sign = decide (m < 0) := by
+  cases m <;> simp [binaryNormalize]
+
+@[simp]
+theorem ofNat_ne_nan (n : Nat) :
+    (BinaryFloat.ofNat n : BinaryFloat fmt) ≠ nan := by
+  simp [BinaryFloat.ofNat]
+
+@[simp]
+theorem sign_ofNat (n : Nat) :
+    (BinaryFloat.ofNat n : BinaryFloat fmt).sign = false := by
+  simp [BinaryFloat.ofNat]
+
 theorem toRat_ofNat (n : Nat) :
     toRat (BinaryFloat.ofNat n : BinaryFloat fmt) = fmt.boundRat (fmt.roundRatEven n) := by
   simp [BinaryFloat.ofNat, toRat_binaryRound]
 
+@[simp]
+theorem ofInt_ne_nan (n : Nat) :
+    (BinaryFloat.ofInt n : BinaryFloat fmt) ≠ nan := by
+  simp [BinaryFloat.ofInt]
+
+@[simp]
+theorem sign_ofInt (n : Int) :
+    (BinaryFloat.ofInt n : BinaryFloat fmt).sign = decide (n < 0) := by
+  simp [BinaryFloat.ofInt]
+
 theorem toRat_ofInt (n : Int) :
     toRat (BinaryFloat.ofInt n : BinaryFloat fmt) = fmt.boundRat (fmt.roundRatEven n) := by
   simp [BinaryFloat.ofInt, toRat_binaryNormalize]
+
+theorem toRat_scaleB (a : BinaryFloat fmt) (h : a.IsFinite) :
+    (a.scaleB n).toRat = fmt.boundRat (fmt.roundRatEven (a.toRat * 2 ^ n)) := by
+  cases h
+  simp [scaleB, toRat_binaryRound, toRat_finite, Rat.mul_assoc, fmt.roundRatEven_ofSign_mul,
+    fmt.boundRat_ofSign_mul, Rat.zpow_add]
+
+@[simp]
+theorem scaleB_zero (a : BinaryFloat fmt) : a.scaleB 0 = a := by
+  rcases a with _ | _ | ⟨s, m, e, h⟩
+  · rfl
+  · rfl
+  · apply BinaryFloat.ext_toRat
+    · simp [scaleB]
+    · simp only [scaleB, Int.add_zero, toRat_binaryRound, toRat_finite]
+      rw [fmt.boundRat_roundRatEven_natCast_mul_two_zpow_eq_self
+        h.1.lt_two_pow_prec h.1.minExp_le h.2, Rat.mul_assoc]
+    · simp [scaleB]
+
+@[simp]
+theorem scaleB_inf (s : Bool) : (inf s : BinaryFloat fmt).scaleB n = inf s := rfl
+
+@[simp]
+theorem scaleB_nan : (nan : BinaryFloat fmt).scaleB n = nan := rfl
+
+@[simp]
+theorem sign_scaleB (a : BinaryFloat fmt) (n : Int) : (a.scaleB n).sign = a.sign := by
+  cases a <;> simp [scaleB]
+
+@[simp]
+theorem scaleB_eq_nan_iff (a : BinaryFloat fmt) (n : Int) : a.scaleB n = nan ↔ a = nan := by
+  cases a <;> simp [scaleB]
 
 theorem toRat_mul {a b : BinaryFloat fmt} (ha : a.IsFinite) (hb : b.IsFinite) :
     (a * b).toRat = fmt.boundRat (fmt.roundRatEven (a.toRat * b.toRat)) := by
@@ -664,6 +831,18 @@ theorem toRat_mul {a b : BinaryFloat fmt} (ha : a.IsFinite) (hb : b.IsFinite) :
       rw [Rat.add_lt_add_iff_left]
       pos
     · simp
+
+@[simp]
+theorem sign_mul {a b : BinaryFloat fmt} (ha : a.IsFinite) (hb : b.IsFinite) :
+    (a * b).sign = (a.sign ^^ b.sign) := by
+  change (BinaryFloat.mul a b).sign = _
+  cases ha <;> cases hb <;> simp [BinaryFloat.mul, apply_dite]
+
+@[simp]
+theorem nan_mul (a : BinaryFloat fmt) : (nan : BinaryFloat fmt) * a = nan := by cases a <;> rfl
+
+@[simp]
+theorem mul_nan (a : BinaryFloat fmt) : a * (nan : BinaryFloat fmt) = nan := by cases a <;> rfl
 
 end BinaryFloat
 

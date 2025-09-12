@@ -515,13 +515,10 @@ instance : Min Float32 := minOfLe
 
 instance : Max Float32 := maxOfLe
 
-/--
-Efficiently computes `x * 2^i`.
-
-This function does not reduce in the kernel.
--/
+/-- Efficiently computes `x * 2^i`. -/
 @[extern "lean_float32_scaleb"]
-opaque Float32.scaleB (x : Float32) (i : @& Int) : Float32
+def Float32.scaleB (x : Float32) (i : @& Int) : Float32 :=
+  ⟨x.val.scaleB i⟩
 
 /--
 Converts a 32-bit floating-point number to a 64-bit floating-point number.
@@ -550,7 +547,7 @@ Constructs a `Float32` from the given mantissa, sign, and exponent values.
 This function is part of the implementation of the `OfScientific Float32` instance that is used to
 interpret floating-point literals.
 -/
-protected opaque Float32.ofScientific (m : Nat) (s : Bool) (e : Nat) : Float32 :=
+protected def Float32.ofScientific (m : Nat) (s : Bool) (e : Nat) : Float32 :=
   if s then
     let s := 64 - m.log2 -- ensure we have 64 bits of mantissa left after division
     let m := (m <<< (3 * e + s)) / 5^e

@@ -241,6 +241,11 @@ protected def ofNat (m : Nat) : BinaryFloat fmt :=
 protected def ofInt (m : Int) : BinaryFloat fmt :=
   binaryNormalize m 0
 
+def scaleB (x : BinaryFloat fmt) (i : Int) : BinaryFloat fmt :=
+  match x with
+  | .nan | .inf _ => x
+  | .finite s m e _ => binaryRound s m (e + i)
+
 protected def mul (a b : BinaryFloat fmt) : BinaryFloat fmt :=
   match a, b with
   | .nan, _ => a

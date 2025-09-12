@@ -508,13 +508,10 @@ instance : Min Float := minOfLe
 
 instance : Max Float := maxOfLe
 
-/--
-Efficiently computes `x * 2^i`.
-
-This function does not reduce in the kernel.
--/
+/-- Efficiently computes `x * 2^i`. -/
 @[extern "lean_float_scaleb"]
-opaque Float.scaleB (x : Float) (i : @& Int) : Float
+def Float.scaleB (x : Float) (i : @& Int) : Float :=
+  ⟨x.val.scaleB i⟩
 
 /-- Computes `m * 2^e`. -/
 def Float.ofBinaryScientific (m : Nat) (e : Int) : Float :=
@@ -529,7 +526,7 @@ Constructs a `Float` from the given mantissa, sign, and exponent values.
 This function is part of the implementation of the `OfScientific Float` instance that is used to
 interpret floating-point literals.
 -/
-protected opaque Float.ofScientific (m : Nat) (s : Bool) (e : Nat) : Float :=
+protected def Float.ofScientific (m : Nat) (s : Bool) (e : Nat) : Float :=
   if s then
     let s := 64 - m.log2 -- ensure we have 64 bits of mantissa left after division
     let m := (m <<< (3 * e + s)) / 5^e

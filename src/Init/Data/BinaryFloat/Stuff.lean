@@ -164,6 +164,62 @@ protected theorem Rat.abs_of_nonpos {q : Rat} (h : q ≤ 0) : q.abs = -q := by
   intro h'
   cases Rat.le_antisymm h h'; rfl
 
+@[simp]
+protected theorem Rat.abs_neg (q : Rat) : (-q).abs = q.abs := by
+  simp [Rat.abs]
+
+protected theorem Rat.abs_mul (a b : Rat) : (a * b).abs = a.abs * b.abs := by
+  by_cases ha : 0 ≤ a
+  · by_cases hb : 0 ≤ b
+    · simp [Rat.abs_of_nonneg, ha, hb, Rat.mul_nonneg]
+    · rw [Rat.abs_of_nonneg ha, Rat.abs_of_nonpos (Std.le_of_not_ge hb), Rat.mul_neg,
+        Rat.abs_of_nonpos]
+      exact mul_nonpos_of_nonneg_of_nonpos ha (Std.le_of_not_ge hb)
+  · replace ha := Std.le_of_not_ge ha
+    by_cases hb : 0 ≤ b
+    · rw [Rat.abs_of_nonpos ha, Rat.abs_of_nonneg hb, Rat.neg_mul, Rat.abs_of_nonpos]
+      exact mul_nonpos_of_nonpos_of_nonneg ha hb
+    · rw [Rat.abs_of_nonpos ha, Rat.abs_of_nonpos (Std.le_of_not_ge hb), Rat.mul_neg, Rat.neg_mul,
+        neg_neg, Rat.abs_of_nonneg]
+      exact mul_nonneg_of_nonpos_of_nonpos ha (Std.le_of_not_ge hb)
+
+@[simp]
+protected theorem Rat.abs_abs (q : Rat) : q.abs.abs = q.abs := by
+  simp [Rat.abs]
+
+protected theorem Rat.abs_pos {q : Rat} : 0 < q.abs ↔ q ≠ 0 := by
+  by_cases h : 0 < q
+  · simp [Rat.abs_of_nonneg (Rat.le_of_lt h), h, Rat.ne_of_gt h]
+  by_cases h' : q = 0
+  · simp [h', Rat.abs]
+  · simp [Rat.abs_of_nonpos (Rat.not_lt.mp h), neg_pos_iff, h',
+      Rat.lt_of_le_of_ne (Rat.not_lt.mp h)]
+
+protected theorem Rat.abs_eq_zero {q : Rat} : q.abs = 0 ↔ q = 0 := by
+  by_cases h : 0 ≤ q
+  · rw [Rat.abs_of_nonneg h]
+  · rw [Rat.abs_of_nonpos (Std.le_of_not_ge h), neg_eq_zero]
+
+protected theorem Rat.abs_le {a b : Rat} : a.abs ≤ b ↔ -b ≤ a ∧ a ≤ b := by
+  obtain h | h := @Rat.le_total 0 a
+  · simp only [Rat.abs_of_nonneg h, iff_and_self]
+    intro h'
+    exact Rat.le_trans (neg_le_iff.mp (Rat.le_trans h h')) h
+  · simp only [Rat.abs_of_nonpos h, neg_le_iff, iff_self_and]
+    intro h'
+    exact Rat.le_trans (Rat.le_trans h (neg_nonneg_iff.mpr h)) h'
+
+protected theorem Rat.abs_lt {a b : Rat} : a.abs < b ↔ -b < a ∧ a < b := by
+  obtain h | h := @Rat.le_total 0 a
+  · simp only [Rat.abs_of_nonneg h, iff_and_self]
+    intro h'
+    exact Std.lt_of_lt_of_le (neg_lt_iff.mp (Std.lt_of_le_of_lt h h')) h
+  · simp only [Rat.abs_of_nonpos h, neg_lt_iff, iff_self_and]
+    intro h'
+    exact Std.lt_of_le_of_lt (Rat.le_trans h (neg_nonneg_iff.mpr h)) h'
+
+protected theorem Rat.abs_intCast (a : Int) : (a : Rat).abs = a.natAbs := rfl
+
 instance : Std.Commutative (α := Rat) (· + ·) := ⟨Rat.add_comm⟩
 instance : Std.Associative (α := Rat) (· + ·) := ⟨Rat.add_assoc⟩
 instance : Std.LawfulIdentity (α := Rat) (· + ·) 0 where
@@ -182,14 +238,6 @@ protected theorem Rat.neg_zero : -0 = (0 : Rat) := rfl
 @[simp]
 protected theorem Rat.neg_neg (x : Rat) : - -x = x :=
   neg_neg x
-
-@[simp]
-protected theorem Rat.abs_neg (q : Rat) : (-q).abs = q.abs := by
-  simp [Rat.abs]
-
-@[simp]
-protected theorem Rat.abs_abs (q : Rat) : q.abs.abs = q.abs := by
-  simp [Rat.abs]
 
 @[simp]
 theorem Rat.roundEven_intCast (i : Int) : (i : Rat).roundEven = i := rfl
@@ -588,6 +636,7 @@ theorem Std.le_iff_lt_or_eq {α : Type u} [LE α] [LT α] [IsPartialOrder α] [L
     · exact Std.le_refl a
 
 protected def Rat.log2 (q : Rat) : Int :=
+  if q.den = 1 then q.num.natAbs.log2 else
   let i : Int := q.num.natAbs.log2 - q.den.log2
   if q.den <<< i.toNat ≤ q.num.natAbs <<< (-i).toNat then i else i - 1
 
@@ -643,6 +692,11 @@ theorem Rat.log2_self_le_abs {q : Rat} (h : q ≠ 0) : 2 ^ q.log2 ≤ q.abs := b
   extract_lets i
   simp only [log2_helper]
   split
+  · simp only [Rat.abs, ‹q.den = 1›, mk'_eq_divInt, Int.cast_ofNat_Int, divInt_eq_div,
+      intCast_ofNat, Rat.div_one]
+    norm_cast
+    exact Nat.log2_self_le (by simp [h])
+  split
   · assumption
   · rw [Rat.abs, Rat.mk'_eq_divInt, Rat.divInt_eq_div, Rat.le_div_iff (mod_cast Rat.den_pos _)]
     calc
@@ -660,6 +714,11 @@ theorem Rat.abs_lt_log2_self {q : Rat} : q.abs < 2 ^ (q.log2 + 1) := by
   extract_lets i
   simp only [log2_helper]
   split
+  · simp only [Rat.abs, ‹q.den = 1›, mk'_eq_divInt, Int.cast_ofNat_Int, divInt_eq_div,
+      intCast_ofNat, Rat.div_one]
+    norm_cast
+    exact Nat.lt_log2_self
+  split
   · rw [Rat.abs, Rat.mk'_eq_divInt, Rat.divInt_eq_div, Rat.div_lt_iff (mod_cast Rat.den_pos _)]
     calc
       _ < (2 : Rat) ^ (q.num.natAbs.log2 + 1 : Int) := mod_cast Nat.lt_log2_self
@@ -671,6 +730,10 @@ theorem Rat.abs_lt_log2_self {q : Rat} : q.abs < 2 ^ (q.log2 + 1) := by
           (mod_cast q.den.log2_self_le (by simp [Rat.den_nz]))
           (Rat.zpow_nonneg (by decide))
   · simp_all [Rat.not_le]
+
+theorem Rat.log2_intCast (i : Int) : (i : Rat).log2 = i.natAbs.log2 := rfl
+
+theorem Rat.log2_zero : Rat.log2 0 = 0 := rfl
 
 theorem Rat.log2_self_le {q : Rat} (h : 0 < q) : 2 ^ q.log2 ≤ q := by
   simpa only [Rat.abs_of_nonneg (Rat.le_of_lt h)] using q.log2_self_le_abs (Rat.ne_of_gt h)
@@ -739,6 +802,9 @@ protected theorem Rat.pow_lt_pow_iff_right {q : Rat} {a b : Nat} (hq : 1 < q) :
     q ^ a < q ^ b ↔ a < b :=
   mod_cast @Rat.zpow_lt_zpow_iff_right q a b (mod_cast hq)
 
+@[simp]
+theorem Rat.log2_one : (1 : Rat).log2 = 0 := rfl
+
 theorem Rat.le_log2 {i : Int} {q : Rat} (h : 0 < q) : i ≤ q.log2 ↔ 2 ^ i ≤ q := by
   constructor
   · intro hi
@@ -761,17 +827,6 @@ theorem Rat.log2_mono {a b : Rat} (ha : 0 < a) (h : a ≤ b) : a.log2 ≤ b.log2
   rw [Rat.not_le]
   exact trans h₂ (trans (Rat.zpow_le_zpow_right (by decide) h') h₁)
 
-@[simp]
-theorem Rat.log2_two_zpow (i : Int) : (2 ^ i : Rat).log2 = i := by
-  apply Int.le_antisymm
-  · apply Int.le_of_lt_add_one
-    apply (Rat.log2_lt (Rat.zpow_pos (by decide))).mpr
-    exact Rat.zpow_lt_zpow_right (by decide) (Int.le_refl _)
-  · exact (Rat.le_log2 (Rat.zpow_pos (by decide))).mpr Rat.le_refl
-
-@[simp]
-theorem Rat.log2_two_pow (i : Nat) : (2 ^ i : Rat).log2 = i := Rat.log2_two_zpow i
-
 theorem Rat.log2_eq_iff {q : Rat} {i : Int} (hq : 0 < q) :
     q.log2 = i ↔ 2 ^ i ≤ q ∧ q < 2 ^ (i + 1) := by
   constructor
@@ -781,6 +836,24 @@ theorem Rat.log2_eq_iff {q : Rat} {i : Int} (hq : 0 < q) :
     apply Int.le_antisymm
     · rwa [Int.le_iff_lt_add_one, Rat.log2_lt hq]
     · rwa [Rat.le_log2 hq]
+
+theorem Rat.log2_mul_two_zpow {q : Rat} (hq : q ≠ 0) (i : Int) :
+    (q * 2 ^ i : Rat).log2 = q.log2 + i := by
+  rw [← log2_abs, Rat.abs_mul, ← log2_abs q, Rat.abs_of_nonneg (Rat.zpow_nonneg (by decide))]
+  rw [Rat.log2_eq_iff (Rat.mul_pos (Rat.abs_pos.mpr hq) (Rat.zpow_pos (by decide)))]
+  constructor
+  · rw [Rat.zpow_add (by decide)]
+    exact Rat.mul_le_mul_of_nonneg_right (log2_self_le_abs (mt Rat.abs_eq_zero.mp hq))
+      (Rat.zpow_nonneg (by decide))
+  · rw [Int.add_right_comm, Rat.zpow_add (by decide)]
+    exact Rat.mul_lt_mul_of_pos_right abs_lt_log2_self (Rat.zpow_pos (by decide))
+
+@[simp]
+theorem Rat.log2_two_zpow (i : Int) : (2 ^ i : Rat).log2 = i := by
+  rw [← Rat.one_mul (2 ^ i), Rat.log2_mul_two_zpow (by decide), Rat.log2_one, Int.zero_add]
+
+@[simp]
+theorem Rat.log2_two_pow (i : Nat) : (2 ^ i : Rat).log2 = i := Rat.log2_two_zpow i
 
 def Rat.ofSign (b : Bool) : Rat :=
   match b with
