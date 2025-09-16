@@ -164,6 +164,12 @@ protected theorem Rat.abs_of_nonpos {q : Rat} (h : q ≤ 0) : q.abs = -q := by
   intro h'
   cases Rat.le_antisymm h h'; rfl
 
+protected theorem Rat.abs_nonneg (q : Rat) : 0 ≤ q.abs := by
+  by_cases h : 0 ≤ q
+  · rwa [Rat.abs_of_nonneg h]
+  · rw [Rat.abs_of_nonpos (Std.le_of_not_ge h)]
+    exact neg_nonneg_iff.mpr (Std.le_of_not_ge h)
+
 @[simp]
 protected theorem Rat.abs_neg (q : Rat) : (-q).abs = q.abs := by
   simp [Rat.abs]
@@ -256,6 +262,10 @@ protected theorem Rat.sub_zero (a : Rat) : a - 0 = a := by
   simp [Rat.sub_eq_add_neg, Rat.add_zero]
 
 @[simp]
+protected theorem Rat.zero_div (a : Rat) : 0 / a = 0 := by
+  simp [Rat.div_def]
+
+@[simp]
 protected theorem Rat.div_zero (a : Rat) : a / 0 = 0 := by
   simp [Rat.div_def]
 
@@ -298,6 +308,9 @@ protected theorem Rat.inv_one : (1 : Rat)⁻¹ = 1 := by with_unfolding_all rfl
 @[simp]
 protected theorem Rat.div_one (a : Rat) : a / 1 = a := by
   simp [Rat.div_def]
+
+protected theorem Rat.mul_two (a : Rat) : a * 2 = a + a := by
+  rw [show (2 : Rat) = 1 + 1 by decide +kernel, Rat.mul_add, Rat.mul_one]
 
 protected theorem Rat.add_right_comm (a b c : Rat) : a + b + c = a + c + b := by
   rw [Rat.add_assoc, Rat.add_comm b, ← Rat.add_assoc]
@@ -343,6 +356,17 @@ protected theorem Rat.neg_lt_self_iff {a : Rat} : -a < a ↔ 0 < a := by
   rw [← Rat.zero_sub, Rat.sub_lt_iff_lt_add, ← Rat.one_mul a, ← Rat.add_mul,
     mul_pos_iff, show 1 + 1 = (2 : Rat) by decide +kernel]
   simp +decide
+
+protected theorem Rat.add_pos_of_pos_of_nonneg {a b : Rat} (ha : 0 < a) (hb : 0 ≤ b) : 0 < a + b := by
+  rw [← Rat.add_lt_add_iff_right (c := b), Rat.zero_add] at ha
+  exact Std.lt_of_le_of_lt hb ha
+
+protected theorem Rat.add_pos_of_nonneg_of_pos {a b : Rat} (ha : 0 ≤ a) (hb : 0 < b) : 0 < a + b := by
+  rw [← Rat.add_lt_add_iff_left (a := a), Rat.add_zero] at hb
+  exact Std.lt_of_le_of_lt ha hb
+
+protected theorem Rat.add_pos {a b : Rat} (ha : 0 < a) (hb : 0 < b) : 0 < a + b :=
+  Rat.add_pos_of_pos_of_nonneg ha (Rat.le_of_lt hb)
 
 protected theorem Rat.div_le_iff {a b c : Rat} (hb : 0 < b) : a / b ≤ c ↔ a ≤ c * b := by
   simpa [Rat.not_lt] using not_congr (Rat.lt_div_iff hb)
@@ -733,6 +757,8 @@ theorem Rat.abs_lt_log2_self {q : Rat} : q.abs < 2 ^ (q.log2 + 1) := by
 
 theorem Rat.log2_intCast (i : Int) : (i : Rat).log2 = i.natAbs.log2 := rfl
 
+theorem Rat.log2_natCast (i : Nat) : (i : Rat).log2 = i.log2 := rfl
+
 theorem Rat.log2_zero : Rat.log2 0 = 0 := rfl
 
 theorem Rat.log2_self_le {q : Rat} (h : 0 < q) : 2 ^ q.log2 ≤ q := by
@@ -805,18 +831,24 @@ protected theorem Rat.pow_lt_pow_iff_right {q : Rat} {a b : Nat} (hq : 1 < q) :
 @[simp]
 theorem Rat.log2_one : (1 : Rat).log2 = 0 := rfl
 
-theorem Rat.le_log2 {i : Int} {q : Rat} (h : 0 < q) : i ≤ q.log2 ↔ 2 ^ i ≤ q := by
+theorem Rat.le_log2_iff_le_abs {i : Int} {q : Rat} (h : q ≠ 0) : i ≤ q.log2 ↔ 2 ^ i ≤ q.abs := by
   constructor
   · intro hi
-    exact Rat.le_trans (Rat.zpow_le_zpow_right (by decide) hi) (Rat.log2_self_le h)
+    exact Rat.le_trans (Rat.zpow_le_zpow_right (by decide) hi) (Rat.log2_self_le_abs h)
   · intro hi
     rw [← Int.lt_add_one_iff]
     rw [← Rat.zpow_lt_zpow_iff_right (show 1 < 2 by decide)]
     exact Std.lt_of_le_of_lt hi Rat.lt_log2_self
 
-theorem Rat.log2_lt {i : Int} {q : Rat} (h : 0 < q) : q.log2 < i ↔ q < 2 ^ i := by
+theorem Rat.le_log2 {i : Int} {q : Rat} (h : 0 < q) : i ≤ q.log2 ↔ 2 ^ i ≤ q := by
+  rw [Rat.le_log2_iff_le_abs (Rat.ne_of_gt h), Rat.abs_of_nonneg (Rat.le_of_lt h)]
+
+theorem Rat.log2_lt_iff_abs_lt {i : Int} {q : Rat} (h : q ≠ 0) : q.log2 < i ↔ q.abs < 2 ^ i := by
   apply Decidable.not_iff_not.mp
-  simp only [Int.not_lt, Rat.le_log2 h, Rat.not_lt]
+  simp only [Int.not_lt, Rat.le_log2_iff_le_abs h, Rat.not_lt]
+
+theorem Rat.log2_lt {i : Int} {q : Rat} (h : 0 < q) : q.log2 < i ↔ q < 2 ^ i := by
+  rw [Rat.log2_lt_iff_abs_lt (Rat.ne_of_gt h), Rat.abs_of_nonneg (Rat.le_of_lt h)]
 
 theorem Rat.log2_mono {a b : Rat} (ha : 0 < a) (h : a ≤ b) : a.log2 ≤ b.log2 := by
   apply Decidable.byContradiction fun h' => ?_
@@ -867,3 +899,6 @@ theorem Rat.ofSign_not : ∀ (a : Bool), ofSign (!a) = -ofSign a := by decide
 theorem Rat.ofSign_xor : ∀ (a b : Bool), ofSign (a ^^ b) = ofSign a * ofSign b := by decide +kernel
 theorem Rat.ofSign_bne : ∀ (a b : Bool), ofSign (a != b) = ofSign a * ofSign b := Rat.ofSign_xor
 theorem Rat.ofSign_ne_zero : ∀ (a : Bool), ofSign a ≠ 0 := by decide
+theorem Rat.ofSign_le_one : ∀ (a : Bool), ofSign a ≤ 1 := by decide
+theorem Rat.neg_one_le_ofSign : ∀ (a : Bool), -1 ≤ ofSign a := by decide
+@[simp] theorem Rat.abs_ofSign : ∀ (a : Bool), (ofSign a).abs = 1 := by decide

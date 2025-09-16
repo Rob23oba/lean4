@@ -8,12 +8,38 @@ module
 prelude
 public import Init.Data.BinaryFloat.Basic
 
+public section
+
 namespace Std
 
 open Lean.Grind.AddCommGroup
 open Lean.Grind.OrderedAdd
 open Lean.Grind.OrderedRing
 open Lean.Grind.Field.IsOrdered
+
+/-- Home-made `positivity` tactic -/
+local syntax "pos" : tactic
+
+macro_rules
+  | `(tactic| pos) =>
+    `(tactic| {
+      with_reducible focus
+      first
+        | decide
+        | assumption
+        | apply Rat.pow_pos
+        | apply Rat.pow_nonneg
+        | apply Rat.zpow_pos
+        | apply Rat.zpow_nonneg
+        | apply Rat.mul_pos
+        | apply Rat.mul_nonneg
+        | apply Rat.div_pos
+        | apply Rat.div_nonneg
+        | apply Rat.natCast_nonneg
+        | apply Rat.natCast_pos.mpr
+        | apply Nat.pos_of_ne_zero; assumption
+      all_goals pos
+    })
 
 namespace FloatFormat
 
@@ -278,31 +304,148 @@ theorem mul_two_pow_inj_of_canonicalMantissa {m₁ m₂ : Nat} {e₁ e₂ : Int}
   · rintro ⟨rfl, rfl⟩
     rfl
 
+axiom Int.le_of_le_add_one (a b : Int) : a ≤ b + 1 → a ≤ b
+
+theorem roundRatEven_add_eq_self' {m : Nat} {e : Int} {q : Rat}
+    (h : fmt.CanonicalMantissa m e) (hq : q.abs < 2 ^ (e - 2)) :
+    fmt.roundRatEven (m * 2 ^ e + q) = m * 2 ^ e := by
+  rw [← Rat.div_mul_cancel (a := q) (b := 2 ^ e) (Rat.ne_of_gt (Rat.zpow_pos (by decide))),
+    ← Rat.add_mul]
+  have hq' : (q / 2 ^ e).abs < 1 / 4 := by
+    rw [Rat.zpow_sub (by decide), Rat.div_def, ← Rat.div_lt_iff' (by pos)] at hq
+    simpa +decide [Rat.div_def, Rat.abs_mul, ← Rat.zpow_neg, Rat.abs_of_nonneg,
+      Rat.zpow_nonneg] using hq
+  by_cases hnz : (m + q / 2 ^ e) * 2 ^ e = 0
+  · simp only [Rat.mul_eq_zero, Rat.ne_of_gt (Rat.zpow_pos (show 0 < 2 by decide)),
+      or_false] at hnz
+    rw [← Rat.abs_neg, Rat.abs_lt, show (1 : Rat) / 4 = 1 / 2 / 2 by decide +kernel,
+      Rat.div_def, ← Rat.neg_mul, ← Rat.div_def, ← Rat.div_def, Rat.div_lt_iff (by decide),
+      Rat.lt_div_iff (by decide)] at hq'
+    have hnz1 := hnz
+    rw [← Rat.eq_sub_iff_add_eq, Rat.zero_sub] at hnz
+    replace hnz := congrArg Rat.roundEven hnz
+    rw [Rat.roundEven_natCast, Rat.roundEven_of_gt_of_lt (i := 0) ?gt ?lt, Int.natCast_eq_zero] at hnz
+    case gt => exact Std.lt_of_le_of_lt (by decide +kernel) hq'.1
+    case lt => exact Std.lt_of_lt_of_le hq'.2 (by decide +kernel)
+    simp_all
+  have log2_le : m.size + e - 1 ≤ ((↑m + q / 2 ^ e) * 2 ^ e).log2 + 1 := by
+    rw [Int.le_add_iff_sub_le, Rat.le_log2_iff_le_abs hnz, Rat.abs_mul,
+      Rat.abs_of_nonneg (Rat.zpow_nonneg (by decide)), Rat.zpow_sub_one' (by decide),
+      Rat.zpow_sub_one' (by decide), Rat.zpow_add (by decide), Rat.mul_div_comm]
+    apply Rat.mul_le_mul_of_nonneg_right _ (by pos)
+
+  rw [roundRatEven]
+
+theorem roundRatEven_add_eq_self {m : Nat} {e : Int} {q : Rat}
+    (h : fmt.CanonicalMantissa m e) (hq : q.abs * 2 ^ (fmt.prec + 2) < m * 2 ^ e) :
+    fmt.roundRatEven (m * 2 ^ e + q) = m * 2 ^ e := by
+  have me_pos : 0 < (m : Rat) * 2 ^ e := by
+    have : 0 ≤ q.abs := Rat.abs_nonneg _
+    apply Std.lt_of_le_of_lt (by pos) hq
+  have mpos : 0 < m := by rwa [← Rat.div_lt_iff (by pos), Rat.zero_div, Rat.natCast_pos] at me_pos
+  have pos' (a : Rat) (ha : 0 ≤ a) (ha' : a ≤ 2 ^ (fmt.prec + 2)) : 0 < m * 2 ^ e + q * a := by
+    by_cases hq' : 0 ≤ q
+    · apply Rat.add_pos_of_pos_of_nonneg <;> pos
+    · rw [← Rat.sub_lt_iff_lt_add, Rat.zero_sub, ← Rat.neg_mul]
+      rw [Rat.abs_of_nonpos (Std.le_of_not_ge hq')] at hq
+      apply Std.lt_of_le_of_lt _ hq
+      exact Rat.mul_le_mul_of_nonneg_left ha' (neg_nonneg_iff.mpr (Std.le_of_not_ge hq'))
+  have pos : 0 < m * 2 ^ e + q := by
+    rw [← Rat.mul_one q, ← Rat.pow_zero 2]
+    exact pos' _ (by decide) (Rat.pow_le_pow_right (by decide) (Nat.zero_le _))
+  have le_log2 : m.size + e - 1 ≤ (m * 2 ^ e + q).log2 + 1 := by
+    rw [Int.le_add_iff_sub_le, Rat.le_log2 pos, Rat.zpow_sub_one' (by decide),
+      Rat.div_le_iff (by decide)]
+    apply Rat.le_trans (b := m * 2 ^ e)
+    · rw [← Rat.le_log2 (by pos), Rat.log2_mul_two_zpow (Rat.ne_of_gt (by pos)), Rat.log2_natCast,
+        Nat.size_eq_log2_add_one (Nat.ne_of_gt mpos)]
+      omega
+    · simp only [Rat.add_mul]
+      rw [Rat.mul_two, Rat.add_assoc]
+      conv => lhs; apply (Rat.add_zero _).symm
+      rw [Rat.add_le_add_left]
+      apply Rat.le_of_lt (pos' _ (by decide) _)
+      exact Rat.pow_le_pow_right (a := 1) (by decide) (Nat.le_add_left _ _)
+  have le_fexp : e - fmt.prec ≤ fmt.fexp ((m * 2 ^ e + q).log2 + 1) := by fexp_trivial
+  have eps : q.abs / 2 ^ fmt.fexp ((↑m * 2 ^ e + q).log2 + 1) < 2⁻¹ := by
+    rw [← Rat.lt_div_iff (by pos), Rat.mul_div_assoc, ← Rat.zpow_natCast,
+      ← Rat.zpow_sub (by decide)] at hq
+    rw [Rat.div_lt_iff (by pos), Rat.mul_comm, ← Rat.zpow_sub_one (by decide)]
+    apply Std.lt_of_lt_of_le hq
+    rw [← Rat.le_div_iff (by pos), ← Rat.zpow_sub (by decide)]
+    apply Rat.le_of_lt
+    rw [← Rat.log2_lt (by pos), Rat.log2_natCast, Int.lt_iff_add_one_le, ← Int.natCast_add_one,
+      ← Nat.size_eq_log2_add_one (Nat.ne_of_gt mpos)]
+    apply Int.le_of_le_add_one
+    fexp_trivial
+  rw [roundRatEven, Rat.add_div]
+
+example {s : Bool} {m₁ m₂ : Nat} {e₁ e₂ : Int}
+    (h₁ : fmt.CanonicalMantissa m₁ e₁) (h₂ : fmt.CanonicalMantissa m₂ e₂)
+    (h : e₂ + fmt.prec + 3 ≤ e₁) :
+    fmt.roundRatEven (m₁ * 2 ^ e₁ + Rat.ofSign s * m₂ * 2 ^ e₂) = m₁ * 2 ^ e₁ := by
+  apply roundRatEven_add_eq_self h₁
+  rw [Rat.abs_mul, Rat.abs_mul, Rat.abs_ofSign, Rat.abs_of_nonneg (by pos),
+    Rat.abs_of_nonneg (by pos), Rat.one_mul, Rat.mul_assoc, ← Rat.zpow_natCast,
+    ← Rat.zpow_add (by decide)]
+  have sz₁ : m₁.size = fmt.prec := by fexp_trivial
+  rw [Nat.size_eq_iff' fmt.prec_ne_zero] at sz₁
+  have sz₂ : m₂ < 2 ^ fmt.prec := h₂.lt_two_pow_prec
+  calc
+    _ < (m₁ : Rat) * 2 * 2 ^ (e₂ + (fmt.prec + 2)) := by
+      apply Rat.mul_lt_mul_of_pos_right _ (Rat.zpow_pos (by decide))
+      norm_cast
+      have : 2 ^ (fmt.prec - 1) * 2 = 2 ^ fmt.prec := by
+        rw [← Nat.pow_add_one, Nat.sub_one_add_one fmt.prec_ne_zero]
+      omega
+    _ ≤ _ := by
+      rw [Rat.mul_assoc, Rat.mul_comm 2, ← Rat.zpow_add_one (by decide)]
+      apply Rat.mul_le_mul_of_nonneg_left _ (by pos)
+      exact Rat.zpow_le_zpow_right (by decide) (by fexp_trivial)
+  /-have lt : (m₂ : Rat) * 2 ^ e₂ < m₁ * 2 ^ e₁ := by
+    apply Std.lt_of_le_of_lt _ lt'
+    rw [Rat.zpow_add_one (by decide), ← Rat.mul_one (m₂ * _), ← Rat.mul_assoc]
+    exact Rat.mul_le_mul_of_nonneg_left (by decide) (by pos)
+  have val_pos : 0 < val := by
+    simp only [val]
+    cases s
+    · rw [Rat.ofSign_false, Rat.one_mul]; apply Rat.add_pos_of_pos_of_nonneg <;> pos
+    · simp only [Rat.ofSign_true, Rat.neg_mul, Rat.one_mul, ← Rat.sub_eq_add_neg,
+        ← Rat.lt_iff_sub_pos, lt]
+  have log2_le : val.log2 ≤ m₁.size + e₁ := by
+    rw [Int.le_iff_lt_add_one, Rat.log2_lt val_pos, Rat.zpow_add_one (by decide)]
+    calc
+      _ ≤ (m₁ : Rat) * 2 ^ e₁ * 2 := by
+        simp only [val, Rat.mul_two, Rat.add_le_add_left, Rat.mul_assoc]
+        apply Rat.le_trans _ (Rat.le_of_lt lt)
+        conv => rhs; apply (Rat.one_mul _).symm
+        exact Rat.mul_le_mul_of_nonneg_right (Rat.ofSign_le_one _) (by pos)
+      _ < _ := by
+        apply Rat.mul_lt_mul_of_pos_right _ (by decide)
+        rw [← Rat.log2_lt pos₁, Rat.log2_mul_two_zpow (Rat.ne_of_gt (by pos)), Rat.log2_natCast,
+          Nat.size_eq_log2_add_one (Nat.ne_of_gt m₁pos)]
+        omega
+  have le_log2 : m₁.size + e₁ - 1 ≤ val.log2 + 1 := by
+    rw [Int.le_add_iff_sub_le, Rat.le_log2 val_pos, Rat.zpow_sub_one' (by decide),
+      Rat.div_le_iff (by decide)]
+    apply Rat.le_trans (b := m₁ * 2 ^ e₁)
+    · rw [← Rat.le_log2 (by pos), Rat.log2_mul_two_zpow (Rat.ne_of_gt (by pos)), Rat.log2_natCast,
+        Nat.size_eq_log2_add_one (Nat.ne_of_gt m₁pos)]
+      omega
+    · simp only [val, Rat.add_mul]
+      rw [Rat.mul_two, Rat.add_assoc]
+      conv => lhs; apply (Rat.add_zero _).symm
+      rw [Rat.add_le_add_left]
+      cases s
+      · rw [Rat.ofSign_false, Rat.one_mul]; apply Rat.add_nonneg <;> pos
+      · simp [Rat.ofSign_true, Rat.neg_mul, Rat.one_mul, ← Rat.sub_eq_add_neg,
+          ← Rat.le_iff_sub_nonneg, Rat.mul_assoc, ← Rat.zpow_add_one, Rat.le_of_lt lt']
+  --have : fmt.fexp (val + 1)
+  rw [roundRatEven]-/
+
+#exit
+
 end FloatFormat
-
-/-- Home-made `positivity` tactic -/
-local syntax "pos" : tactic
-
-macro_rules
-  | `(tactic| pos) =>
-    `(tactic| {
-      with_reducible focus
-      first
-        | decide
-        | assumption
-        | apply Rat.pow_pos
-        | apply Rat.pow_nonneg
-        | apply Rat.zpow_pos
-        | apply Rat.zpow_nonneg
-        | apply Rat.mul_pos
-        | apply Rat.mul_nonneg
-        | apply Rat.div_pos
-        | apply Rat.div_nonneg
-        | apply Rat.natCast_nonneg
-        | apply Rat.natCast_pos.mpr
-        | apply Nat.pos_of_ne_zero; assumption
-      all_goals pos
-    })
 
 namespace BinaryFloat
 
@@ -843,6 +986,50 @@ theorem nan_mul (a : BinaryFloat fmt) : (nan : BinaryFloat fmt) * a = nan := by 
 
 @[simp]
 theorem mul_nan (a : BinaryFloat fmt) : a * (nan : BinaryFloat fmt) = nan := by cases a <;> rfl
+
+@[simp]
+theorem roundRatEven_toRat (a : BinaryFloat fmt) : fmt.roundRatEven a.toRat = a.toRat := by
+  rcases a with _ | _ | ⟨_, _, _, h⟩
+  · simp
+  · simp [toRat_inf, fmt.roundRatEven_ofSign_mul, fmt.roundRatEven_two_pow_eq_self fmt.minExp_le_maxExp]
+  · rw [toRat_finite, Rat.mul_assoc, fmt.roundRatEven_ofSign_mul,
+      fmt.roundRatEven_natCast_mul_two_zpow_eq_self h.1.lt_two_pow_prec h.1.minExp_le]
+
+@[simp]
+theorem boundRat_toRat (a : BinaryFloat fmt) : fmt.boundRat a.toRat = a.toRat := by
+  rcases a with _ | _ | ⟨_, _, _, h⟩
+  · simp
+  · rw [toRat_inf, fmt.boundRat_ofSign_mul, fmt.boundRat_of_ge Rat.le_refl]
+  · rw (occs := [1]) [← roundRatEven_toRat, toRat_finite, Rat.mul_assoc, toRat_finite,
+      Rat.mul_assoc, fmt.roundRatEven_ofSign_mul, fmt.boundRat_ofSign_mul,
+      fmt.boundRat_roundRatEven_natCast_mul_two_zpow_eq_self h.1.lt_two_pow_prec h.1.minExp_le h.2]
+
+theorem toRat_add {a b : BinaryFloat fmt} (ha : a.IsFinite) (hb : b.IsFinite) :
+    (a + b).toRat = fmt.boundRat (fmt.roundRatEven (a.toRat + b.toRat)) := by
+  change (a.add b).toRat = _
+  rcases ha with ⟨s₁, m₁, e₁, h₁⟩; rcases hb with ⟨s₂, m₂, e₂, h₂⟩
+  rw [BinaryFloat.add]
+  split
+  · split
+    · subst_eqs
+      rw [toRat_finite_true]
+      simp [Rat.add_zero]
+    · split
+      · simp_all [toRat_finite, Rat.add_zero]
+      · subst_eqs
+        conv => enter [2, 2, 2, 2]; rw [toRat_finite]
+        simp [Rat.add_zero]
+  · extract_lets condNeg
+    split
+    · split
+      · rename_i h
+        have : e₂ ≠ fmt.minExp := by fexp_trivial
+        simp [toRat_finite]
+
+#reduce fun (s : Bool) (i : Nat) =>
+  match s, i with
+  | false, n => (n : Int)
+  | true, n => -(n : Int)
 
 end BinaryFloat
 

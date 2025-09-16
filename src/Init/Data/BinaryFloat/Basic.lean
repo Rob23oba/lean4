@@ -102,6 +102,8 @@ theorem maxExp_pos : 0 < fmt.maxExp := by
 
 theorem minExp_le_maxExp : fmt.minExp ≤ fmt.maxExp := Int.le_of_lt minExp_lt_maxExp
 
+theorem prec_ne_zero : fmt.prec ≠ 0 := Nat.ne_of_gt fmt.prec_pos
+
 end FloatFormat
 
 inductive BinaryFloat (fmt : FloatFormat) where
@@ -267,6 +269,36 @@ where finally
   fexp_trivial
 
 instance : Mul (BinaryFloat fmt) := ⟨BinaryFloat.mul⟩
+
+protected def add (a b : BinaryFloat fmt) : BinaryFloat fmt :=
+  match a, b with
+  | .nan, _ => a
+  | _, .nan => b
+  | .inf s, .inf s' => if s = s' then a else nan
+  | .inf _, .finite _ _ _ _ => a
+  | .finite _ _ _ _, .inf _ => b
+  | .finite s₁ m₁ e₁ _, .finite s₂ m₂ e₂ _ =>
+    if m₂ = 0 then
+      if s₂ then a else if m₁ = 0 then b else a
+    else
+      have condNeg (s : Bool) (i : Nat) : Int :=
+        match s, i with
+        | false, n => n
+        | true, n => -n
+      if e₁ ≤ e₂ then
+        if e₁ + fmt.prec + 2 ≤ e₂ then b
+        else
+          binaryNormalize (condNeg s₁ m₁ + condNeg s₂ (m₂ <<< (e₂ - e₁).toNat)) e₁
+      else
+        if e₂ + fmt.prec + 2 ≤ e₁ then a
+        else
+          binaryNormalize (condNeg s₁ (m₁ <<< (e₁ - e₂).toNat) + condNeg s₂ m₂) e₂
+
+instance : Add (BinaryFloat fmt) := ⟨BinaryFloat.add⟩
+
+protected def sub (a b : BinaryFloat fmt) : BinaryFloat fmt := a + -b
+
+instance : Sub (BinaryFloat fmt) := ⟨BinaryFloat.sub⟩
 
 def encode (x : BinaryFloat fmt) : BitVec (1 + fmt.maxExp.log2 + fmt.prec) :=
   let sign : BitVec 1 := BitVec.ofBool x.sign
