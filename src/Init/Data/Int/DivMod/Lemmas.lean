@@ -774,6 +774,8 @@ theorem one_emod {b : Int} : 1 % b = if b.natAbs = 1 then 0 else 1 := by
 
 @[simp] theorem neg_emod_two (i : Int) : -i % 2 = i % 2 := by omega
 
+theorem natAbs_emod_two (i : Int) : i.natAbs % 2 = (i % 2).natAbs := by omega
+
 /-! ### properties of `/` and `%` -/
 
 theorem mul_ediv_cancel_of_dvd {a b : Int} (H : b ∣ a) : b * (a / b) = a :=
