@@ -2321,6 +2321,77 @@ theorem eraseKey_of_perm [BEq α] [EquivBEq α] {l l' : List ((a : α) × β a)}
   apply getEntry?_ext hl.eraseKey (hl.perm h.symm).eraseKey
   simp [getEntry?_eraseKey hl, getEntry?_eraseKey (hl.perm h.symm), getEntry?_of_perm hl h]
 
+theorem replaceEntry_replaceEntry_of_beq [BEq α] [EquivBEq α] {l : List ((a : α) × β a)}
+    {k k' : α} {v : β k} {v' : β k'} (hk : k == k') :
+    replaceEntry k' v' (replaceEntry k v l) = replaceEntry k' v' l := by
+  induction l using assoc_induction with
+  | nil => rfl
+  | cons k v t ih =>
+    simp only [replaceEntry_cons, cond_eq_if, BEq.congr_right hk]
+    split <;> simp_all [replaceEntry_cons]
+
+theorem replaceEntry_comm [BEq α] [EquivBEq α] {l : List ((a : α) × β a)}
+    {k k' : α} {v : β k} {v' : β k'} (hk : (k == k') = false) :
+    replaceEntry k' v' (replaceEntry k v l) = replaceEntry k v (replaceEntry k' v' l) := by
+  induction l using assoc_induction with
+  | nil => rfl
+  | cons k v t ih =>
+    simp only [replaceEntry_cons, cond_eq_if]
+    split
+    · rename_i h
+      simp [BEq.congr_left h, hk, replaceEntry_cons]
+    split
+    · simp [replaceEntry_cons, BEq.comm.trans hk, *]
+    · simp [replaceEntry_cons, *]
+
+theorem insertEntry_insertEntry_of_beq [BEq α] [EquivBEq α] {l : List ((a : α) × β a)}
+    {k k' : α} {v : β k} {v' : β k'} (hk : k == k') :
+    (insertEntry k' v' (insertEntry k v l)).Perm (insertEntry k' v' l) := by
+  apply List.Perm.of_eq
+  rw [insertEntry, Bool.cond_pos]
+  · rw [insertEntry, insertEntry, containsKey_congr hk, cond_eq_if, cond_eq_if]
+    split
+    · rw [replaceEntry_replaceEntry_of_beq hk]
+    · simp [replaceEntry_cons, hk]
+  · simp [hk]
+
+theorem insertEntry_comm [BEq α] [EquivBEq α] {l : List ((a : α) × β a)}
+    {k k' : α} {v : β k} {v' : β k'} (hk : (k == k') = false) :
+    (insertEntry k' v' (insertEntry k v l)).Perm (insertEntry k v (insertEntry k' v' l)) := by
+  rw [insertEntry.eq_def k', insertEntry.eq_def k _ (insertEntry ..)]
+  simp only [containsKey_insertEntry, hk, Bool.false_or, BEq.comm.trans hk]
+  simp only [insertEntry, cond_eq_if]
+  split <;> split
+  · rw [replaceEntry_comm hk]
+  · simp [replaceEntry_cons, hk]
+  · simp [replaceEntry_cons, BEq.comm.trans hk]
+  · exact Perm.swap ⟨k, v⟩ ⟨k', v'⟩ l
+
+theorem eraseKey_insertEntry [BEq α] [EquivBEq α] {l : List ((a : α) × β a)}
+    (hl : DistinctKeys l) {k k' : α} {v : β k} :
+    (eraseKey k' (insertEntry k v l)).Perm
+      (if k == k' then eraseKey k' l else insertEntry k v (eraseKey k' l)) := by
+  split
+  · rename_i hk
+    apply getEntry?_ext hl.insertEntry.eraseKey hl.eraseKey
+    intro a
+    simp only [hl.insertEntry, getEntry?_eraseKey, getEntry?_insertEntry, BEq.congr_left hk, hl]
+    split <;> rfl
+  · apply getEntry?_ext hl.insertEntry.eraseKey hl.eraseKey.insertEntry
+    intro a
+    simp only [getEntry?_eraseKey, getEntry?_insertEntry, hl, hl.insertEntry]
+    split
+    · rw [← BEq.congr_right ‹_›, if_neg ‹_›]
+    · rfl
+
+theorem insertEntry_nil_induction [BEq α] [EquivBEq α] {motive : List ((a : α) × β a) → Prop}
+    (nil : motive []) (insertEntry : ∀ k v l, motive l → motive (insertEntry k v l))
+    {l : List ((a : α) × β a)} (hl : DistinctKeys l) : motive l := by
+  induction l using assoc_induction with
+  | nil => exact nil
+  | cons k v t ih =>
+    simpa [List.insertEntry, hl.containsKey_eq_false] using insertEntry k v t (ih hl.tail)
+
 @[simp]
 theorem getEntry?_append [BEq α] {l l' : List ((a : α) × β a)} {a : α} :
     getEntry? a (l ++ l') = (getEntry? a l).or (getEntry? a l') := by
