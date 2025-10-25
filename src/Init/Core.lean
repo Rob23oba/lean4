@@ -1110,9 +1110,6 @@ instance : Decidable True :=
 instance : Decidable False :=
   isFalse not_false
 
-@[simp] theorem decide_true : decide True = true := rfl
-@[simp] theorem decide_false : decide False = false := rfl
-
 namespace Decidable
 variable {p q : Prop}
 
