@@ -35,7 +35,7 @@ info: Linear.instBEqL.beq.eq_1.{u_1} {α✝ : Type u_1} [BEq α✝] (x✝ x✝¹
       match x✝, x✝¹, h with
       | L.nil, L.nil, ⋯ => true
       | L.cons a a_1, L.cons a' a'_1, ⋯ => a == a' && instBEqL.beq a_1 a'_1
-    | { decide := false, reflects_decide := h } => false
+    | { decide := false, reflects_decide := reflects_decide } => false
 -/
 #guard_msgs in
 #check instBEqL.beq.eq_1

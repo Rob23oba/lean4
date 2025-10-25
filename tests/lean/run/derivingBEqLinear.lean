@@ -38,7 +38,7 @@ info: instBEqL.beq_spec.{u_1} {α✝ : Type u_1} [BEq α✝] (x✝ x✝¹ : L α
       match x✝, x✝¹, h with
       | L.nil, L.nil, ⋯ => true
       | L.cons a a_1, L.cons a' a'_1, ⋯ => a == a' && a_1 == a'_1
-    | { decide := false, reflects_decide := h } => false
+    | { decide := false, reflects_decide := reflects_decide } => false
 -/
 #guard_msgs in #check instBEqL.beq_spec
 
@@ -69,7 +69,7 @@ info: theorem InNamespace.instBEqL'.beq_spec.{u_1} : ∀ {α : Type u_1} [inst :
       match x, x_1, h with
       | InNamespace.L'.nil, InNamespace.L'.nil, ⋯ => true
       | InNamespace.L'.cons a a_1, InNamespace.L'.cons a' a'_1, ⋯ => a == a' && a_1 == a'_1
-    | { decide := false, reflects_decide := h } => false
+    | { decide := false, reflects_decide := reflects_decide } => false
 -/
 #guard_msgs in #print sig InNamespace.instBEqL'.beq_spec
 
@@ -86,7 +86,7 @@ info: instBEqVec.beq_spec.{u_1} {α✝ : Type u_1} {a✝ : Nat} [BEq α✝] (x�
       match a✝, x✝, x✝¹ with
       | 0, Vec.nil, Vec.nil, ⋯ => true
       | x + 1, Vec.cons a a_1, Vec.cons a' a'_1, ⋯ => a == a' && a_1 == a'_1
-    | { decide := false, reflects_decide := h } => false
+    | { decide := false, reflects_decide := reflects_decide } => false
 -/
 #guard_msgs in
 #check instBEqVec.beq_spec
