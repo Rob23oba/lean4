@@ -1073,14 +1073,12 @@ theorem Exists.elim {α : Sort u} {p : α → Prop} {b : Prop}
 
 /-! # Decidable -/
 
-/-- Generalized variant of `decide_true` that can't be used in `dsimp`. -/
-@[simp mid] theorem decide_true' (h : Decidable True) : @decide True h = true :=
+@[simp] theorem decide_true (h : Decidable True) : @decide True h = true :=
   match h with
   | isTrue _  => rfl
   | isFalse h => False.elim <| h ⟨⟩
 
-/-- Generalized variant of `decide_false` that can't be used in `dsimp`. -/
-@[simp mid] theorem decide_false' (h : Decidable False) : @decide False h = false :=
+@[simp] theorem decide_false (h : Decidable False) : @decide False h = false :=
   match h with
   | isFalse _ => rfl
   | isTrue h  => False.elim h

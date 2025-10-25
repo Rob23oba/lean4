@@ -66,14 +66,8 @@ theorem ne_false_iff : {b : Bool} → b ≠ false ↔ b = true := by decide
 
 theorem eq_iff_iff {a b : Bool} : a = b ↔ (a ↔ b) := by cases b <;> simp
 
-@[simp] theorem decide_eq_true  {b : Bool} : decide (b = true)  =  b := rfl
-@[simp] theorem decide_eq_false {b : Bool} : decide (b = false) = !b := rfl
-
-/-- Generalized variant of `decide_eq_true` that can't be used in `dsimp`. -/
-@[simp mid] theorem decide_eq_true'  {b : Bool} [Decidable (b = true)]  : decide (b = true)  =  b := by cases b <;> simp
-
-/-- Generalized variant of `decide_eq_false` that can't be used in `dsimp`. -/
-@[simp mid] theorem decide_eq_false' {b : Bool} [Decidable (b = false)] : decide (b = false) = !b := by cases b <;> simp
+@[simp] theorem decide_eq_true  {b : Bool} [Decidable (b = true)]  : decide (b = true)  =  b := by cases b <;> simp
+@[simp] theorem decide_eq_false {b : Bool} [Decidable (b = false)] : decide (b = false) = !b := by cases b <;> simp
 
 theorem decide_true_eq  {b : Bool} [Decidable (true = b)]  : decide (true  = b) =  b := by cases b <;> simp
 theorem decide_false_eq {b : Bool} [Decidable (false = b)] : decide (false = b) = !b := by cases b <;> simp
@@ -647,29 +641,17 @@ theorem apply_cond (f : α → β) {b : Bool} {a a' : α} :
 
 /-! # decidability -/
 
-protected theorem decide_coe (b : Bool) [Decidable (b = true)] : decide (b = true) = b := decide_eq_true'
+protected theorem decide_coe (b : Bool) [Decidable (b = true)] : decide (b = true) = b := decide_eq_true
 
-@[simp] theorem decide_and (p q : Prop) [dp : Decidable p] [dq : Decidable q] :
-    decide (p ∧ q) = (p && q) := rfl
-
-/-- Generalized variant of `decide_and` that can't be used in `dsimp`. -/
-@[simp mid] theorem decide_and' (p q : Prop) [dpq : Decidable (p ∧ q)] [dp : Decidable p] [dq : Decidable q] :
+@[simp] theorem decide_and (p q : Prop) [dpq : Decidable (p ∧ q)] [dp : Decidable p] [dq : Decidable q] :
     decide (p ∧ q) = (p && q) := by
   cases dp with | _ p => simp [p]
 
-@[simp] theorem decide_or (p q : Prop) [dp : Decidable p] [dq : Decidable q] :
-    decide (p ∨ q) = (p || q) := rfl
-
-/-- Generalized variant of `decide_or` that can't be used in `dsimp`. -/
-@[simp mid] theorem decide_or' (p q : Prop) [dpq : Decidable (p ∨ q)] [dp : Decidable p] [dq : Decidable q] :
+@[simp] theorem decide_or (p q : Prop) [dpq : Decidable (p ∨ q)] [dp : Decidable p] [dq : Decidable q] :
     decide (p ∨ q) = (p || q) := by
   cases dp with | _ p => simp [p]
 
-@[simp] theorem decide_iff_dist (p q : Prop) [dp : Decidable p] [dq : Decidable q] :
-    decide (p ↔ q) = (decide p == decide q) := rfl
-
-/-- Generalized variant of `decide_iff_dist` that can't be used in `dsimp`. -/
-@[simp mid] theorem decide_iff_dist' (p q : Prop) [dpq : Decidable (p ↔ q)] [dp : Decidable p] [dq : Decidable q] :
+@[simp] theorem decide_iff_dist (p q : Prop) [dpq : Decidable (p ↔ q)] [dp : Decidable p] [dq : Decidable q] :
     decide (p ↔ q) = (decide p == decide q) := by
   cases dp with | _ p => simp [p]
 
