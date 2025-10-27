@@ -35,8 +35,7 @@ def elabGrindPattern : CommandElab := fun stx => do
   | _ => throwUnsupportedSyntax
 where
   go (thmName : TSyntax `ident) (terms : Syntax.TSepArray `term ",") (kind : AttributeKind) : CommandElabM Unit := liftTermElabM do
-    let declName ← resolveGlobalConstNoOverload thmName
-    discard <| addTermInfo thmName (← mkConstWithLevelParams declName)
+    let declName ← realizeGlobalConstNoOverloadWithInfo thmName
     let info ← getConstVal declName
     forallTelescope info.type fun xs _ => do
       let patterns ← terms.getElems.mapM fun term => do
@@ -185,7 +184,8 @@ where
           -- If it is an inductive predicate,
           -- we also add the constructors (intro rules) as E-matching rules
           for ctor in info.ctors do
-            params ← withRef p <| addEMatchTheorem params id ctor (.default false) minIndexable
+            -- **Note**: We should not warn if `declName` is an inductive
+            params ← withRef p <| addEMatchTheorem params id ctor (.default false) minIndexable (warn := False)
       else
         params ← withRef p <| addEMatchTheorem params id declName (.default false) minIndexable (suggest := true)
     | .symbol prio =>
@@ -195,7 +195,7 @@ where
 
   addEMatchTheorem (params : Grind.Params) (id : Ident) (declName : Name)
       (kind : Grind.EMatchTheoremKind)
-      (minIndexable : Bool) (suggest : Bool := false) : MetaM Grind.Params := do
+      (minIndexable : Bool) (suggest : Bool := false) (warn := true) : MetaM Grind.Params := do
     let info ← getAsyncConstInfo declName
     match info.kind with
     | .thm | .axiom | .ctor =>
@@ -204,7 +204,8 @@ where
         ensureNoMinIndexable minIndexable
         let thm₁ ← Grind.mkEMatchTheoremForDecl declName (.eqLhs gen) params.symPrios
         let thm₂ ← Grind.mkEMatchTheoremForDecl declName (.eqRhs gen) params.symPrios
-        if params.ematch.containsWithSamePatterns thm₁.origin thm₁.patterns &&
+        if warn &&
+           params.ematch.containsWithSamePatterns thm₁.origin thm₁.patterns &&
            params.ematch.containsWithSamePatterns thm₂.origin thm₂.patterns then
           warnRedundantEMatchArg params.ematch declName
         return { params with extra := params.extra.push thm₁ |>.push thm₂ }
@@ -215,7 +216,7 @@ where
           Grind.mkEMatchTheoremAndSuggest id declName params.symPrios minIndexable (isParam := true)
         else
           Grind.mkEMatchTheoremForDecl declName kind params.symPrios (minIndexable := minIndexable)
-        if params.ematch.containsWithSamePatterns thm.origin thm.patterns then
+        if warn && params.ematch.containsWithSamePatterns thm.origin thm.patterns then
           warnRedundantEMatchArg params.ematch declName
         return { params with extra := params.extra.push thm }
     | .defn =>
@@ -356,6 +357,8 @@ private def elabGrindConfig' (config : TSyntax ``Lean.Parser.Tactic.optConfig) (
     elabGrindConfig config
 
 @[builtin_tactic Lean.Parser.Tactic.grind] def evalGrind : Tactic := fun stx => do
+  -- Preserve this import in core; all others import `Init` anyway
+  recordExtraModUse (isMeta := false) `Init.Grind.Tactics
   match stx with
   | `(tactic| grind $config:optConfig $[only%$only]?  $[ [$params:grindParam,*] ]? $[=> $seq:grindSeq]?) =>
     let interactive := seq.isSome
