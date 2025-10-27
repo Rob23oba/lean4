@@ -1148,7 +1148,7 @@ instance exists_prop_decidable {p} (P : p → Prop)
   decide := if h : p then decide (P h) else false
   reflects_decide :=
     match hp with
-    | isTrue h =>
+    | isTrue h => show (decide (P h)).Reflects (Exists P) from
       match hP h with
       | isTrue h2 => ⟨h, h2⟩
       | isFalse h2 => fun ⟨_, h2'⟩ => h2 h2'
@@ -1160,7 +1160,7 @@ instance forall_prop_decidable {p} (P : p → Prop)
   decide := if h : p then decide (P h) else true
   reflects_decide :=
     match hp with
-    | isTrue h =>
+    | isTrue h => show (decide (P h)).Reflects (∀ h, P h) from
       match hP h with
       | isTrue h2 => fun _ => hP
       | isFalse h2 => fun al => absurd (al h) h2
