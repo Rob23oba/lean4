@@ -1162,7 +1162,7 @@ instance forall_prop_decidable {p} (P : p → Prop)
     match hp with
     | isTrue h => show (decide (P h)).Reflects (∀ h, P h) from
       match hP h with
-      | isTrue h2 => fun _ => hP
+      | isTrue h2 => fun _ => h2
       | isFalse h2 => fun al => absurd (al h) h2
     | isFalse h => fun h2 => absurd h2 h
 
