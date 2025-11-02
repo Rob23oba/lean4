@@ -6,12 +6,12 @@ Authors: Mac Malone
 module
 
 prelude
-public import Lean.Util.LeanOptions
 public import Lake.Build.Target.Basic
 public import Lake.Config.Dynlib
 public import Lake.Config.MetaClasses
 meta import all Lake.Config.Meta
 import Lake.Util.Name
+import Init.Data.String.Modify
 
 open System Lean
 
@@ -70,7 +70,6 @@ public def orPreferLeft : Backend → Backend → Backend
 
 end Backend
 
-public section -- for `Ord`
 /--
 Lake equivalent of CMake's
 [`CMAKE_BUILD_TYPE`](https://stackoverflow.com/a/59314670).
@@ -99,7 +98,6 @@ public inductive BuildType
   -/
   | release
 deriving Inhabited, Repr, DecidableEq, Ord
-end
 
 namespace BuildType
 
@@ -120,7 +118,7 @@ public def leancArgs : BuildType → Array String
 | release => #["-O3", "-DNDEBUG"]
 
 public def ofString? (s : String) : Option BuildType :=
-  match s with
+  match s.decapitalize with
   | "debug" => some .debug
   | "relWithDebInfo" => some .relWithDebInfo
   | "minSizeRel" => some .minSizeRel

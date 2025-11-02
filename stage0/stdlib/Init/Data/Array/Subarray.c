@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Init.Data.Array.Subarray
-// Imports: Init.GetElem Init.Data.Array.GetLit Init.Data.Slice.Basic
+// Imports: public import Init.Data.Array.Basic import Init.Data.Array.GetLit public import Init.Data.Slice.Basic
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -46,7 +46,6 @@ static lean_object* l_Array___aux__Init__Data__Array__Subarray______macroRules__
 LEAN_EXPORT lean_object* l_Subarray_allM___redArg___lam__0___boxed(lean_object*, lean_object*);
 static lean_object* l_Array___aux__Init__Data__Array__Subarray______macroRules__Array__term_____x5b___x3a_x5d__1___closed__2;
 LEAN_EXPORT lean_object* l_Subarray_size___redArg___boxed(lean_object*);
-LEAN_EXPORT lean_object* l_Std_Slice_Internal_SubarrayData_toCtorIdx(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Subarray_getD___redArg___boxed(lean_object*, lean_object*, lean_object*);
 static lean_object* l_Array___aux__Init__Data__Array__Subarray______macroRules__Array__term_____x5b___x3a_x5d__1___closed__6;
 LEAN_EXPORT lean_object* l_Subarray_size___boxed(lean_object*, lean_object*);
@@ -191,7 +190,6 @@ LEAN_EXPORT lean_object* l_Subarray_findRevM_x3f(lean_object*, lean_object*, lea
 LEAN_EXPORT uint8_t l_Subarray_all___redArg(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Subarray_get___redArg___boxed(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Array_term_____x5b___x3a___x5d;
-LEAN_EXPORT lean_object* l_Std_Slice_Internal_SubarrayData_toCtorIdx___boxed(lean_object*, lean_object*);
 static lean_object* l_Array___aux__Init__Data__Array__Subarray______macroRules__Array__term_____x5b___x3a___x5d__1___closed__0;
 LEAN_EXPORT lean_object* l_Subarray_anyM(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l___private_Init_Data_Array_Subarray_0__Subarray_findSomeRevM_x3f_find___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
@@ -244,23 +242,6 @@ _start:
 {
 lean_object* x_3; 
 x_3 = l_Std_Slice_Internal_SubarrayData_ctorIdx(x_1, x_2);
-lean_dec_ref(x_2);
-return x_3;
-}
-}
-LEAN_EXPORT lean_object* l_Std_Slice_Internal_SubarrayData_toCtorIdx(lean_object* x_1, lean_object* x_2) {
-_start:
-{
-lean_object* x_3; 
-x_3 = lean_unsigned_to_nat(0u);
-return x_3;
-}
-}
-LEAN_EXPORT lean_object* l_Std_Slice_Internal_SubarrayData_toCtorIdx___boxed(lean_object* x_1, lean_object* x_2) {
-_start:
-{
-lean_object* x_3; 
-x_3 = l_Std_Slice_Internal_SubarrayData_toCtorIdx(x_1, x_2);
 lean_dec_ref(x_2);
 return x_3;
 }
@@ -3586,21 +3567,21 @@ return x_53;
 }
 }
 }
-lean_object* initialize_Init_GetElem(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Data_Array_GetLit(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Data_Slice_Basic(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Data_Array_Basic(uint8_t builtin);
+lean_object* initialize_Init_Data_Array_GetLit(uint8_t builtin);
+lean_object* initialize_Init_Data_Slice_Basic(uint8_t builtin);
 static bool _G_initialized = false;
-LEAN_EXPORT lean_object* initialize_Init_Data_Array_Subarray(uint8_t builtin, lean_object* w) {
+LEAN_EXPORT lean_object* initialize_Init_Data_Array_Subarray(uint8_t builtin) {
 lean_object * res;
 if (_G_initialized) return lean_io_result_mk_ok(lean_box(0));
 _G_initialized = true;
-res = initialize_Init_GetElem(builtin, lean_io_mk_world());
+res = initialize_Init_Data_Array_Basic(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_Init_Data_Array_GetLit(builtin, lean_io_mk_world());
+res = initialize_Init_Data_Array_GetLit(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_Init_Data_Slice_Basic(builtin, lean_io_mk_world());
+res = initialize_Init_Data_Slice_Basic(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 l_Subarray_empty___closed__0 = _init_l_Subarray_empty___closed__0();

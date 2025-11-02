@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Init.Data.Cast
-// Imports: Init.Coe
+// Imports: public import Init.Coe
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -13,9 +13,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-LEAN_EXPORT lean_object* l_NatCast_toCtorIdx(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_instCoeHTCTNatOfNatCast___redArg(lean_object*);
-LEAN_EXPORT lean_object* l_NatCast_toCtorIdx___boxed(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_instNatCastNat;
 LEAN_EXPORT lean_object* l_Nat_cast(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Nat_cast___redArg(lean_object*, lean_object*);
@@ -39,23 +37,6 @@ _start:
 {
 lean_object* x_3; 
 x_3 = l_NatCast_ctorIdx(x_1, x_2);
-lean_dec(x_2);
-return x_3;
-}
-}
-LEAN_EXPORT lean_object* l_NatCast_toCtorIdx(lean_object* x_1, lean_object* x_2) {
-_start:
-{
-lean_object* x_3; 
-x_3 = lean_unsigned_to_nat(0u);
-return x_3;
-}
-}
-LEAN_EXPORT lean_object* l_NatCast_toCtorIdx___boxed(lean_object* x_1, lean_object* x_2) {
-_start:
-{
-lean_object* x_3; 
-x_3 = l_NatCast_toCtorIdx(x_1, x_2);
 lean_dec(x_2);
 return x_3;
 }
@@ -140,13 +121,13 @@ lean_closure_set(x_3, 1, x_2);
 return x_3;
 }
 }
-lean_object* initialize_Init_Coe(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Coe(uint8_t builtin);
 static bool _G_initialized = false;
-LEAN_EXPORT lean_object* initialize_Init_Data_Cast(uint8_t builtin, lean_object* w) {
+LEAN_EXPORT lean_object* initialize_Init_Data_Cast(uint8_t builtin) {
 lean_object * res;
 if (_G_initialized) return lean_io_result_mk_ok(lean_box(0));
 _G_initialized = true;
-res = initialize_Init_Coe(builtin, lean_io_mk_world());
+res = initialize_Init_Coe(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 l_instNatCastNat = _init_l_instNatCastNat();

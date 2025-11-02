@@ -4,14 +4,11 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Leonardo de Moura
 -/
 module
-
 prelude
-public import Init.Grind.Ring.Poly
-public import Init.Grind.Ring.OfSemiring
-public import Lean.Meta.Tactic.Grind.Arith.VarRename
-
+public import Init.Grind.Ring.CommSemiringAdapter
+public import Lean.Meta.Tactic.Grind.VarRename
 namespace Lean.Grind.CommRing
-open Lean.Meta.Grind.Arith
+open Lean.Meta.Grind
 
 public def Power.renameVars (pw : Power) (f : VarRename) : Power :=
   { pw with x := (f pw.x) }
@@ -57,23 +54,3 @@ public def Expr.collectVars (e : Expr) : VarCollector :=
   | .add a b | .sub a b | .mul a b => a.collectVars >> b.collectVars
 
 end Lean.Grind.CommRing
-
-namespace Lean.Grind.Ring.OfSemiring
-open Lean.Meta.Grind.Arith
-
-public def Expr.renameVars (e : Expr) (f : VarRename) : Expr :=
-  match e with
-  | .num .. => e
-  | .var x => .var (f x)
-  | .add a b => .add (renameVars a f) (renameVars b f)
-  | .mul a b => .mul (renameVars a f) (renameVars b f)
-  | .pow a k => .pow (renameVars a f) k
-
-public def Expr.collectVars (e : Expr) : VarCollector :=
-  match e with
-  | .num .. => id
-  | .var x => collectVar x
-  | .pow a _ => a.collectVars
-  | .add a b | .mul a b => a.collectVars >> b.collectVars
-
-end Lean.Grind.Ring.OfSemiring

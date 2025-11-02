@@ -7,12 +7,13 @@ module
 
 prelude
 public import Lean.Elab.PreDefinition.Basic
-import Lean.Elab.PreDefinition.Eqns
-import Lean.Meta.Tactic.Apply
-import Lean.Meta.Tactic.Split
 public import Lean.Meta.Tactic.Simp.Types
+import Lean.Elab.PreDefinition.EqnsUtils
+import Lean.Meta.Tactic.Split
 import Lean.Meta.Tactic.Simp.Main
 import Lean.Meta.Tactic.Simp.BuiltinSimprocs
+import Lean.Meta.Tactic.Delta
+import Lean.Meta.Tactic.Refl
 
 /-!
 This module is responsible for proving the unfolding equation for functions defined
@@ -197,7 +198,7 @@ def mkUnfoldProof (declName : Name) (mvarId : MVarId) : MetaM Unit := withTransp
   match (← simpTarget mvarId ctx (simprocs := simprocs)).1 with
   | none => return ()
   | some mvarId' =>
-    prependError m!"failed to finish proof for equational theorem for '{.ofConstName declName}'" do
+    prependError m!"failed to finish proof for equational theorem for `{.ofConstName declName}`" do
       mvarId'.refl
 
 public def mkUnfoldEq (preDef : PreDefinition) (unaryPreDefName : Name) (wfPreprocessProof : Simp.Result) : MetaM Unit := do
@@ -249,7 +250,7 @@ public def mkBinaryUnfoldEq (preDef : PreDefinition) (unaryPreDefName : Name) : 
       let mvarId ← deltaLHS mvarId -- unfold the function
       let mvarIds ← mvarId.applyConst unaryEqName
       unless mvarIds.isEmpty do
-        throwError "Failed to apply '{unaryEqName}' to '{mvarId}'"
+        throwError "Failed to apply `{unaryEqName}` to `{mvarId}`"
 
       let value ← instantiateMVars main
       let type ← mkForallFVars xs type

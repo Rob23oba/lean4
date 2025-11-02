@@ -5,22 +5,25 @@ Authors: Leonardo de Moura
 -/
 module
 prelude
-public import Lean.Meta.Tactic.Grind.Simp
-public import Lean.Meta.Tactic.Grind.Arith.Cutsat.Var
-public import Lean.Meta.Tactic.Grind.Arith.Cutsat.DvdCnstr
-public import Lean.Meta.Tactic.Grind.Arith.Cutsat.LeCnstr
-public import Lean.Meta.Tactic.Grind.Arith.Cutsat.ToInt
-public import Lean.Meta.Tactic.Grind.Arith.Cutsat.CommRing
+public import Lean.Meta.Tactic.Grind.Arith.Cutsat.Types
+import Init.Data.Int.OfNat
+import Lean.Meta.Tactic.Grind.Simp
+import Lean.Meta.Tactic.Grind.Arith.Cutsat.Proof
+import Lean.Meta.Tactic.Grind.Arith.Cutsat.Var
+import Lean.Meta.Tactic.Grind.Arith.Cutsat.DvdCnstr
+import Lean.Meta.Tactic.Grind.Arith.Cutsat.LeCnstr
+import Lean.Meta.Tactic.Grind.Arith.Cutsat.Nat
+import Lean.Meta.Tactic.Grind.Arith.Cutsat.CommRing
+import Lean.Meta.Tactic.Grind.Arith.Cutsat.Norm
 import Lean.Meta.NatInstTesters
 public section
-
 namespace Lean.Meta.Grind.Arith.Cutsat
 
 private def _root_.Int.Linear.Poly.substVar (p : Poly) : GoalM (Option (Var × EqCnstr × Poly)) := do
   let some (a, x, c) ← p.findVarToSubst | return none
   let b := c.p.coeff x
   let p' := p.mul (-b) |>.combine (c.p.mul a)
-  trace[grind.debug.cutsat.subst] "{← p.pp}, {a}, {← getVar x}, {← c.pp}, {b}, {← p'.pp}"
+  trace[grind.debug.lia.subst] "{← p.pp}, {a}, {← getVar x}, {← c.pp}, {b}, {← p'.pp}"
   return some (x, c, p')
 
 def EqCnstr.norm (c : EqCnstr) : EqCnstr :=
@@ -43,12 +46,12 @@ def DiseqCnstr.applyEq (a : Int) (x : Var) (c₁ : EqCnstr) (b : Int) (c₂ : Di
   let p := c₁.p
   let q := c₂.p
   let p := p.mul b |>.combine (q.mul (-a))
-  trace[grind.debug.cutsat.subst] "{← getVar x}, {← c₁.pp}, {← c₂.pp}"
+  trace[grind.debug.lia.subst] "{← getVar x}, {← c₁.pp}, {← c₂.pp}"
   return { p, h := .subst x c₁ c₂ }
 
 partial def DiseqCnstr.applySubsts (c : DiseqCnstr) : GoalM DiseqCnstr := withIncRecDepth do
   let some (x, c₁, p) ← c.p.substVar | return c
-  trace[grind.debug.cutsat.subst] "{← getVar x}, {← c.pp}, {← c₁.pp}"
+  trace[grind.debug.lia.subst] "{← getVar x}, {← c.pp}, {← c₁.pp}"
   applySubsts { p, h := .subst x c₁ c }
 
 /--
@@ -70,14 +73,14 @@ private def DiseqCnstr.findLe (c : DiseqCnstr) : GoalM Bool := do
 
 def DiseqCnstr.assert (c : DiseqCnstr) : GoalM Unit := do
   if (← inconsistent) then return ()
-  trace[grind.cutsat.assert] "{← c.pp}"
+  trace[grind.lia.assert] "{← c.pp}"
   let c ← c.norm.applySubsts
   if c.p.isUnsatDiseq then
-    trace[grind.cutsat.assert.unsat] "{← c.pp}"
+    trace[grind.lia.assert.unsat] "{← c.pp}"
     setInconsistent (.diseq c)
     return ()
   if c.isTrivial then
-    trace[grind.cutsat.assert.trivial] "{← c.pp}"
+    trace[grind.lia.assert.trivial] "{← c.pp}"
     return ()
   let k := c.p.gcdCoeffs c.p.getConst
   let c := if k == 1 then
@@ -88,7 +91,7 @@ def DiseqCnstr.assert (c : DiseqCnstr) : GoalM Unit := do
     return ()
   let .add _ x _ := c.p | c.throwUnexpected
   c.p.updateOccs
-  trace[grind.cutsat.assert.store] "{← c.pp}"
+  trace[grind.lia.assert.store] "{← c.pp}"
   modify' fun s => { s with diseqs := s.diseqs.modify x (·.push c) }
   if (← c.satisfied) == .false then
     resetAssignmentFrom x
@@ -114,7 +117,7 @@ where
 
 partial def EqCnstr.applySubsts (c : EqCnstr) : GoalM EqCnstr := withIncRecDepth do
   let some (x, c₁, p) ← c.p.substVar | return c
-  trace[grind.debug.cutsat.subst] "{← getVar x}, {← c.pp}, {← c₁.pp}"
+  trace[grind.debug.lia.subst] "{← getVar x}, {← c.pp}, {← c₁.pp}"
   applySubsts { p, h := .subst x c₁ c : EqCnstr }
 
 private def updateDvdCnstr (a : Int) (x : Var) (c : EqCnstr) (y : Var) : GoalM Unit := do
@@ -292,7 +295,7 @@ private def updateElimEqs (a : Int) (x : Var) (c : EqCnstr) (y : Var) : GoalM Un
   let b := c₂.p.coeff x
   if b == 0 then return ()
   let c₂ := { p := c₂.p.mul a |>.combine (c.p.mul (-b)), h := .subst x c₂ c : EqCnstr }
-  trace[grind.debug.cutsat.elimEq] "updated: {← getVar y}, {← c₂.pp}"
+  trace[grind.debug.lia.elimEq] "updated: {← getVar y}, {← c₂.pp}"
   modify' fun s => { s with elimEqs := s.elimEqs.set y (some c₂) }
   propagateNonlinearTerms y
 
@@ -335,14 +338,14 @@ partial def _root_.Int.Linear.Poly.updateOccsForElimEq (p : Poly) (x : Var) : Go
 @[export lean_grind_cutsat_assert_eq]
 def EqCnstr.assertImpl (c : EqCnstr) : GoalM Unit := do
   if (← inconsistent) then return ()
-  trace[grind.cutsat.assert] "{← c.pp}"
+  trace[grind.lia.assert] "{← c.pp}"
   let c ← c.norm.applySubsts
   if c.p.isUnsatEq then
-    trace[grind.cutsat.assert.unsat] "{← c.pp}"
+    trace[grind.lia.assert.unsat] "{← c.pp}"
     setInconsistent (.eq c)
     return ()
   if c.isTrivial then
-    trace[grind.cutsat.assert.trivial] "{← c.pp}"
+    trace[grind.lia.assert.trivial] "{← c.pp}"
     return ()
   let k := c.p.gcdCoeffs'
   if c.p.getConst % k > 0 then
@@ -353,9 +356,11 @@ def EqCnstr.assertImpl (c : EqCnstr) : GoalM Unit := do
   else
     { p := c.p.div k, h := .divCoeffs c }
   let some (k, x) := c.p.pickVarToElim? | c.throwUnexpected
-  trace[grind.debug.cutsat.subst] ">> {← getVar x}, {← c.pp}"
-  trace[grind.cutsat.assert.store] "{← c.pp}"
-  trace[grind.debug.cutsat.elimEq] "{← getVar x}, {← c.pp}"
+  trace[grind.debug.lia.subst] ">> {← getVar x}, {← c.pp}"
+  trace[grind.lia.assert.store] "{← c.pp}"
+  trace[grind.debug.lia.elimEq] "{← getVar x}, {← c.pp}"
+  if (← c.satisfied) == .false then
+    resetAssignmentFrom x
   modify' fun s => { s with
     elimEqs := s.elimEqs.set x (some c)
     elimStack := x :: s.elimStack
@@ -424,9 +429,8 @@ private def processNewToIntEq (a b : Expr) : ToIntM Unit := do
   let c := { p, h := .coreToInt a b thm lhs rhs : EqCnstr }
   c.assertCore
 
-@[export lean_process_cutsat_eq]
-def processNewEqImpl (a b : Expr) : GoalM Unit := do
-  unless (← getConfig).cutsat do return ()
+def processNewEq (a b : Expr) : GoalM Unit := do
+  unless (← getConfig).lia do return ()
   if (← isNatTerm a <&&> isNatTerm b) then
     processNewNatEq a b
   else if (← isIntTerm a <&&> isIntTerm b) then
@@ -480,9 +484,8 @@ private def processNewToIntDiseq (a b : Expr) : ToIntM Unit := do
   let c := { p, h := .coreToInt a b thm lhs rhs : DiseqCnstr }
   c.assertCore
 
-@[export lean_process_cutsat_diseq]
-def processNewDiseqImpl (a b : Expr) : GoalM Unit := do
-  unless (← getConfig).cutsat do return ()
+def processNewDiseq (a b : Expr) : GoalM Unit := do
+  unless (← getConfig).lia do return ()
   if (← isNatTerm a <&&> isNatTerm b) then
     processNewNatDiseq a b
   else if (← isIntTerm a <&&> isIntTerm b) then
@@ -536,7 +539,7 @@ private def isForbiddenParent (parent? : Option Expr) (k : SupportedTermKind) : 
 private def internalizeInt (e : Expr) : GoalM Unit := do
   if (← hasVar e) then return ()
   let p ← toPoly e
-  trace[grind.debug.cutsat.internalize] "{aquote e}:= {← p.pp}"
+  trace[grind.debug.lia.internalize] "{aquote e}:= {← p.pp}"
   let x ← mkVar e
   if p == .add 1 x (.num 0) then
     -- It is pointless to assert `x = x`
@@ -600,7 +603,10 @@ private def propagateMod (e : Expr) : GoalM Unit := do
 
 private def propagateToInt (e : Expr) : GoalM Unit := do
   let_expr Grind.ToInt.toInt α _ _ a := e | return ()
-  if (← isToIntTerm a) then return ()
+  if (← isToIntTerm a) then
+    -- Save the mapping `a ==> e` for model construction
+    modify' fun s => { s with toIntVarMap := s.toIntVarMap.insert { expr := a } e }
+    return ()
   let some (eToInt, he) ← toInt? a α | return ()
   discard <| mkVar e
   if isSameExpr e eToInt then return ()
@@ -626,7 +632,7 @@ private def isToIntForbiddenParent (parent? : Option Expr) : Bool :=
 
 private def internalizeIntTerm (e type : Expr) (parent? : Option Expr) (k : SupportedTermKind) : GoalM Unit := do
   if isForbiddenParent parent? k then return ()
-  trace[grind.debug.cutsat.internalize] "{e} : {type}"
+  trace[grind.debug.lia.internalize] "{e} : {type}"
   match k with
   | .div => propagateDiv e
   | .mod => propagateMod e
@@ -650,12 +656,12 @@ private def internalizeNatTerm (e type : Expr) (parent? : Option Expr) (k : Supp
   if isForbiddenParent parent? k then return ()
   if (← get').natToIntMap.contains { expr := e } then return ()
   let e'h ← natToInt e
-  trace[grind.debug.cutsat.internalize] "{e} : {type}"
-  trace[grind.debug.cutsat.toInt] "{e} ==> {e'h.1}"
+  trace[grind.debug.lia.internalize] "{e} : {type}"
+  trace[grind.debug.lia.toInt] "{e} ==> {e'h.1}"
   modify' fun s => { s with
     natToIntMap := s.natToIntMap.insert { expr := e } e'h
   }
-  markAsCutsatTerm e
+  cutsatExt.markTerm e
   /-
   If `e'.h` is of the form `NatCast.natCast e`, then it is wasteful to
   assert an equality
@@ -680,13 +686,13 @@ private def internalizeNatTerm (e type : Expr) (parent? : Option Expr) (k : Supp
 private def internalizeToIntTerm (e type : Expr) : GoalM Unit := do
   if (← isToIntTerm e) then return () -- already internalized
   if let some (eToInt, he) ← toInt? e type then
-    trace[grind.debug.cutsat.internalize] "{e} : {type}"
-    trace[grind.debug.cutsat.toInt] "{e} ==> {eToInt}"
+    trace[grind.debug.lia.internalize] "{e} : {type}"
+    trace[grind.debug.lia.toInt] "{e} ==> {eToInt}"
     let α := type
     modify' fun s => { s with
       toIntTermMap := s.toIntTermMap.insert { expr := e } { eToInt, he, α }
     }
-    markAsCutsatTerm e
+    cutsatExt.markTerm e
 
 /--
 Internalizes an integer (and `Nat`) expression. Here are the different cases that are handled.
@@ -698,7 +704,7 @@ Internalizes an integer (and `Nat`) expression. Here are the different cases tha
   back to the congruence closure module. Example: we have `f 5`, `f x`, `x - y = 3`, `y = 2`.
 -/
 def internalize (e : Expr) (parent? : Option Expr) : GoalM Unit := do
-  unless (← getConfig).cutsat do return ()
+  unless (← getConfig).lia do return ()
   if let some (k, type) := getKindAndType? e then
     if type.isConstOf ``Int then
       internalizeIntTerm e type parent? k

@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Init.Data.Slice.Basic
-// Imports: Init.Core
+// Imports: public import Init.Core
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -31,10 +31,8 @@ static lean_object* l_Std_Slice_Self_eq___autoParam___closed__17;
 static lean_object* l_Std_Slice_Self_eq___autoParam___closed__20;
 static lean_object* l_Std_Slice_Self_eq___autoParam___closed__11;
 LEAN_EXPORT lean_object* l_Std_Slice_Self_eq___autoParam;
-LEAN_EXPORT lean_object* l_Std_Slice_toCtorIdx___boxed(lean_object*, lean_object*);
 static lean_object* l_Std_Slice_Self_eq___autoParam___closed__16;
 static lean_object* l_Std_Slice_Self_eq___autoParam___closed__3;
-LEAN_EXPORT lean_object* l_Std_Slice_toCtorIdx(lean_object*, lean_object*);
 static lean_object* l_Std_Slice_Self_eq___autoParam___closed__7;
 static lean_object* l_Std_Slice_Self_eq___autoParam___closed__0;
 lean_object* l_Lean_Name_mkStr1(lean_object*);
@@ -58,23 +56,6 @@ _start:
 {
 lean_object* x_3; 
 x_3 = l_Std_Slice_ctorIdx(x_1, x_2);
-lean_dec(x_2);
-return x_3;
-}
-}
-LEAN_EXPORT lean_object* l_Std_Slice_toCtorIdx(lean_object* x_1, lean_object* x_2) {
-_start:
-{
-lean_object* x_3; 
-x_3 = lean_unsigned_to_nat(0u);
-return x_3;
-}
-}
-LEAN_EXPORT lean_object* l_Std_Slice_toCtorIdx___boxed(lean_object* x_1, lean_object* x_2) {
-_start:
-{
-lean_object* x_3; 
-x_3 = l_Std_Slice_toCtorIdx(x_1, x_2);
 lean_dec(x_2);
 return x_3;
 }
@@ -309,13 +290,13 @@ x_1 = l_Std_Slice_Self_eq___autoParam___closed__21;
 return x_1;
 }
 }
-lean_object* initialize_Init_Core(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Core(uint8_t builtin);
 static bool _G_initialized = false;
-LEAN_EXPORT lean_object* initialize_Init_Data_Slice_Basic(uint8_t builtin, lean_object* w) {
+LEAN_EXPORT lean_object* initialize_Init_Data_Slice_Basic(uint8_t builtin) {
 lean_object * res;
 if (_G_initialized) return lean_io_result_mk_ok(lean_box(0));
 _G_initialized = true;
-res = initialize_Init_Core(builtin, lean_io_mk_world());
+res = initialize_Init_Core(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 l_Std_Slice_Self_eq___autoParam___closed__0 = _init_l_Std_Slice_Self_eq___autoParam___closed__0();

@@ -6,14 +6,10 @@ Authors: Leonardo de Moura
 module
 
 prelude
-public import Lean.Meta.CtorRecognizer
 public import Lean.Meta.Match.Match
 public import Lean.Meta.Match.MatchEqsExt
-public import Lean.Meta.Tactic.Apply
 public import Lean.Meta.Tactic.Refl
 public import Lean.Meta.Tactic.Delta
-public import Lean.Meta.Tactic.Injection
-public import Lean.Meta.Tactic.Contradiction
 import Lean.Meta.Tactic.SplitIf
 
 public section
@@ -401,9 +397,11 @@ partial def proveCondEqThm (matchDeclName : Name) (type : Expr)
       mvarId ← subst mvarId' h
     trace[Meta.Match.matchEqs] "proveCondEqThm after subst{mvarId}"
   mvarId := (← mvarId.intros).2
-  mvarId ← mvarId.deltaTarget (· == matchDeclName)
-  mvarId ← mvarId.heqOfEq
-  go mvarId 0
+  try mvarId.refl
+  catch _ =>
+    mvarId ← mvarId.deltaTarget (· == matchDeclName)
+    mvarId ← mvarId.heqOfEq
+    go mvarId 0
   instantiateMVars mvar0
 where
   go (mvarId : MVarId) (depth : Nat) : MetaM Unit := withIncRecDepth do
@@ -698,7 +696,7 @@ where
       if mvarId' == mvarId then
         if (← mvarId.contradictionCore {}) then
           return ()
-        throwError "failed to generate splitter for match auxiliary declaration '{matchDeclName}', unsolved subgoal:\n{MessageData.ofGoal mvarId}"
+        throwError "failed to generate splitter for match auxiliary declaration `{matchDeclName}`, unsolved subgoal:\n{MessageData.ofGoal mvarId}"
       else
         proveSubgoalLoop mvarId' forbidden
     | .subgoal fvarId mvarId => proveSubgoalLoop mvarId (forbidden.insert fvarId)
@@ -753,7 +751,7 @@ def getEquationsForImpl (matchDeclName : Name) : MetaM MatchEqns := do
 where go baseName splitterName := withConfig (fun c => { c with etaStruct := .none }) do
   let constInfo ← getConstInfo matchDeclName
   let us := constInfo.levelParams.map mkLevelParam
-  let some matchInfo ← getMatcherInfo? matchDeclName | throwError "'{matchDeclName}' is not a matcher function"
+  let some matchInfo ← getMatcherInfo? matchDeclName | throwError "`{matchDeclName}` is not a matcher function"
   let numDiscrEqs := getNumEqsFromDiscrInfos matchInfo.discrInfos
   forallTelescopeReducing constInfo.type fun xs matchResultType => do
     let mut eqnNames := #[]
@@ -821,7 +819,11 @@ where go baseName splitterName := withConfig (fun c => { c with etaStruct := .no
       let template := mkAppN (mkConst constInfo.name us) (params ++ #[motive] ++ discrs ++ alts)
       let template ← deltaExpand template (· == constInfo.name)
       let template := template.headBeta
-      let splitterVal ← mkLambdaFVars splitterParams (← mkSplitterProof matchDeclName template alts altsNew splitterAltNumParams altArgMasks)
+      let splitterVal ←
+        if (← isDefEq splitterType constInfo.type) then
+          pure <| mkConst constInfo.name us
+        else
+          mkLambdaFVars splitterParams (← mkSplitterProof matchDeclName template alts altsNew splitterAltNumParams altArgMasks)
       addAndCompile <| Declaration.defnDecl {
         name        := splitterName
         levelParams := constInfo.levelParams
@@ -865,7 +867,7 @@ where go baseName := withConfig (fun c => { c with etaStruct := .none }) do
   withConfig (fun c => { c with etaStruct := .none }) do
   let constInfo ← getConstInfo matchDeclName
   let us := constInfo.levelParams.map mkLevelParam
-  let some matchInfo ← getMatcherInfo? matchDeclName | throwError "'{matchDeclName}' is not a matcher function"
+  let some matchInfo ← getMatcherInfo? matchDeclName | throwError "`{matchDeclName}` is not a matcher function"
   let numDiscrEqs := matchInfo.getNumDiscrEqs
   forallTelescopeReducing constInfo.type fun xs _matchResultType => do
     let mut eqnNames := #[]

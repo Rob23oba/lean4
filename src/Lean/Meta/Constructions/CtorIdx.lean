@@ -33,10 +33,10 @@ returns the constructor index of the given value.
 Does nothing if `T` does not eliminate into `Type` or if `T` is unsafe.
 Assumes `T.casesOn` to be defined already.
 -/
-public def mkCtorIdx (indName : Name) : MetaM Unit := do
+public def mkCtorIdx (indName : Name) : MetaM Unit :=
+  withExporting (isExporting := ! isPrivateName indName) do
   prependError m!"failed to construct `T.ctorIdx` for `{.ofConstName indName}`:" do
     unless genCtorIdx.get (← getOptions) do return
-    unless genInjectivity.get (← getOptions)  do return
     let declName := mkCtorIdxName indName
     if (← hasConst declName) then return
     let ConstantInfo.inductInfo info ← getConstInfo indName | unreachable!
@@ -72,17 +72,13 @@ public def mkCtorIdx (indName : Name) : MetaM Unit := do
             value := mkApp value alt
           pure value
         mkLambdaFVars (xs.push x) value
-      let decl := .defnDecl (← mkDefinitionValInferringUnsafe
+      addAndCompile (.defnDecl (← mkDefinitionValInferringUnsafe
         (name        := declName)
         (levelParams := info.levelParams)
         (type        := declType)
         (value       := declValue)
         (hints       := ReducibilityHints.abbrev)
-      )
-      addDecl decl
-      if info.numCtors = 1 then
-        setInlineAttribute declName .macroInline
-      compileDecl decl
+      ))
       modifyEnv fun env => addToCompletionBlackList env declName
       modifyEnv fun env => addProtected env declName
       setReducibleAttribute declName
@@ -90,16 +86,13 @@ public def mkCtorIdx (indName : Name) : MetaM Unit := do
       -- Deprecated alias for enumeration types (which used to have `toCtorIdx`)
       if (← isEnumType indName) then
         let aliasName := mkToCtorIdxName indName
-        let decl := .defnDecl (← mkDefinitionValInferringUnsafe
+        addAndCompile (.defnDecl (← mkDefinitionValInferringUnsafe
           (name        := aliasName)
           (levelParams := info.levelParams)
           (type        := declType)
           (value       := mkConst declName us)
           (hints       := ReducibilityHints.abbrev)
-        )
-        addDecl decl
-        setInlineAttribute aliasName .macroInline
-        compileDecl decl
+        ))
         modifyEnv fun env => addToCompletionBlackList env aliasName
         modifyEnv fun env => addProtected env aliasName
         setReducibleAttribute aliasName

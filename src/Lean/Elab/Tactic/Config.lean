@@ -7,7 +7,6 @@ module
 
 prelude
 public import Lean.Meta.Eval
-public import Lean.Elab.Tactic.Basic
 public import Lean.Elab.SyntheticMVars
 import Lean.Linter.MissingDocs
 meta import Lean.Parser.Tactic
@@ -59,7 +58,7 @@ private partial def expandField (structName : Name) (field : Name) : MetaM (Name
   | .str .anonymous fieldName => expandFieldName structName (Name.mkSimple fieldName)
   | .str field' fieldName =>
     let (field', projFn) ← expandField structName field'
-    let notStructure {α} : MetaM α := throwError "Field `{field'}` of structure '{.ofConstName structName}' is not a structure"
+    let notStructure {α} : MetaM α := throwError "Field `{field'}` of structure `{.ofConstName structName}` is not a structure"
     let .const structName' _ := (← getConstInfo projFn).type.getForallBody | notStructure
     unless isStructure (← getEnv) structName' do notStructure
     let (field'', projFn) ← expandFieldName structName' (Name.mkSimple fieldName)
@@ -126,7 +125,7 @@ section
 -- parser.
 set_option internal.parseQuotWithCurrentStage false
 
-private def mkConfigElaborator
+private meta def mkConfigElaborator
     (doc? : Option (TSyntax ``Parser.Command.docComment)) (elabName type monadName : Ident)
     (adapt recover : Term) : MacroM (TSyntax `command) := do
   let empty ← withRef type `({ : $type})
@@ -142,6 +141,7 @@ private def mkConfigElaborator
           return $empty
         unless (← getEnv).contains ``$type do
           throwError m!"Error evaluating configuration: Environment does not yet contain type {``$type}"
+        recordExtraModUseFromDecl (isMeta := true) ``$type
         let c ← elabConfig recover ``$type items
         if c.hasSyntheticSorry then
           -- An error is already logged, return the default.

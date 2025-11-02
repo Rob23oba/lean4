@@ -9,6 +9,8 @@ prelude
 public import Init.Data.Float
 public import Lake.Toml.Data.Dict
 public import Lake.Toml.Data.DateTime
+import Lake.Util.String
+import Init.Data.String.TakeDrop
 
 /-!
 # TOML Value
@@ -18,7 +20,6 @@ open Lean
 
 namespace Lake.Toml
 
-public section -- for `BEq`
 /-- A TOML value with optional source info. -/
 public inductive Value
 | string (ref : Syntax) (s : String)
@@ -29,7 +30,6 @@ public inductive Value
 | array (ref : Syntax) (xs : Array Value)
 | table' (ref : Syntax) (xs : RBDict Name Value Name.quickCmp)
 deriving Inhabited, BEq
-end
 
 /-- A TOML table, an ordered key-value map of TOML values (`Lake.Toml.Value`). -/
 public abbrev Table := NameDict Value
@@ -65,7 +65,7 @@ public def ppString (s : String) : String :=
     | '\\' => s ++ "\\\\"
     | _ =>
       if c.val < 0x20 || c.val == 0x7F then
-        s ++ "\\u" ++ lpad (String.mk <| Nat.toDigits 16 c.val.toNat) '0' 4
+        s ++ "\\u" ++ lpad (String.ofList <| Nat.toDigits 16 c.val.toNat) '0' 4
       else
         s.push c
   s.push '\"'

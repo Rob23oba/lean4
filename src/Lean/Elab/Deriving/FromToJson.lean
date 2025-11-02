@@ -6,10 +6,8 @@ Authors: Sebastian Ullrich, Dany Fabian
 module
 
 prelude
-public import Lean.Meta.Transform
 public import Lean.Elab.Deriving.Basic
 public import Lean.Elab.Deriving.Util
-public import Lean.Data.Json.FromToJson.Basic
 meta import Lean.Parser.Do
 
 public section
@@ -215,13 +213,13 @@ def mkFromJsonMutualBlock (ctx : Context) : TermElabM Command := do
     end)
 
 private def mkToJsonInstance (declName : Name) : TermElabM (Array Command) := do
-  let ctx ← mkContext "toJson" declName
+  let ctx ← mkContext ``ToJson "toJson" declName
   let cmds := #[← mkToJsonMutualBlock ctx] ++ (← mkInstanceCmds ctx ``ToJson #[declName])
   trace[Elab.Deriving.toJson] "\n{cmds}"
   return cmds
 
 private def mkFromJsonInstance (declName : Name) : TermElabM (Array Command) := do
-  let ctx ← mkContext "fromJson" declName
+  let ctx ← mkContext ``FromJson "fromJson" declName
   let cmds := #[← mkFromJsonMutualBlock ctx] ++ (← mkInstanceCmds ctx ``FromJson #[declName])
   trace[Elab.Deriving.fromJson] "\n{cmds}"
   return cmds

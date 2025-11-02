@@ -31,7 +31,7 @@ This file defines the `Int` type as well as
 Division and modulus operations are defined in `Init.Data.Int.DivMod.Basic`.
 -/
 
-set_option genInjectivity false in
+set_option genCtorIdx false in
 /--
 The integers.
 
@@ -80,7 +80,10 @@ protected theorem zero_ne_one : (0 : Int) ≠ 1 := nofun
 
 /-! ## Coercions -/
 
-@[simp] theorem ofNat_eq_coe : Int.ofNat n = Nat.cast n := rfl
+@[simp] theorem ofNat_eq_natCast (n : Nat) : Int.ofNat n = n := rfl
+
+@[deprecated ofNat_eq_natCast (since := "2025-10-29")]
+theorem ofNat_eq_coe : Int.ofNat n = Nat.cast n := rfl
 
 @[simp] theorem ofNat_zero : ((0 : Nat) : Int) = 0 := rfl
 
@@ -313,7 +316,7 @@ the logical model.
 Examples:
  * `(7 : Int).natAbs = 7`
  * `(0 : Int).natAbs = 0`
- * `((-11 : Int).natAbs = 11`
+ * `(-11 : Int).natAbs = 11`
 -/
 @[extern "lean_nat_abs", expose]
 def natAbs (m : @& Int) : Nat :=
@@ -321,7 +324,7 @@ def natAbs (m : @& Int) : Nat :=
   | ofNat m => m
   | -[m +1] => m.succ
 
-gen_injective_theorems% Int
+attribute [gen_constructor_elims] Int
 
 /-! ## sign -/
 
@@ -368,9 +371,6 @@ Examples:
 def toNat? : Int → Option Nat
   | (n : Nat) => some n
   | -[_+1] => none
-
-@[deprecated toNat? (since := "2025-03-11"), inherit_doc toNat?]
-abbrev toNat' := toNat?
 
 /-! ## divisibility -/
 

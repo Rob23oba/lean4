@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Lean.Meta.ExprTraverse
-// Imports: Lean.Meta.Basic Lean.SubExpr
+// Imports: public import Lean.SubExpr
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -18,6 +18,7 @@ lean_object* lean_mk_empty_array_with_capacity(lean_object*);
 static lean_object* l_Lean_Meta_traverseLambdaWithPos___redArg___closed__0;
 lean_object* l_Lean_Meta_mkForallFVars___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 lean_object* l___private_Lean_Expr_0__Lean_Expr_updateProj_x21Impl(lean_object*, lean_object*);
+static lean_object* l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_forgetPos___redArg___closed__0;
 LEAN_EXPORT lean_object* l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_traverseLambdaWithPos_visit___redArg___lam__0___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 lean_object* l_Lean_Meta_mkLambdaFVars___boxed(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 lean_object* lean_array_push(lean_object*, lean_object*);
@@ -35,6 +36,7 @@ LEAN_EXPORT lean_object* l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_forgetP
 LEAN_EXPORT lean_object* l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_traverseLambdaWithPos_visit(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_forgetPos___redArg___lam__0(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_traverseLambdaWithPos_visit___redArg___lam__1(lean_object*, lean_object*, lean_object*, uint8_t, lean_object*, lean_object*);
+extern lean_object* l_Lean_SubExpr_Pos_root;
 LEAN_EXPORT lean_object* l_Lean_Meta_traverseLambdaWithPos___redArg(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
 lean_object* l_Lean_Meta_withLocalDecl___redArg(lean_object*, lean_object*, lean_object*, uint8_t, lean_object*, lean_object*, uint8_t);
 lean_object* l_Lean_SubExpr_Pos_pushBindingDomain(lean_object*);
@@ -79,13 +81,21 @@ x_4 = lean_apply_1(x_1, x_3);
 return x_4;
 }
 }
+static lean_object* _init_l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_forgetPos___redArg___closed__0() {
+_start:
+{
+lean_object* x_1; 
+x_1 = l_Lean_SubExpr_Pos_root;
+return x_1;
+}
+}
 LEAN_EXPORT lean_object* l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_forgetPos___redArg(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
 _start:
 {
 lean_object* x_4; lean_object* x_5; lean_object* x_6; 
 x_4 = lean_alloc_closure((void*)(l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_forgetPos___redArg___lam__0___boxed), 3, 1);
 lean_closure_set(x_4, 0, x_2);
-x_5 = lean_unsigned_to_nat(1u);
+x_5 = l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_forgetPos___redArg___closed__0;
 x_6 = lean_apply_3(x_1, x_4, x_5, x_3);
 return x_6;
 }
@@ -760,19 +770,17 @@ x_7 = l_Lean_Meta_traverseChildren___redArg(x_2, x_3, x_4, x_5, x_6);
 return x_7;
 }
 }
-lean_object* initialize_Lean_Meta_Basic(uint8_t builtin, lean_object*);
-lean_object* initialize_Lean_SubExpr(uint8_t builtin, lean_object*);
+lean_object* initialize_Lean_SubExpr(uint8_t builtin);
 static bool _G_initialized = false;
-LEAN_EXPORT lean_object* initialize_Lean_Meta_ExprTraverse(uint8_t builtin, lean_object* w) {
+LEAN_EXPORT lean_object* initialize_Lean_Meta_ExprTraverse(uint8_t builtin) {
 lean_object * res;
 if (_G_initialized) return lean_io_result_mk_ok(lean_box(0));
 _G_initialized = true;
-res = initialize_Lean_Meta_Basic(builtin, lean_io_mk_world());
+res = initialize_Lean_SubExpr(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_Lean_SubExpr(builtin, lean_io_mk_world());
-if (lean_io_result_is_error(res)) return res;
-lean_dec_ref(res);
+l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_forgetPos___redArg___closed__0 = _init_l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_forgetPos___redArg___closed__0();
+lean_mark_persistent(l___private_Lean_Meta_ExprTraverse_0__Lean_Meta_forgetPos___redArg___closed__0);
 l_Lean_Meta_traverseLambdaWithPos___redArg___closed__0 = _init_l_Lean_Meta_traverseLambdaWithPos___redArg___closed__0();
 lean_mark_persistent(l_Lean_Meta_traverseLambdaWithPos___redArg___closed__0);
 return lean_io_result_mk_ok(lean_box(0));

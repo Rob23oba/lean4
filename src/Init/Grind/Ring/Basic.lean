@@ -6,10 +6,7 @@ Authors: Kim Morrison
 module
 
 prelude
-public import Init.Data.Zero
-public import Init.Data.Int.DivMod.Lemmas
 public import Init.Data.Int.LemmasAux
-public import Init.Data.Int.Pow
 public import Init.TacticsExtra
 public import Init.Grind.Module.Basic
 
@@ -179,6 +176,20 @@ theorem ofNat_mul (a b : Nat) : OfNat.ofNat (α := α) (a * b) = OfNat.ofNat a *
 theorem natCast_mul (a b : Nat) : ((a * b : Nat) : α) = ((a : α) * (b : α)) := by
   rw [← ofNat_eq_natCast, ofNat_mul, ofNat_eq_natCast, ofNat_eq_natCast]
 
+theorem natCast_mul_comm (a : Nat) (b : α) : a * b = b * a := by
+  induction a
+  next => simp [Semiring.natCast_zero, mul_zero, zero_mul]
+  next ih =>
+    rw [Semiring.natCast_succ, Semiring.left_distrib, Semiring.right_distrib, ih]
+    simp [Semiring.mul_one, Semiring.one_mul]
+
+theorem natCast_mul_left_comm (a : α) (b : Nat) (c : α) : a * (b * c) = b * (a * c) := by
+  induction b
+  next => simp [Semiring.natCast_zero, mul_zero, zero_mul]
+  next ih =>
+    rw [Semiring.natCast_succ, Semiring.right_distrib, Semiring.left_distrib, ih,
+        Semiring.right_distrib, Semiring.one_mul, Semiring.one_mul]
+
 theorem pow_one (a : α) : a ^ 1 = a := by
   rw [pow_succ, pow_zero, one_mul]
 
@@ -189,6 +200,9 @@ theorem pow_add (a : α) (k₁ k₂ : Nat) : a ^ (k₁ + k₂) = a^k₁ * a^k₂
   induction k₂
   next => simp [pow_zero, mul_one]
   next k₂ ih => rw [Nat.add_succ, pow_succ, pow_succ, ih, mul_assoc]
+
+theorem pow_add_congr (a r : α) (k k₁ k₂ : Nat) : k = k₁ + k₂ → a^k₁ * a^k₂ = r → a ^ k = r := by
+  intros; subst k r; rw [pow_add]
 
 theorem natCast_pow (x : Nat) (k : Nat) : ((x ^ k : Nat) : α) = (x : α) ^ k := by
   induction k
@@ -330,6 +344,18 @@ theorem intCast_mul (x y : Int) : ((x * y : Int) : α) = ((x : α) * (y : α)) :
   | (-(x + 1 : Nat)), (-(y + 1 : Nat)) => by
     rw [Int.neg_mul_neg, intCast_neg, intCast_neg, neg_mul, mul_neg, neg_neg, intCast_mul_aux,
       intCast_natCast, intCast_natCast]
+
+theorem intCast_mul_comm (a : Int) (b : α) : a * b = b * a := by
+  have : a = a.natAbs ∨ a = -a.natAbs := by exact Int.natAbs_eq a
+  cases this
+  next h => rw [h, Ring.intCast_natCast, Semiring.natCast_mul_comm]
+  next h => rw [h, Ring.intCast_neg, Ring.intCast_natCast, Ring.mul_neg, Ring.neg_mul, Semiring.natCast_mul_comm]
+
+theorem intCast_mul_left_comm (a : α) (b : Int) (c : α) : a * (b * c) = b * (a * c) := by
+  have : b = b.natAbs ∨ b = -b.natAbs := by exact Int.natAbs_eq b
+  cases this
+  next h => rw [h, Ring.intCast_natCast, Semiring.natCast_mul_left_comm]
+  next h => rw [h, Ring.intCast_neg, Ring.intCast_natCast, Ring.neg_mul, Ring.neg_mul, Ring.mul_neg, Semiring.natCast_mul_left_comm]
 
 theorem intCast_pow (x : Int) (k : Nat) : ((x ^ k : Int) : α) = (x : α) ^ k := by
   induction k

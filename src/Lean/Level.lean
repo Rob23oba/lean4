@@ -7,13 +7,9 @@ module
 
 prelude
 public import Init.Data.Array.QSort
-public import Lean.Data.PersistentHashMap
 public import Lean.Data.PersistentHashSet
 public import Lean.Hygiene
-public import Lean.Data.Name
-public import Lean.Data.Format
 public import Init.Data.Option.Coe
-public import Std.Data.TreeSet.Basic
 
 public section
 
@@ -203,6 +199,18 @@ def isNeverZero : Level → Bool
   | succ ..      => true
   | max l₁ l₂    => isNeverZero l₁ || isNeverZero l₂
   | imax _  l₂   => isNeverZero l₂
+
+/--
+Returns true if and only if `l` evaluates to zero for all instantiations of parameters and
+meta-variables.
+-/
+def isAlwaysZero : Level → Bool
+  | zero         => true
+  | param ..     => false
+  | mvar ..      => false
+  | succ ..      => false
+  | max l₁ l₂    => isAlwaysZero l₁ && isAlwaysZero l₂
+  | imax _  l₂   => isAlwaysZero l₂
 
 @[expose] def ofNat : Nat → Level
   | 0   => levelZero

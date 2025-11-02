@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Lake.Config.ConfigTarget
-// Imports: Lake.Config.Package
+// Imports: public import Lake.Config.Package
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -37,7 +37,6 @@ static lean_object* l_Lake_Package_configTargets___closed__10;
 LEAN_EXPORT lean_object* l_Lake_Package_findConfigTarget_x3f(lean_object*, lean_object*, lean_object*);
 uint8_t lean_name_eq(lean_object*, lean_object*);
 lean_object* l_Id_instMonad___lam__3(lean_object*, lean_object*, lean_object*, lean_object*);
-LEAN_EXPORT lean_object* l_Lake_ConfigTarget_toCtorIdx(lean_object*, lean_object*);
 LEAN_EXPORT uint64_t l_Lake_instHashableConfigTarget___lam__0(lean_object*);
 LEAN_EXPORT lean_object* l_Lake_instHashableConfigTarget___boxed(lean_object*);
 lean_object* l_Id_instMonad___lam__1___boxed(lean_object*, lean_object*, lean_object*, lean_object*);
@@ -47,7 +46,6 @@ static lean_object* l_Lake_Package_configTargets___closed__8;
 uint64_t l_Lean_Name_hash___override(lean_object*);
 static lean_object* l_Lake_Package_configTargets___closed__3;
 lean_object* l___private_Init_Data_Array_Basic_0__Array_foldlMUnsafe_fold(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, lean_object*, size_t, size_t, lean_object*);
-LEAN_EXPORT lean_object* l_Lake_ConfigTarget_toCtorIdx___boxed(lean_object*, lean_object*);
 static lean_object* l_Lake_Package_configTargets___closed__5;
 static lean_object* l_Lake_Package_configTargets___closed__4;
 lean_object* l_Id_instMonad___lam__6(lean_object*, lean_object*, lean_object*, lean_object*);
@@ -73,24 +71,6 @@ _start:
 {
 lean_object* x_3; 
 x_3 = l_Lake_ConfigTarget_ctorIdx(x_1, x_2);
-lean_dec_ref(x_2);
-lean_dec(x_1);
-return x_3;
-}
-}
-LEAN_EXPORT lean_object* l_Lake_ConfigTarget_toCtorIdx(lean_object* x_1, lean_object* x_2) {
-_start:
-{
-lean_object* x_3; 
-x_3 = lean_unsigned_to_nat(0u);
-return x_3;
-}
-}
-LEAN_EXPORT lean_object* l_Lake_ConfigTarget_toCtorIdx___boxed(lean_object* x_1, lean_object* x_2) {
-_start:
-{
-lean_object* x_3; 
-x_3 = l_Lake_ConfigTarget_toCtorIdx(x_1, x_2);
 lean_dec_ref(x_2);
 lean_dec(x_1);
 return x_3;
@@ -332,7 +312,7 @@ LEAN_EXPORT lean_object* l_Lake_Package_configTargets(lean_object* x_1, lean_obj
 _start:
 {
 lean_object* x_3; lean_object* x_4; lean_object* x_5; lean_object* x_6; lean_object* x_7; uint8_t x_8; 
-x_3 = lean_ctor_get(x_2, 10);
+x_3 = lean_ctor_get(x_2, 11);
 lean_inc_ref(x_3);
 x_4 = lean_unsigned_to_nat(0u);
 x_5 = l_Lake_Package_configTargets___closed__0;
@@ -483,13 +463,13 @@ lean_dec(x_1);
 return x_4;
 }
 }
-lean_object* initialize_Lake_Config_Package(uint8_t builtin, lean_object*);
+lean_object* initialize_Lake_Config_Package(uint8_t builtin);
 static bool _G_initialized = false;
-LEAN_EXPORT lean_object* initialize_Lake_Config_ConfigTarget(uint8_t builtin, lean_object* w) {
+LEAN_EXPORT lean_object* initialize_Lake_Config_ConfigTarget(uint8_t builtin) {
 lean_object * res;
 if (_G_initialized) return lean_io_result_mk_ok(lean_box(0));
 _G_initialized = true;
-res = initialize_Lake_Config_Package(builtin, lean_io_mk_world());
+res = initialize_Lake_Config_Package(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 l_Lake_Package_configTargets___closed__0 = _init_l_Lake_Package_configTargets___closed__0();

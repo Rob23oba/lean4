@@ -10,8 +10,9 @@ public import Lake.Build.Key
 public import Lake.Util.Family
 public import Lake.Config.Dynlib
 public import Lake.Config.Kinds
-meta import all Lake.Config.Kinds
-meta import Lake.Util.Name
+public meta import Lake.Config.Kinds
+public meta import Lake.Util.Name
+import all Lake.Config.Kinds
 
 open Lean
 
@@ -74,8 +75,6 @@ public instance : CoeOut (OptDataKind α) Lean.Name := ⟨(·.name)⟩
 public instance : ToString (OptDataKind α) := ⟨(·.name.toString)⟩
 
 end OptDataKind
-
-@[deprecated DataType (since := "2025-03-26")] public abbrev TargetData := DataType
 
 /--
 The open type family which maps a Lake facet to its output type.
@@ -207,10 +206,10 @@ scoped macro (name := builtinFacetCommand)
 : command => withRef tk do
   let fam := mkCIdentFrom tk ``FacetOut
   let nsName :: _ ← Macro.resolveNamespace ns.getId
-    | Macro.throwErrorAt ns s!"unknown or ambiguous target namespace '{ns.getId}'"
+    | Macro.throwErrorAt ns s!"unknown or ambiguous target namespace `{ns.getId}`"
   let kindName := facetKindForNamespace nsName
   if kindName.isAnonymous then
-    Macro.throwErrorAt ns s!"unknown target namespace '{ns.getId}'"
+    Macro.throwErrorAt ns s!"unknown target namespace `{ns.getId}`"
   let nameLit := Name.quoteFrom name name.getId (canonical := id?.isSome)
   let kindLit := Name.quoteFrom ns kindName (canonical := true)
   let facet := kindName ++ name.getId
@@ -259,14 +258,6 @@ scoped macro (name := moduleDataDecl)
 scoped macro (name := libraryDataDecl)
   doc?:optional(docComment) tk:"library_data " facet:ident " : " ty:term
 : command => `($[$doc?]? facet_data%$tk $(mkIdentFrom tk LeanLib.facetKind) $facet : $ty)
-
-/-- Macro for declaring new `TargetData`. -/
-scoped macro (name := targetDataDecl)
-  doc?:optional(docComment) tk:"target_data " id:ident " : " ty:term
-: command => withRef tk do
-  let fam := mkCIdentFrom (← getRef) ``TargetData
-  let idx := Name.quoteFrom id id.getId
-  `($[$doc?]? family_def $id : $fam $idx := $ty)
 
 /-- Macro for declaring new `CustomData`. -/
 scoped macro (name := customDataDecl)

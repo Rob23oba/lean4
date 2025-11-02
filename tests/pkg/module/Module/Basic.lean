@@ -1,5 +1,8 @@
 module
 
+meta import Init.Dynamic
+meta import Init.System.IO
+
 public axiom testSorry : α
 
 /-! Module docstring -/
@@ -34,6 +37,21 @@ info: @[reducible, expose] def fabbrev : Nat :=
 #guard_msgs in
 #print fabbrev
 
+/-- A non-exposed function type. -/
+public def Fun := Nat → Nat
+
+/-! The compiler should check it has sufficient information about types available. -/
+
+/--
+error: Compilation failed, locally inferred compilation type
+  (Nat → Nat) → Nat → Nat
+differs from type
+  (Nat → Nat) → lcAny
+that would be inferred in other modules. This usually means that a type `def` involved with the mentioned declarations needs to be `@[expose]`d. This is a current compiler limitation for `module`s that may be lifted in the future.
+-/
+#guard_msgs in
+public def Fun.mk (f : Nat → Nat) : Fun := f
+
 #guard_msgs(drop warning) in
 /-- A theorem. -/
 public theorem t : f = 1 := testSorry
@@ -41,18 +59,43 @@ public theorem t : f = 1 := testSorry
 /-- A private definition. -/
 def fpriv := 1
 
+public section
+/-- Examples are always private. -/
+example : fpriv = 1 := rfl
+
 /--
 error: Unknown identifier `fpriv`
 
-Note: A private declaration `fpriv` (from this module) exists but is not accessible in the current context.
+Note: A private declaration `fpriv` (from the current module) exists but would need to be public to access here.
+-/
+#guard_msgs in
+/-- ...unless explicitly marked `public`. -/
+public example : fpriv = 1 := rfl
+end
+
+/--
+error: Unknown identifier `fpriv`
+
+Note: A private declaration `fpriv` (from the current module) exists but would need to be public to access here.
 -/
 #guard_msgs in
 public theorem tpriv : fpriv = 1 := rfl
+
+/-! Type inference should not be able to smuggle out private references. -/
+
+/--
+error: Unknown constant `_private.Module.Basic.0.fpriv`
+
+Note: A private declaration `fpriv` (from the current module) exists but would need to be public to access here.
+-/
+#guard_msgs in
+public def inferredPrivRef := (rfl : fpriv = 1)
 
 public class X
 
 /-- A local instance of a public class. -/
 instance : X := ⟨⟩
+
 
 -- Check that the theorem types are checked in exported context, where `f` is not defeq to `1`
 -- (but `fexp` is)
@@ -64,6 +107,9 @@ has type
   Vector Unit 1
 but is expected to have type
   Vector Unit f
+
+Note: The following definitions were not unfolded because their definition is not exposed:
+  f ↦ 1
 -/
 #guard_msgs in
 public theorem v (x : Vector Unit f) (y : Vector Unit 1) : x = y := testSorry
@@ -137,6 +183,7 @@ is not definitionally equal to the right-hand side
 #guard_msgs in
 @[defeq] public theorem not_rfl : f = 2 := testSorry
 
+/-- A private definition. -/
 def priv := 2
 
 /-! Private decls should not be accessible in exported contexts. -/
@@ -144,7 +191,7 @@ def priv := 2
 /--
 error: Unknown identifier `priv`
 
-Note: A private declaration `priv` (from this module) exists but is not accessible in the current context.
+Note: A private declaration `priv` (from the current module) exists but would need to be public to access here.
 -/
 #guard_msgs in
 public abbrev h := priv
@@ -172,11 +219,11 @@ termination_by n => n
   | none   => none
 
 
-/-- error: 'f.eq_def' is a reserved name -/
+/-- error: `f.eq_def` is a reserved name -/
 #guard_msgs in
 public def f.eq_def := 1
 
-/-- error: 'fexp.eq_def' is a reserved name -/
+/-- error: `fexp.eq_def` is a reserved name -/
 #guard_msgs in
 public def fexp.eq_def := 1
 
@@ -272,10 +319,19 @@ constructor:
 
 #check { x := 1 : StructWithPrivateField }
 
-/-- error: invalid {...} notation, constructor for 'StructWithPrivateField' is marked as private -/
+/-- error: invalid {...} notation, constructor for `StructWithPrivateField` is marked as private -/
 #guard_msgs in
 #with_exporting
 #check { x := 1 : StructWithPrivateField }
+
+#check (⟨1⟩ : StructWithPrivateField)
+
+/--
+error: Invalid `⟨...⟩` notation: Constructor for `StructWithPrivateField` is marked as private
+-/
+#guard_msgs in
+#with_exporting
+#check (⟨1⟩ : StructWithPrivateField)
 
 #check StructWithPrivateField.x
 
@@ -300,7 +356,7 @@ constructor:
 #guard_msgs in
 #print StructWithPrivateCtor
 
-/-- error: invalid {...} notation, constructor for 'StructWithPrivateCtor' is marked as private -/
+/-- error: invalid {...} notation, constructor for `StructWithPrivateCtor` is marked as private -/
 #guard_msgs in
 #with_exporting
 #check { x := 1 : StructWithPrivateCtor }
@@ -320,7 +376,7 @@ constructor:
 public section
 
 private def foo : Nat := 0
-/-- error: private declaration 'foo' has already been declared -/
+/-- error: private declaration `foo` has already been declared -/
 #guard_msgs in
 private def foo : Nat := 0
 
@@ -349,15 +405,102 @@ constructor:
 section
 set_option pp.oneline true
 /--
-info: private def OptParamStruct.pauto._autoParam : Lean.Syntax :=
+info: private meta def OptParamStruct.pauto._autoParam : Lean.Syntax :=
 Lean.Syntax.node Lean.SourceInfo.none `Lean.Parser.Tactic.tacticSeq [...]
 -/
 #guard_msgs in
 #print OptParamStruct.pauto._autoParam
 /--
-info: @[expose] def OptParamStruct.auto._autoParam : Lean.Syntax :=
+info: @[expose] meta def OptParamStruct.auto._autoParam : Lean.Syntax :=
 Lean.Syntax.node Lean.SourceInfo.none `Lean.Parser.Tactic.tacticSeq [...]
 -/
 #guard_msgs in
 #print OptParamStruct.auto._autoParam
+end
+
+/-! `deriving` should derive `meta` defs on `meta` structures. -/
+meta structure Foo where
+deriving TypeName
+
+/--
+info: private meta def instTypeNameFoo : TypeName Foo :=
+inst✝
+-/
+#guard_msgs in
+#print instTypeNameFoo
+
+public meta def pubMeta := 1
+
+/-! `#eval` should accept `meta` and non-`meta`. -/
+
+meta def fmeta := 1
+
+/-- info: 2 -/
+#guard_msgs in
+#eval f + fmeta
+
+/-! Prop `instance`s should have direct access to the private scope. -/
+
+public class PropClass : Prop where
+  proof : True
+
+theorem privTrue : True := trivial
+public instance : PropClass := ⟨privTrue⟩
+
+/-! Meta defs should only be exposed explicitly. -/
+
+@[expose] section
+public meta def msec := 1
+@[expose] public meta def msecexp := 1
+end
+
+/--
+info: meta def msec : Nat :=
+<not imported>
+-/
+#guard_msgs in
+#with_exporting
+#print msec
+
+/--
+info: @[expose] meta def msecexp : Nat :=
+1
+-/
+#guard_msgs in
+#with_exporting
+#print msecexp
+
+attribute [simp] f_struct
+
+/-! `[inherit_doc]` should work independently of visibility. -/
+
+@[inherit_doc priv] public def pubInheritDoc := 1
+
+/-! `initialize` should be run even if imported IR-only. -/
+
+public initialize initialized : Nat ← pure 5
+
+/-! Error message on private dot notation access. -/
+
+public structure S
+
+def S.s := 1
+
+/--
+error: Invalid field `s`: The environment does not contain `S.s`
+  s
+has type
+  S
+
+Note: A private declaration `S.s` (from the current module) exists but would need to be public to access here.
+-/
+#guard_msgs in
+@[expose] public def useS (s : S) := s.s
+
+/- `meta` should trump `noncomputable`. -/
+
+noncomputable section
+/-- error: Invalid `meta` definition `m`, `S.s` not marked `meta` -/
+#guard_msgs in
+meta def m := S.s
 end

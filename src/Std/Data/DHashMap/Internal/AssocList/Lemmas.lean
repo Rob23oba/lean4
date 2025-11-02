@@ -25,9 +25,9 @@ set_option autoImplicit false
 open Std.DHashMap.Internal
 open List (Perm perm_middle)
 
-universe w v u
+universe w v u w'
 
-variable {α : Type u} {β : α → Type v} {γ : α → Type w} {δ : Type w} {m : Type w → Type w} [Monad m]
+variable {α : Type u} {β : α → Type v} {γ : α → Type w} {δ : Type w} {m : Type w → Type w'} [Monad m]
 
 namespace Std.DHashMap.Internal.AssocList
 
@@ -200,7 +200,7 @@ theorem toList_filter {f : (a : α) → β a → Bool} {l : AssocList α β} :
   induction l' generalizing l
   · simp [filter.go]
   next k v t ih =>
-    simp only [filter.go, toList_cons, List.filter_cons, cond_eq_if]
+    simp only [filter.go, toList_cons, List.filter_cons, cond_eq_ite]
     split
     · exact (ih _).trans (by simpa using perm_middle.symm)
     · exact ih _
@@ -220,7 +220,7 @@ theorem filterMap_eq_filter {f : (a : α) → β a → Bool} {l : AssocList α �
   induction l generalizing l' with
   | nil => rfl
   | cons k v t ih =>
-    simp only [filterMap.go, filter.go, ih, Option.guard, cond_eq_if]
+    simp only [filterMap.go, filter.go, ih, Option.guard, cond_eq_ite]
     symm; split <;> rfl
 
 theorem toList_alter [BEq α] [LawfulBEq α] {a : α} {f : Option (β a) → Option (β a)}

@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Init.Data.Iterators.Consumers.Partial
-// Imports: Init.Data.Iterators.Basic
+// Imports: public import Init.Data.Iterators.Basic
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -18,9 +18,7 @@ LEAN_EXPORT lean_object* l_Std_Iterators_Iter_allowNontermination___redArg(lean_
 LEAN_EXPORT lean_object* l_Std_Iterators_Iter_Partial_ctorIdx___boxed(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Std_Iterators_Iter_Partial_ctorIdx(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Std_Iterators_Iter_allowNontermination(lean_object*, lean_object*, lean_object*);
-LEAN_EXPORT lean_object* l_Std_Iterators_Iter_Partial_toCtorIdx___boxed(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Std_Iterators_Iter_allowNontermination___redArg___boxed(lean_object*);
-LEAN_EXPORT lean_object* l_Std_Iterators_Iter_Partial_toCtorIdx(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Std_Iterators_Iter_Partial_ctorIdx(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
 _start:
 {
@@ -34,23 +32,6 @@ _start:
 {
 lean_object* x_4; 
 x_4 = l_Std_Iterators_Iter_Partial_ctorIdx(x_1, x_2, x_3);
-lean_dec(x_3);
-return x_4;
-}
-}
-LEAN_EXPORT lean_object* l_Std_Iterators_Iter_Partial_toCtorIdx(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
-_start:
-{
-lean_object* x_4; 
-x_4 = lean_unsigned_to_nat(0u);
-return x_4;
-}
-}
-LEAN_EXPORT lean_object* l_Std_Iterators_Iter_Partial_toCtorIdx___boxed(lean_object* x_1, lean_object* x_2, lean_object* x_3) {
-_start:
-{
-lean_object* x_4; 
-x_4 = l_Std_Iterators_Iter_Partial_toCtorIdx(x_1, x_2, x_3);
 lean_dec(x_3);
 return x_4;
 }
@@ -87,13 +68,13 @@ lean_dec(x_3);
 return x_4;
 }
 }
-lean_object* initialize_Init_Data_Iterators_Basic(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Data_Iterators_Basic(uint8_t builtin);
 static bool _G_initialized = false;
-LEAN_EXPORT lean_object* initialize_Init_Data_Iterators_Consumers_Partial(uint8_t builtin, lean_object* w) {
+LEAN_EXPORT lean_object* initialize_Init_Data_Iterators_Consumers_Partial(uint8_t builtin) {
 lean_object * res;
 if (_G_initialized) return lean_io_result_mk_ok(lean_box(0));
 _G_initialized = true;
-res = initialize_Init_Data_Iterators_Basic(builtin, lean_io_mk_world());
+res = initialize_Init_Data_Iterators_Basic(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 return lean_io_result_mk_ok(lean_box(0));

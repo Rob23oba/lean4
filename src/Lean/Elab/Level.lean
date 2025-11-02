@@ -6,9 +6,7 @@ Authors: Leonardo de Moura
 module
 
 prelude
-public import Lean.Log
 public import Lean.Parser.Level
-public import Lean.Elab.Exception
 public import Lean.Elab.AutoBound
 
 public section
@@ -84,7 +82,7 @@ partial def elabLevel (stx : Syntax) : LevelElabM Level := withRef stx do
       if (← read).autoBoundImplicit && isValidAutoBoundLevelName paramName (relaxedAutoImplicit.get (← read).options) then
         modify fun s => { s with levelNames := paramName :: s.levelNames }
       else
-        throwError "unknown universe level '{mkIdent paramName}'"
+        throwError "unknown universe level `{mkIdent paramName}`"
     return mkLevelParam paramName
   else if kind == `Lean.Parser.Level.addLit then
     let lvl ← elabLevel (stx.getArg 0)

@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Init.Control.Except
-// Imports: Init.Control.Basic Init.Control.Id Init.Coe
+// Imports: public import Init.Control.Basic public import Init.Control.Id
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -17,14 +17,12 @@ LEAN_EXPORT lean_object* l_liftExcept(lean_object*, lean_object*, lean_object*, 
 LEAN_EXPORT lean_object* l_ExceptT_instMonad___redArg___lam__0(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Except_orElseLazy___redArg___boxed(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_ExceptT_instMonad___redArg___lam__7(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
-LEAN_EXPORT lean_object* l_MonadFinally_toCtorIdx(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_instMonadExceptOfExcept(lean_object*);
 LEAN_EXPORT lean_object* l_Except_instMonad___lam__2___boxed(lean_object*, lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_tryFinally___redArg___lam__1(lean_object*);
 LEAN_EXPORT lean_object* l_ExceptT_run___redArg___boxed(lean_object*);
 LEAN_EXPORT lean_object* l_ExceptT_bindCont___redArg(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_instInhabitedExceptTOfMonad(lean_object*, lean_object*, lean_object*, lean_object*, lean_object*);
-LEAN_EXPORT lean_object* l_MonadFinally_toCtorIdx___boxed(lean_object*, lean_object*);
 static lean_object* l_instMonadControlExceptTOfMonad___redArg___closed__0;
 LEAN_EXPORT lean_object* l_Except_pure(lean_object*, lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_instMonadExceptOfExceptTOfMonad(lean_object*, lean_object*, lean_object*);
@@ -2337,23 +2335,6 @@ lean_dec(x_2);
 return x_3;
 }
 }
-LEAN_EXPORT lean_object* l_MonadFinally_toCtorIdx(lean_object* x_1, lean_object* x_2) {
-_start:
-{
-lean_object* x_3; 
-x_3 = lean_unsigned_to_nat(0u);
-return x_3;
-}
-}
-LEAN_EXPORT lean_object* l_MonadFinally_toCtorIdx___boxed(lean_object* x_1, lean_object* x_2) {
-_start:
-{
-lean_object* x_3; 
-x_3 = l_MonadFinally_toCtorIdx(x_1, x_2);
-lean_dec(x_2);
-return x_3;
-}
-}
 LEAN_EXPORT lean_object* l_tryFinally___redArg___lam__0(lean_object* x_1, lean_object* x_2) {
 _start:
 {
@@ -2717,21 +2698,17 @@ lean_closure_set(x_9, 2, x_8);
 return x_9;
 }
 }
-lean_object* initialize_Init_Control_Basic(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Control_Id(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Coe(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Control_Basic(uint8_t builtin);
+lean_object* initialize_Init_Control_Id(uint8_t builtin);
 static bool _G_initialized = false;
-LEAN_EXPORT lean_object* initialize_Init_Control_Except(uint8_t builtin, lean_object* w) {
+LEAN_EXPORT lean_object* initialize_Init_Control_Except(uint8_t builtin) {
 lean_object * res;
 if (_G_initialized) return lean_io_result_mk_ok(lean_box(0));
 _G_initialized = true;
-res = initialize_Init_Control_Basic(builtin, lean_io_mk_world());
+res = initialize_Init_Control_Basic(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_Init_Control_Id(builtin, lean_io_mk_world());
-if (lean_io_result_is_error(res)) return res;
-lean_dec_ref(res);
-res = initialize_Init_Coe(builtin, lean_io_mk_world());
+res = initialize_Init_Control_Id(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 l_Except_instMonad___closed__0 = _init_l_Except_instMonad___closed__0();

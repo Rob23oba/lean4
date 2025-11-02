@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Init.GrindInstances.ToInt
-// Imports: Init.Grind.ToInt Init.Grind.ToInt Init.Grind.Module.Basic Init.Grind.Ring.ToInt Init.Data.Int.DivMod.Basic Init.Data.Int.Lemmas Init.Data.Int.Order Init.Data.Fin.Lemmas Init.Data.UInt.Lemmas Init.Data.SInt.Lemmas
+// Imports: import all Init.Grind.ToInt public import Init.Grind.Ring.ToInt public import Init.Data.SInt.Lemmas
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -34,7 +34,6 @@ LEAN_EXPORT lean_object* l_Lean_Grind_instToIntBitVecUint(lean_object*);
 LEAN_EXPORT lean_object* l_Lean_Grind_instToIntFinCoOfNatIntCast___boxed(lean_object*);
 lean_object* l_instNatCastInt___lam__0(lean_object*);
 lean_object* lean_int8_to_int(uint8_t);
-lean_object* lean_nat_to_int(lean_object*);
 LEAN_EXPORT lean_object* l_Lean_Grind_instToIntUInt64UintOfNatNat___lam__0(uint64_t);
 LEAN_EXPORT lean_object* l_Lean_Grind_instToIntIntIi;
 lean_object* lean_int32_to_int(uint32_t);
@@ -116,7 +115,7 @@ LEAN_EXPORT lean_object* l_Lean_Grind_instToIntFinCoOfNatIntCast___lam__0(lean_o
 _start:
 {
 lean_object* x_2; 
-x_2 = lean_nat_to_int(x_1);
+x_2 = l_instNatCastInt___lam__0(x_1);
 return x_2;
 }
 }
@@ -142,7 +141,7 @@ _start:
 {
 lean_object* x_2; lean_object* x_3; 
 x_2 = lean_uint8_to_nat(x_1);
-x_3 = lean_nat_to_int(x_2);
+x_3 = l_instNatCastInt___lam__0(x_2);
 return x_3;
 }
 }
@@ -168,7 +167,7 @@ _start:
 {
 lean_object* x_2; lean_object* x_3; 
 x_2 = lean_uint16_to_nat(x_1);
-x_3 = lean_nat_to_int(x_2);
+x_3 = l_instNatCastInt___lam__0(x_2);
 return x_3;
 }
 }
@@ -194,7 +193,7 @@ _start:
 {
 lean_object* x_2; lean_object* x_3; 
 x_2 = lean_uint32_to_nat(x_1);
-x_3 = lean_nat_to_int(x_2);
+x_3 = l_instNatCastInt___lam__0(x_2);
 return x_3;
 }
 }
@@ -221,7 +220,7 @@ _start:
 {
 lean_object* x_2; lean_object* x_3; 
 x_2 = lean_uint64_to_nat(x_1);
-x_3 = lean_nat_to_int(x_2);
+x_3 = l_instNatCastInt___lam__0(x_2);
 return x_3;
 }
 }
@@ -248,7 +247,7 @@ _start:
 {
 lean_object* x_2; lean_object* x_3; 
 x_2 = lean_usize_to_nat(x_1);
-x_3 = lean_nat_to_int(x_2);
+x_3 = l_instNatCastInt___lam__0(x_2);
 return x_3;
 }
 }
@@ -423,49 +422,21 @@ x_3 = l_Lean_Grind_instToIntISizeSintNumBits___lam__0(x_2);
 return x_3;
 }
 }
-lean_object* initialize_Init_Grind_ToInt(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Grind_ToInt(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Grind_Module_Basic(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Grind_Ring_ToInt(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Data_Int_DivMod_Basic(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Data_Int_Lemmas(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Data_Int_Order(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Data_Fin_Lemmas(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Data_UInt_Lemmas(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Data_SInt_Lemmas(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Grind_ToInt(uint8_t builtin);
+lean_object* initialize_Init_Grind_Ring_ToInt(uint8_t builtin);
+lean_object* initialize_Init_Data_SInt_Lemmas(uint8_t builtin);
 static bool _G_initialized = false;
-LEAN_EXPORT lean_object* initialize_Init_GrindInstances_ToInt(uint8_t builtin, lean_object* w) {
+LEAN_EXPORT lean_object* initialize_Init_GrindInstances_ToInt(uint8_t builtin) {
 lean_object * res;
 if (_G_initialized) return lean_io_result_mk_ok(lean_box(0));
 _G_initialized = true;
-res = initialize_Init_Grind_ToInt(builtin, lean_io_mk_world());
+res = initialize_Init_Grind_ToInt(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_Init_Grind_ToInt(builtin, lean_io_mk_world());
+res = initialize_Init_Grind_Ring_ToInt(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_Init_Grind_Module_Basic(builtin, lean_io_mk_world());
-if (lean_io_result_is_error(res)) return res;
-lean_dec_ref(res);
-res = initialize_Init_Grind_Ring_ToInt(builtin, lean_io_mk_world());
-if (lean_io_result_is_error(res)) return res;
-lean_dec_ref(res);
-res = initialize_Init_Data_Int_DivMod_Basic(builtin, lean_io_mk_world());
-if (lean_io_result_is_error(res)) return res;
-lean_dec_ref(res);
-res = initialize_Init_Data_Int_Lemmas(builtin, lean_io_mk_world());
-if (lean_io_result_is_error(res)) return res;
-lean_dec_ref(res);
-res = initialize_Init_Data_Int_Order(builtin, lean_io_mk_world());
-if (lean_io_result_is_error(res)) return res;
-lean_dec_ref(res);
-res = initialize_Init_Data_Fin_Lemmas(builtin, lean_io_mk_world());
-if (lean_io_result_is_error(res)) return res;
-lean_dec_ref(res);
-res = initialize_Init_Data_UInt_Lemmas(builtin, lean_io_mk_world());
-if (lean_io_result_is_error(res)) return res;
-lean_dec_ref(res);
-res = initialize_Init_Data_SInt_Lemmas(builtin, lean_io_mk_world());
+res = initialize_Init_Data_SInt_Lemmas(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 l_Lean_Grind_instToIntIntIi___closed__0 = _init_l_Lean_Grind_instToIntIntIi___closed__0();

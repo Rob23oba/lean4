@@ -4,7 +4,6 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Leonardo de Moura
 -/
 module
-
 prelude
 public import Lean.Meta.Tactic.Grind.Attr
 public import Lean.Meta.Tactic.Grind.RevertAll
@@ -37,9 +36,17 @@ public import Lean.Meta.Tactic.Grind.LawfulEqCmp
 public import Lean.Meta.Tactic.Grind.ReflCmp
 public import Lean.Meta.Tactic.Grind.SynthInstance
 public import Lean.Meta.Tactic.Grind.AC
-
+public import Lean.Meta.Tactic.Grind.VarRename
+public import Lean.Meta.Tactic.Grind.ProofUtil
+public import Lean.Meta.Tactic.Grind.PropagateInj
+public import Lean.Meta.Tactic.Grind.Order
+public import Lean.Meta.Tactic.Grind.Anchor
+public import Lean.Meta.Tactic.Grind.Action
+public import Lean.Meta.Tactic.Grind.EMatchTheoremParam
+public import Lean.Meta.Tactic.Grind.EMatchAction
+public import Lean.Meta.Tactic.Grind.Filter
+public import Lean.Meta.Tactic.Grind.CollectParams
 public section
-
 namespace Lean
 
 /-! Trace options for `grind` users -/
@@ -78,7 +85,7 @@ builtin_initialize registerTraceClass `grind.debug.final
 builtin_initialize registerTraceClass `grind.debug.forallPropagator
 builtin_initialize registerTraceClass `grind.debug.split
 builtin_initialize registerTraceClass `grind.debug.canon
-builtin_initialize registerTraceClass `grind.debug.ematch.activate
+builtin_initialize registerTraceClass `grind.debug.theorem.activate
 builtin_initialize registerTraceClass `grind.debug.ematch.pattern
 builtin_initialize registerTraceClass `grind.debug.beta
 builtin_initialize registerTraceClass `grind.debug.internalize

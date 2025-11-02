@@ -8,7 +8,6 @@ module
 prelude
 public import Lean.Parser.Basic
 public import Lean.ScopedEnvExtension
-import Lean.PrivateName
 import Lean.BuiltinDocAttr
 
 public section
@@ -38,7 +37,7 @@ builtin_initialize
 builtin_initialize builtinParserCategoriesRef : IO.Ref ParserCategories ← IO.mkRef {}
 
 private def throwParserCategoryAlreadyDefined {α} (catName : Name) : ExceptT String Id α :=
-  throw s!"parser category '{catName}' has already been defined"
+  throw s!"parser category `{catName}` has already been defined"
 
 private def addParserCategoryCore (categories : ParserCategories) (catName : Name) (initial : ParserCategory) : Except String ParserCategories :=
   if categories.contains catName then
@@ -99,7 +98,7 @@ private def addTokenConfig (tokens : TokenTable) (tk : Token) : Except String To
     | some _ => pure tokens
 
 def throwUnknownParserCategory {α} (catName : Name) : ExceptT String Id α :=
-  throw s!"unknown parser category '{catName}'"
+  throw s!"unknown parser category `{catName}`"
 
 abbrev getCategory (categories : ParserCategories) (catName : Name) : Option ParserCategory :=
   categories.find? catName
@@ -184,7 +183,7 @@ abbrev AliasTable (α) := NameMap (AliasValue α)
 def registerAliasCore {α} (mapRef : IO.Ref (AliasTable α)) (aliasName : Name) (value : AliasValue α) : IO Unit := do
   unless (← initializing) do throw ↑"aliases can only be registered during initialization"
   if (← mapRef.get).contains aliasName then
-    throw ↑s!"alias '{aliasName}' has already been declared"
+    throw ↑s!"alias `{aliasName}` has already been declared"
   mapRef.modify (·.insert aliasName value)
 
 def getAlias {α} (mapRef : IO.Ref (AliasTable α)) (aliasName : Name) : IO (Option (AliasValue α)) := do
@@ -193,21 +192,21 @@ def getAlias {α} (mapRef : IO.Ref (AliasTable α)) (aliasName : Name) : IO (Opt
 def getConstAlias {α} (mapRef : IO.Ref (AliasTable α)) (aliasName : Name) : IO α := do
   match (← getAlias mapRef aliasName) with
   | some (AliasValue.const v)  => pure v
-  | some (AliasValue.unary _)  => throw ↑s!"parser '{aliasName}' is not a constant, it takes one argument"
-  | some (AliasValue.binary _) => throw ↑s!"parser '{aliasName}' is not a constant, it takes two arguments"
-  | none   => throw ↑s!"parser '{aliasName}' was not found"
+  | some (AliasValue.unary _)  => throw ↑s!"parser `{aliasName}` is not a constant, it takes one argument"
+  | some (AliasValue.binary _) => throw ↑s!"parser `{aliasName}` is not a constant, it takes two arguments"
+  | none   => throw ↑s!"parser `{aliasName}` was not found"
 
 def getUnaryAlias {α} (mapRef : IO.Ref (AliasTable α)) (aliasName : Name) : IO (α → α) := do
   match (← getAlias mapRef aliasName) with
   | some (AliasValue.unary v) => pure v
-  | some _ => throw ↑s!"parser '{aliasName}' does not take one argument"
-  | none   => throw ↑s!"parser '{aliasName}' was not found"
+  | some _ => throw ↑s!"parser `{aliasName}` does not take one argument"
+  | none   => throw ↑s!"parser `{aliasName}` was not found"
 
 def getBinaryAlias {α} (mapRef : IO.Ref (AliasTable α)) (aliasName : Name) : IO (α → α → α) := do
   match (← getAlias mapRef aliasName) with
   | some (AliasValue.binary v) => pure v
-  | some _ => throw ↑s!"parser '{aliasName}' does not take two arguments"
-  | none   => throw ↑s!"parser '{aliasName}' was not found"
+  | some _ => throw ↑s!"parser `{aliasName}` does not take two arguments"
+  | none   => throw ↑s!"parser `{aliasName}` was not found"
 
 abbrev ParserAliasValue := AliasValue Parser
 
@@ -274,7 +273,7 @@ unsafe def mkParserOfConstantUnsafe (constName : Name) (compileParserDescr : Par
       let d ← IO.ofExcept $ env.evalConst TrailingParserDescr opts constName
       let p ← compileParserDescr d
       pure ⟨false, p⟩
-    | _ => throw ↑s!"unexpected parser type at '{constName}' (`ParserDescr`, `TrailingParserDescr`, `Parser` or `TrailingParser` expected)"
+    | _ => throw ↑s!"unexpected parser type at `{constName}` (`ParserDescr`, `TrailingParserDescr`, `Parser` or `TrailingParser` expected)"
 
 @[implemented_by mkParserOfConstantUnsafe]
 opaque mkParserOfConstantAux (constName : Name) (compileParserDescr : ParserDescr → ImportM Parser) : ImportM (Bool × Parser)
@@ -291,6 +290,7 @@ partial def compileParserDescr (categories : ParserCategories) (d : ParserDescr)
     | ParserDescr.trailingNode k prec lhsPrec d       => return trailingNode k prec lhsPrec (← visit d)
     | ParserDescr.symbol tk                           => return symbol tk
     | ParserDescr.nonReservedSymbol tk includeIdent   => return nonReservedSymbol tk includeIdent
+    | ParserDescr.unicodeSymbol tk asciiTk preserve   => return unicodeSymbol tk asciiTk preserve
     | ParserDescr.parser constName                    => do
       let (_, p) ← mkParserOfConstantAux constName visit;
       pure p
@@ -350,8 +350,11 @@ builtin_initialize parserExtension : ParserExtension ←
     ofOLeanEntry    := ParserExtension.OLeanEntry.toEntry
   }
 
+def getParserCategory? (env : Environment) (catName : Name) : Option ParserCategory :=
+  (parserExtension.getState env).categories.find? catName
+
 def isParserCategory (env : Environment) (catName : Name) : Bool :=
-  (parserExtension.getState env).categories.contains catName
+  getParserCategory? env catName |>.isSome
 
 def addParserCategory (env : Environment) (catName declName : Name) (behavior : LeadingIdentBehavior) : Except String Environment := do
   if isParserCategory env catName then
@@ -448,8 +451,8 @@ set_option linter.unusedVariables.funArgs false in
 -- Note: `crlfToLf` preserves logical line and column numbers for each character.
 def mkInputContext (input : String) (fileName : String)
     (normalizeLineEndings := true)
-    (endPos := input.endPos)
-    (endPos_valid : endPos ≤ input.endPos := by simp) :
+    (endPos := input.rawEndPos)
+    (endPos_valid : endPos ≤ input.rawEndPos := by simp) :
     InputContext :=
   let text := FileMap.ofString input
   let next := if normalizeLineEndings then
@@ -461,7 +464,7 @@ def mkInputContext (input : String) (fileName : String)
     (text, endPos)
   let text := next.1
   let endPos' := next.2
-  if h : endPos' ≤ text.source.endPos then
+  if h : endPos' ≤ text.source.rawEndPos then
     .mk text.source fileName (fileMap := text) (endPos := endPos') (endPos_valid := h)
   else
     .mk text.source fileName (fileMap := text)
@@ -543,7 +546,7 @@ private def ParserAttribute.add (_attrName : Name) (catName : Name) (declName : 
     try
       addToken token attrKind
     catch
-      | Exception.error _   msg => throwError "invalid parser '{.ofConstName declName}', {msg}"
+      | Exception.error _   msg => throwError "invalid parser `{.ofConstName declName}`, {msg}"
       | ex => throw ex
   let kinds := parser.info.collectKinds {}
   kinds.forM fun kind _ => modifyEnv fun env => addSyntaxNodeKind env kind
@@ -660,7 +663,7 @@ inductive ParserResolution where
   | alias (p : ParserAliasValue)
 
 /-- Resolve the given parser name and return a list of candidates. -/
-def resolveParserNameCore (env : Environment) (currNamespace : Name)
+private def resolveParserNameCore (env : Environment) (opts : Options) (currNamespace : Name)
     (openDecls : List OpenDecl) (ident : Ident) : List ParserResolution := Id.run do
   let ⟨.ident (val := val) (preresolved := pre) ..⟩ := ident | return []
 
@@ -681,7 +684,7 @@ def resolveParserNameCore (env : Environment) (currNamespace : Name)
   if isParserCategory env erased then
     return [.category erased]
 
-  let resolved ← ResolveName.resolveGlobalName env currNamespace openDecls val |>.filterMap fun
+  let resolved ← ResolveName.resolveGlobalName env opts currNamespace openDecls val |>.filterMap fun
     | (name, []) => (isParser name).map fun isDescr => .parser name isDescr
     | _ => none
   unless resolved.isEmpty do
@@ -695,11 +698,11 @@ def resolveParserNameCore (env : Environment) (currNamespace : Name)
 
 /-- Resolve the given parser name and return a list of candidates. -/
 def ParserContext.resolveParserName (ctx : ParserContext) (id : Ident) : List ParserResolution :=
-  Parser.resolveParserNameCore ctx.env ctx.currNamespace ctx.openDecls id
+  Parser.resolveParserNameCore ctx.env ctx.options ctx.currNamespace ctx.openDecls id
 
 /-- Resolve the given parser name and return a list of candidates. -/
 def resolveParserName (id : Ident) : CoreM (List ParserResolution) :=
-  return resolveParserNameCore (← getEnv) (← getCurrNamespace) (← getOpenDecls) id
+  return resolveParserNameCore (← getEnv) (← getOptions) (← getCurrNamespace) (← getOpenDecls) id
 
 def parserOfStackFn (offset : Nat) : ParserFn := fun ctx s => Id.run do
   let stack := s.stxStack

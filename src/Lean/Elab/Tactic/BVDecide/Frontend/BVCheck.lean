@@ -8,7 +8,6 @@ module
 prelude
 public import Lean.Elab.Tactic.BVDecide.Frontend.BVDecide
 public import Lean.Meta.Tactic.TryThis
-public import Std.Tactic.BVDecide.Syntax
 
 public section
 
@@ -29,7 +28,7 @@ def getSrcDir : TermElabM System.FilePath := do
   let ctx ← readThe Lean.Core.Context
   let srcPath := System.FilePath.mk ctx.fileName
   let some srcDir := srcPath.parent
-    | throwError "cannot compute parent directory of '{srcPath}'"
+    | throwError "cannot compute parent directory of `{srcPath}`"
   return srcDir
 
 def mkContext (lratPath : System.FilePath) (cfg : BVDecideConfig) : TermElabM TacticContext := do

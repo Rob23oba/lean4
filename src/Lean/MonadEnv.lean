@@ -6,9 +6,7 @@ Authors: Leonardo de Moura
 module
 
 prelude
-public import Lean.Environment
-public import Lean.Exception
-public import Lean.Declaration
+public import Lean.Elab.Exception
 public import Lean.Log
 public import Lean.AuxRecursor
 public import Lean.Compiler.Old
@@ -113,22 +111,22 @@ def mkConstWithLevelParams [Monad m] [MonadEnv m] [MonadError m] (constName : Na
 def getConstInfoDefn [Monad m] [MonadEnv m] [MonadError m] (constName : Name) : m DefinitionVal := do
   match (← getConstInfo constName) with
   | ConstantInfo.defnInfo v => pure v
-  | _                       => throwError "'{.ofConstName constName}' is not a definition"
+  | _                       => throwError "`{.ofConstName constName}` is not a definition"
 
 def getConstInfoInduct [Monad m] [MonadEnv m] [MonadError m] (constName : Name) : m InductiveVal := do
   match (← getConstInfo constName) with
   | ConstantInfo.inductInfo v => pure v
-  | _                         => throwError "'{.ofConstName constName}' is not a inductive type"
+  | _                         => throwError "`{.ofConstName constName}` is not a inductive type"
 
 def getConstInfoCtor [Monad m] [MonadEnv m] [MonadError m] (constName : Name) : m ConstructorVal := do
   match (← getConstInfo constName) with
   | ConstantInfo.ctorInfo v => pure v
-  | _                       => throwError "'{.ofConstName constName}' is not a constructor"
+  | _                       => throwError "`{.ofConstName constName}` is not a constructor"
 
 def getConstInfoRec [Monad m] [MonadEnv m] [MonadError m] (constName : Name) : m RecursorVal := do
   match (← getConstInfo constName) with
   | ConstantInfo.recInfo v => pure v
-  | _                      => throwError "'{.ofConstName constName}' is not a recursor"
+  | _                      => throwError "`{.ofConstName constName}` is not a recursor"
 
 /--
 Matches if `e` is a constant that is an inductive type with one constructor.
@@ -159,10 +157,18 @@ See also `Lean.matchConstStructure` for a less restrictive version.
         | _ => failK ()
       | _ => failK ()
 
+@[extern "lean_has_compile_error"]
+opaque hasCompileError (env : Environment) (constName : Name) : Bool
+
 unsafe def evalConst [Monad m] [MonadEnv m] [MonadError m] [MonadOptions m] (α) (constName : Name) (checkMeta := true) : m α := do
+  -- If compilation wasn't successful (meaning it already emitted an error), abort silently
+  if hasCompileError (← getEnv) constName then
+    Elab.throwAbortCommand
   ofExcept <| (← getEnv).evalConst (checkMeta := checkMeta) α (← getOptions) constName
 
 unsafe def evalConstCheck [Monad m] [MonadEnv m] [MonadError m] [MonadOptions m] (α) (typeName : Name) (constName : Name) : m α := do
+  if hasCompileError (← getEnv) constName then
+    Elab.throwAbortCommand
   ofExcept <| (← getEnv).evalConstCheck α (← getOptions) typeName constName
 
 def findModuleOf? [Monad m] [MonadEnv m] [MonadError m] (declName : Name) : m (Option Name) := do

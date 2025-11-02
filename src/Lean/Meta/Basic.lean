@@ -7,10 +7,8 @@ module
 
 prelude
 public import Lean.Data.LOption
-public import Lean.Environment
 public import Lean.Class
 public import Lean.ReducibilityAttrs
-public import Lean.Util.ReplaceExpr
 public import Lean.Util.MonadBacktrack
 public import Lean.Compiler.InlineAttrs
 public import Lean.Meta.TransparencyMode
@@ -415,6 +413,10 @@ structure PostponedEntry where
 structure Diagnostics where
   /-- Number of times each declaration has been unfolded -/
   unfoldCounter : PHashMap Name Nat := {}
+  /--
+  Number of times each axiom was tried to be unfolded, which may point to an inaccessible def value.
+  -/
+  unfoldAxiomCounter : PHashMap Name Nat := {}
   /-- Number of times `f a =?= f b` heuristic has been used per function `f`. -/
   heuristicCounter : PHashMap Name Nat := {}
   /-- Number of times a TC instance is used. -/
@@ -670,21 +672,30 @@ def mkInfoCacheKey (expr : Expr) (nargs? : Option Nat) : MetaM InfoCacheKey :=
 
 /-- If diagnostics are enabled, record that `declName` has been unfolded. -/
 def recordUnfold (declName : Name) : MetaM Unit := do
-  modifyDiag fun { unfoldCounter, heuristicCounter, instanceCounter, synthPendingFailures } =>
+  modifyDiag fun { unfoldCounter, unfoldAxiomCounter, heuristicCounter, instanceCounter, synthPendingFailures } =>
     let newC := if let some c := unfoldCounter.find? declName then c + 1 else 1
-    { unfoldCounter := unfoldCounter.insert declName newC, heuristicCounter, instanceCounter, synthPendingFailures }
+    { unfoldCounter := unfoldCounter.insert declName newC, unfoldAxiomCounter, heuristicCounter, instanceCounter, synthPendingFailures }
+
+def recordUnfoldAxiom (declName : Name) : MetaM Unit := do
+  modifyDiag fun { unfoldCounter, unfoldAxiomCounter, heuristicCounter, instanceCounter, synthPendingFailures } =>
+    let newC := if let some c := unfoldAxiomCounter.find? declName then c + 1 else 1
+    { unfoldCounter, unfoldAxiomCounter := unfoldAxiomCounter.insert declName newC, heuristicCounter, instanceCounter, synthPendingFailures }
+
+def resetUnfoldAxiom : MetaM Unit := do
+  modifyDiag fun { unfoldCounter, heuristicCounter, instanceCounter, synthPendingFailures, .. } =>
+    { unfoldCounter, unfoldAxiomCounter := {}, heuristicCounter, instanceCounter, synthPendingFailures }
 
 /-- If diagnostics are enabled, record that heuristic for solving `f a =?= f b` has been used. -/
 def recordDefEqHeuristic (declName : Name) : MetaM Unit := do
-  modifyDiag fun { unfoldCounter, heuristicCounter, instanceCounter, synthPendingFailures } =>
+  modifyDiag fun { unfoldCounter, unfoldAxiomCounter, heuristicCounter, instanceCounter, synthPendingFailures } =>
     let newC := if let some c := heuristicCounter.find? declName then c + 1 else 1
-    { unfoldCounter, heuristicCounter := heuristicCounter.insert declName newC, instanceCounter, synthPendingFailures }
+    { unfoldCounter, unfoldAxiomCounter, heuristicCounter := heuristicCounter.insert declName newC, instanceCounter, synthPendingFailures }
 
 /-- If diagnostics are enabled, record that instance `declName` was used during TC resolution. -/
 def recordInstance (declName : Name) : MetaM Unit := do
-  modifyDiag fun { unfoldCounter, heuristicCounter, instanceCounter, synthPendingFailures } =>
+  modifyDiag fun { unfoldCounter, unfoldAxiomCounter, heuristicCounter, instanceCounter, synthPendingFailures } =>
     let newC := if let some c := instanceCounter.find? declName then c + 1 else 1
-    { unfoldCounter, heuristicCounter, instanceCounter := instanceCounter.insert declName newC, synthPendingFailures }
+    { unfoldCounter, unfoldAxiomCounter, heuristicCounter, instanceCounter := instanceCounter.insert declName newC, synthPendingFailures }
 
 /-- If diagnostics are enabled, record that synth pending failures. -/
 def recordSynthPendingFailure (type : Expr) : MetaM Unit := do
@@ -692,8 +703,8 @@ def recordSynthPendingFailure (type : Expr) : MetaM Unit := do
     unless (← get).diag.synthPendingFailures.contains type do
       -- We need to save the full context since type class resolution uses multiple metavar contexts and different local contexts
       let msg ← addMessageContextFull m!"{type}"
-      modifyDiag fun { unfoldCounter, heuristicCounter, instanceCounter, synthPendingFailures } =>
-        { unfoldCounter, heuristicCounter, instanceCounter, synthPendingFailures := synthPendingFailures.insert type msg }
+      modifyDiag fun { unfoldCounter, unfoldAxiomCounter, heuristicCounter, instanceCounter, synthPendingFailures } =>
+        { unfoldCounter, unfoldAxiomCounter, heuristicCounter, instanceCounter, synthPendingFailures := synthPendingFailures.insert type msg }
 
 def getLocalInstances : MetaM LocalInstances :=
   return (← read).localInstances
@@ -900,7 +911,7 @@ Throw an exception if `mvarId` is not declared in the current metavariable conte
 def _root_.Lean.MVarId.getDecl (mvarId : MVarId) : MetaM MetavarDecl := do
   match (← mvarId.findDecl?) with
   | some d => pure d
-  | none   => throwError "unknown metavariable '?{mvarId.name}'"
+  | none   => throwError "unknown metavariable `?{mvarId.name}`"
 
 /--
 Return `mvarId` kind. Throw an exception if `mvarId` is not declared in the current metavariable context.
@@ -953,7 +964,7 @@ Return the level of the given universe level metavariable.
 def _root_.Lean.LMVarId.getLevel (mvarId : LMVarId) : MetaM Nat := do
   match (← getMCtx).findLevelDepth? mvarId with
   | some depth => return depth
-  | _          => throwError "unknown universe metavariable '?{mvarId.name}'"
+  | _          => throwError "unknown universe metavariable `?{mvarId.name}`"
 
 /--
 Return true if the given universe metavariable is "read-only".
@@ -972,7 +983,7 @@ def _root_.Lean.MVarId.setUserName (mvarId : MVarId) (newUserName : Name) : Meta
 Throw an exception saying `fvarId` is not declared in the current local context.
 -/
 def _root_.Lean.FVarId.throwUnknown (fvarId : FVarId) : CoreM α :=
-  throwError "unknown free variable '{mkFVar fvarId}'"
+  throwError "unknown free variable `{mkFVar fvarId}`"
 
 /--
 Return `some decl` if `fvarId` is declared in the current local context.
@@ -1042,7 +1053,7 @@ Throw an exception if free variable is not declared.
 def getLocalDeclFromUserName (userName : Name) : MetaM LocalDecl := do
   match (← getLCtx).findFromUserName? userName with
   | some d => pure d
-  | none   => throwError "unknown local declaration '{userName}'"
+  | none   => throwError "unknown local declaration `{userName}`"
 
 /-- Given a user-facing name for a free variable, return the free variable or throw if not declared. -/
 def getFVarFromUserName (userName : Name) : MetaM Expr := do
@@ -1955,14 +1966,14 @@ def withErasedFVars [MonadLCtx n] [MonadLiftT MetaM n] (fvarIds : Array FVarId) 
 /--
 Ensures that the user names of all local declarations after index `idx` have a macro scope.
 -/
-def withFreshUserNamesSinceIdx [MonadLCtx n] [MonadLiftT MetaM n] (idx : Nat) (k : n α) : n α := do
-  let mut lctx ← getLCtx
+private def freshenUserNamesSinceIdx [MonadLiftT MetaM n] (lctx : LocalContext) (idx : Nat) : n LocalContext := do
+  let mut lctx := lctx
   for i in [idx:lctx.numIndices] do
     let some decl := lctx.decls[i]! | continue
     let n := decl.userName
     if !n.hasMacroScopes then
       lctx := lctx.setUserName decl.fvarId (← liftMetaM <| mkFreshUserName n)
-  withLCtx' lctx k
+  return lctx
 
 private def withMVarContextImp (mvarId : MVarId) (x : MetaM α) : MetaM α := do
   let mvarDecl ← mvarId.getDecl
@@ -1999,6 +2010,14 @@ def withoutModifyingMCtx : n α → n α :=
       x
     finally
       modify fun s => { s with cache, mctx }
+
+/--
+Ensures that the user names of all local declarations after index `idx` have a macro scope.
+-/
+def _root_.Lean.MVarId.freshenLCtxUserNamesSinceIdx [MonadMCtx n] [MonadLiftT MetaM n] (mvarId : MVarId) (idx : Nat) : n Unit := do
+  let some decl := (← getMCtx).findDecl? mvarId | liftMetaM <| throwError m!"unknown metavariable {mvarId.name}"
+  let lctx ← freshenUserNamesSinceIdx decl.lctx idx
+  modifyMCtx fun mctx => { mctx with decls := mctx.decls.insert mvarId { decl with lctx } }
 
 @[inline] private def approxDefEqImp (x : MetaM α) : MetaM α :=
   withConfig (fun config => { config with foApprox := true, ctxApprox := true, quasiPatternApprox := true}) x

@@ -1,6 +1,6 @@
 // Lean compiler output
 // Module: Init.Data.Vector.Algebra
-// Imports: Init.Data.Vector.Lemmas Init.Grind
+// Imports: public import Init.Data.Vector.Lemmas public import Init.Grind
 #include <lean/lean.h>
 #if defined(__clang__)
 #pragma clang diagnostic ignored "-Wunused-parameter"
@@ -690,12 +690,11 @@ x_4 = lean_ctor_get(x_2, 0);
 x_5 = lean_ctor_get(x_2, 1);
 lean_inc(x_1);
 x_6 = l_Vector_instAddCommMonoid___redArg(x_1, x_4);
-x_7 = lean_alloc_closure((void*)(l_Vector_hmul___boxed), 7, 5);
+x_7 = lean_alloc_closure((void*)(l_Vector_smul___boxed), 6, 4);
 lean_closure_set(x_7, 0, lean_box(0));
 lean_closure_set(x_7, 1, lean_box(0));
-lean_closure_set(x_7, 2, lean_box(0));
-lean_closure_set(x_7, 3, x_1);
-lean_closure_set(x_7, 4, x_5);
+lean_closure_set(x_7, 2, x_1);
+lean_closure_set(x_7, 3, x_5);
 lean_ctor_set(x_2, 1, x_7);
 lean_ctor_set(x_2, 0, x_6);
 return x_2;
@@ -710,12 +709,11 @@ lean_inc(x_8);
 lean_dec(x_2);
 lean_inc(x_1);
 x_10 = l_Vector_instAddCommMonoid___redArg(x_1, x_8);
-x_11 = lean_alloc_closure((void*)(l_Vector_hmul___boxed), 7, 5);
+x_11 = lean_alloc_closure((void*)(l_Vector_smul___boxed), 6, 4);
 lean_closure_set(x_11, 0, lean_box(0));
 lean_closure_set(x_11, 1, lean_box(0));
-lean_closure_set(x_11, 2, lean_box(0));
-lean_closure_set(x_11, 3, x_1);
-lean_closure_set(x_11, 4, x_9);
+lean_closure_set(x_11, 2, x_1);
+lean_closure_set(x_11, 3, x_9);
 x_12 = lean_alloc_ctor(0, 2, 0);
 lean_ctor_set(x_12, 0, x_10);
 lean_ctor_set(x_12, 1, x_11);
@@ -756,18 +754,16 @@ x_11 = lean_ctor_get(x_6, 1);
 lean_inc(x_11);
 lean_dec_ref(x_6);
 lean_inc(x_1);
-x_12 = lean_alloc_closure((void*)(l_Vector_hmul___boxed), 7, 5);
+x_12 = lean_alloc_closure((void*)(l_Vector_smul___boxed), 6, 4);
 lean_closure_set(x_12, 0, lean_box(0));
 lean_closure_set(x_12, 1, lean_box(0));
-lean_closure_set(x_12, 2, lean_box(0));
-lean_closure_set(x_12, 3, x_1);
-lean_closure_set(x_12, 4, x_11);
-x_13 = lean_alloc_closure((void*)(l_Vector_hmul___boxed), 7, 5);
+lean_closure_set(x_12, 2, x_1);
+lean_closure_set(x_12, 3, x_11);
+x_13 = lean_alloc_closure((void*)(l_Vector_smul___boxed), 6, 4);
 lean_closure_set(x_13, 0, lean_box(0));
 lean_closure_set(x_13, 1, lean_box(0));
-lean_closure_set(x_13, 2, lean_box(0));
-lean_closure_set(x_13, 3, x_1);
-lean_closure_set(x_13, 4, x_4);
+lean_closure_set(x_13, 2, x_1);
+lean_closure_set(x_13, 3, x_4);
 lean_ctor_set(x_2, 2, x_13);
 lean_ctor_set(x_2, 1, x_12);
 lean_ctor_set(x_2, 0, x_5);
@@ -781,18 +777,16 @@ x_14 = lean_ctor_get(x_6, 1);
 lean_inc(x_14);
 lean_dec_ref(x_6);
 lean_inc(x_1);
-x_15 = lean_alloc_closure((void*)(l_Vector_hmul___boxed), 7, 5);
+x_15 = lean_alloc_closure((void*)(l_Vector_smul___boxed), 6, 4);
 lean_closure_set(x_15, 0, lean_box(0));
 lean_closure_set(x_15, 1, lean_box(0));
-lean_closure_set(x_15, 2, lean_box(0));
-lean_closure_set(x_15, 3, x_1);
-lean_closure_set(x_15, 4, x_14);
-x_16 = lean_alloc_closure((void*)(l_Vector_hmul___boxed), 7, 5);
+lean_closure_set(x_15, 2, x_1);
+lean_closure_set(x_15, 3, x_14);
+x_16 = lean_alloc_closure((void*)(l_Vector_smul___boxed), 6, 4);
 lean_closure_set(x_16, 0, lean_box(0));
 lean_closure_set(x_16, 1, lean_box(0));
-lean_closure_set(x_16, 2, lean_box(0));
-lean_closure_set(x_16, 3, x_1);
-lean_closure_set(x_16, 4, x_4);
+lean_closure_set(x_16, 2, x_1);
+lean_closure_set(x_16, 3, x_4);
 x_17 = lean_alloc_ctor(0, 3, 0);
 lean_ctor_set(x_17, 0, x_5);
 lean_ctor_set(x_17, 1, x_15);
@@ -809,17 +803,17 @@ x_4 = l_Vector_instIntModule___redArg(x_2, x_3);
 return x_4;
 }
 }
-lean_object* initialize_Init_Data_Vector_Lemmas(uint8_t builtin, lean_object*);
-lean_object* initialize_Init_Grind(uint8_t builtin, lean_object*);
+lean_object* initialize_Init_Data_Vector_Lemmas(uint8_t builtin);
+lean_object* initialize_Init_Grind(uint8_t builtin);
 static bool _G_initialized = false;
-LEAN_EXPORT lean_object* initialize_Init_Data_Vector_Algebra(uint8_t builtin, lean_object* w) {
+LEAN_EXPORT lean_object* initialize_Init_Data_Vector_Algebra(uint8_t builtin) {
 lean_object * res;
 if (_G_initialized) return lean_io_result_mk_ok(lean_box(0));
 _G_initialized = true;
-res = initialize_Init_Data_Vector_Lemmas(builtin, lean_io_mk_world());
+res = initialize_Init_Data_Vector_Lemmas(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
-res = initialize_Init_Grind(builtin, lean_io_mk_world());
+res = initialize_Init_Grind(builtin);
 if (lean_io_result_is_error(res)) return res;
 lean_dec_ref(res);
 l_Vector_add___redArg___closed__0 = _init_l_Vector_add___redArg___closed__0();

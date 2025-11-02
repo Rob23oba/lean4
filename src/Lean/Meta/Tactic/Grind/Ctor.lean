@@ -4,13 +4,10 @@ Released under Apache 2.0 license as described in the file LICENSE.
 Authors: Leonardo de Moura
 -/
 module
-
 prelude
 public import Lean.Meta.Tactic.Grind.Types
-public import Lean.Meta.Tactic.Grind.ProveEq
-
+import Lean.Meta.Tactic.Grind.Simp
 public section
-
 namespace Lean.Meta.Grind
 
 private partial def propagateInjEqs (eqs : Expr) (proof : Expr) : GoalM Unit := do
