@@ -28,30 +28,32 @@ def withPrimedNames (xs : Array Expr) (k : MetaM α) : MetaM α := do
   withLCtx lctx (← getLocalInstances) k
 
 /--
-Constructs a lambda expression that returns the argument to the `noConfusion` principle for a given
-constructor. In particular, returns
+Given `fields1` and `fields2` corresponding to fields of the constructor `ctorName`, wraps the type
+`P` in (potentially heterogenous) equalities for every expression in `fields1` and `fields2`:
 ```
-fun params x1 x2 x3 x1' x2' x3' => (x1 = x1' → x2 = x2' → x3 = x3' → P)
+x1 = x1' → x2 = x2' → x3 ≍ x3' → P
 ```
-where `x1 x2 x3` and `x1' x2' x3'` are the fields of a constructor application of `ctorName`,
-omitting equalities between propositions and using `HEq` where needed.
+where `fields1 := #[x1, x2, x3]` and `fields2 := #[x1', x2', x3']`, omitting equalities between
+propositions and using `HEq` where needed.
 -/
-def mkNoConfusionCtorArg (ctorName : Name) (P : Expr) : MetaM Expr := do
+def mkNoConfusionCtorArg (ctorName : Name) (P : Expr) (fields1 fields2 : Array Expr) :
+    MetaM Expr := do
   let ctorInfo ← getConstInfoCtor ctorName
-  -- We bring the constructor's parameters into scope abstractly, this way
-  -- we can check if we need to use HEq. (The concrete fields could allow Eq)
-  forallBoundedTelescope ctorInfo.type ctorInfo.numParams fun xs t => do
-    forallTelescopeReducing t fun fields1 _ => do
-    forallTelescopeReducing t fun fields2 _ => do
-    withPrimedNames fields2 do
-    let mut t := P
-    for f1 in fields1.reverse, f2 in fields2.reverse do
-      if (← isProof f1) then
-        continue
-      let name := (← f1.fvarId!.getUserName).appendAfter "_eq"
-      let eq ← mkEqHEq f1 f2
-      t := mkForall name .default eq t
-    mkLambdaFVars (xs ++ fields1 ++ fields2) t
+  let mut ctorType := ctorInfo.type.getForallBodyMaxDepth ctorInfo.numParams
+  let mut fieldProps : Array (Name × Bool) := #[] -- name, domain has loose bvars
+  repeat
+    let .forallE nm d b _ := ctorType | break
+    fieldProps := fieldProps.push ⟨nm, ctorInfo.numParams < d.looseBVarRange⟩
+    ctorType := b
+
+  let mut t : Expr := P
+  for f1 in fields1.reverse, f2 in fields2.reverse, (nm, dep) in fieldProps.reverse do
+    if (← isProof f1) then
+      continue
+    let name := nm.appendAfter "_eq"
+    let eq ← if dep then mkEq f1 f2 else mkHEq f1 f2
+    t := .forallE name eq t .default
+  return t
 
 register_builtin_option backward.linearNoConfusionType : Bool := {
   defValue := true
@@ -114,7 +116,7 @@ def mkNoConfusionType (indName : Name) : MetaM Unit := do
                 let e := mkAppN e (xs ++ #[motive] ++ ysx2 ++ #[h])
                 let e := mkApp e <|
                   ← forallTelescopeReducing ((← whnf (← inferType e)).bindingDomain!) fun zs2 _ => do
-                    let k := (← mkNoConfusionCtorArg conName P).beta (xs ++ zs1 ++ zs2)
+                    let k ← mkNoConfusionCtorArg conName P zs1 zs2
                     let t ← mkArrow k P
                     mkLambdaFVars zs2 t
                 pure e
@@ -128,7 +130,7 @@ def mkNoConfusionType (indName : Name) : MetaM Unit := do
               let alts2 ← altTypes2.mapIdxM fun j altType2 => do
                 forallTelescope altType2 fun zs2 _ => do
                   if i = j then
-                    let k := (← mkNoConfusionCtorArg conName P).beta (xs ++ zs1 ++ zs2)
+                    let k ← mkNoConfusionCtorArg conName P zs1 zs2
                     let t ← mkArrow k P
                     mkLambdaFVars zs2 t
                   else
@@ -232,7 +234,7 @@ def mkNoConfusionCoreImp (indName : Name) : MetaM Unit := do
       let alts ← info.ctors.mapM fun ctor => do
         let ctorType ← inferType (mkAppN (mkConst ctor us) params)
         forallTelescopeReducing ctorType fun fs _ => do
-          let kType := (← mkNoConfusionCtorArg ctor P).beta (params ++ fs ++ fs)
+          let kType ← mkNoConfusionCtorArg ctor P fs fs
           withLocalDeclD `k kType fun k => do
             let mut e := k
             let eqns ← arrowDomainsN kType.getNumHeadForalls kType
@@ -309,8 +311,7 @@ def mkNoConfusionCtors (declName : Name) : MetaM Unit := do
           withNeededEqTelescope (is1.push ctor1) (is2.push ctor2) fun eqvs eqs => do
             -- When the kernel checks this definition, it will perform the potentially expensive
             -- computation that `noConfusionType h` is equal to `$kType → P`
-            let kType ← mkNoConfusionCtorArg ctor P
-            let kType := kType.beta (xs ++ fields1 ++ fields2)
+            let kType ← mkNoConfusionCtorArg ctor P fields1 fields2
             withLocalDeclD `k kType fun k => do
               let mut e := mkConst noConfusionName (v :: us)
               e := mkAppN e (xs ++ #[P] ++ is1 ++ #[ctor1] ++ is2 ++ #[ctor2])
