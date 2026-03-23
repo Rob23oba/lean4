@@ -391,6 +391,11 @@ Please see https://lean-lang.org/doc/reference/latest/find/?domain=Verso.Genre.M
 -/
 @[builtin_term_parser] def borrowed   := leading_parser
   "@& " >> termParser leadPrec
+/--
+Indicates that a return value of a function marked `@[extern]` is borrowed.
+-/
+@[builtin_term_parser] def borrowedReturn   := leading_parser
+  "@&[" >> sepBy ident ", " >> "] " >> termParser leadPrec
 /-- A literal of type `Name`. -/
 @[builtin_term_parser] def quotedName := leading_parser nameLit
 /--

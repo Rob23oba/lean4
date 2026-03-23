@@ -446,6 +446,9 @@ to be passed around etc. at this point in the pipeline.
 @[inline, expose, match_pattern]
 def void : Expr := .const ``lcVoid []
 
+@[inherit_doc markBorrowedReturn, match_pattern]
+abbrev borrowedReturn := markBorrowedReturn
+
 /--
 Whether the type is a scalar as opposed to a pointer (or a value disguised as a pointer).
 -/
@@ -463,24 +466,25 @@ def Lean.Expr.isScalar : Expr → Bool
 Whether the type is an object which is to say a pointer or a value disguised as a pointer.
 -/
 def Lean.Expr.isObj : Expr → Bool
-  | ImpureType.object  => true
-  | ImpureType.tagged  => true
-  | ImpureType.tobject => true
-  | ImpureType.void    => true
+  | ImpureType.object             => true
+  | ImpureType.tagged             => true
+  | ImpureType.tobject            => true
+  | ImpureType.void               => true
+  | ImpureType.borrowedReturn _ _ => true
   | _       => false
 
 /--
 Whether the type might be an actual pointer (crucially this excludes `tagged`).
 -/
 def Lean.Expr.isPossibleRef : Expr → Bool
-  | ImpureType.object | ImpureType.tobject => true
+  | ImpureType.object | ImpureType.tobject | ImpureType.borrowedReturn _ _ => true
   | _ => false
 
 /--
 Whether the type is a pointer for sure.
 -/
 def Lean.Expr.isDefiniteRef : Expr → Bool
-  | ImpureType.object => true
+  | ImpureType.object => true | ImpureType.borrowedReturn _ ImpureType.object => true
   | _ => false
 
 /--

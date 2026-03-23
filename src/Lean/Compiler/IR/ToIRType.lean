@@ -46,6 +46,7 @@ def toIRType (type : Lean.Expr) : IRType :=
   | LCNF.ImpureType.tobject => .tobject
   | LCNF.ImpureType.tagged => .tagged
   | LCNF.ImpureType.void => .void
+  | LCNF.ImpureType.borrowedReturn _ t => toIRType t
   | _ => unreachable!
 
 end IR

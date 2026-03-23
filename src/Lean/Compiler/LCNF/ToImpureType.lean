@@ -96,7 +96,7 @@ def isAnyProducingType (type : Expr) : Bool :=
   | .forallE _ _ b _ => isAnyProducingType b
   | _ => false
 
-public partial def toImpureType (type : Expr) : CoreM Expr := do
+public partial def toImpureType (type : Expr) (isReturn : Bool := false) : CoreM Expr := do
   match type with
   | .const name _ => visitApp name #[]
   | .app .. =>
@@ -112,14 +112,18 @@ public partial def toImpureType (type : Expr) : CoreM Expr := do
       return ImpureType.tobject
     else
       return ImpureType.object
-  | .mdata _ b => toImpureType b
+  | .mdata d b =>
+    if isReturn && type matches markBorrowedReturn .. then
+      return .mdata d (← toImpureType b isReturn)
+    else
+      toImpureType b isReturn
   | _ => unreachable!
 where
   visitApp (declName : Name) (args : Array Lean.Expr) : CoreM Expr := do
     if let some info ← hasTrivialImpureStructure? declName then
       let ctorType ← getOtherDeclBaseType info.ctorName []
       let monoType ← toMonoType (getParamTypes (← instantiateForall ctorType args[*...info.numParams]))[info.fieldIdx]!
-      toImpureType monoType
+      toImpureType monoType isReturn
     else
       nameToImpureType declName
 

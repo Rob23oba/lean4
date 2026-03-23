@@ -106,6 +106,18 @@ open Meta
   | `(@& $e) => return markBorrowed (← elabTerm e expectedType?)
   | _ => throwUnsupportedSyntax
 
+@[builtin_term_elab borrowedReturn] def elabBorrowedReturn : TermElab := fun stx expectedType? => do
+  match stx with
+  | `(Lean.Parser.Term.borrowedReturn| @&[$ids,*] $e) =>
+    let mut mask := 0
+    let lctx ← getLCtx
+    for id in ids.getElems do
+      let val ← withRef id <| getFVarFromUserName id.getId
+      let decl ← getFVarLocalDecl val
+      mask := mask ||| (1 <<< (lctx.size - decl.index))
+    return markBorrowedReturn mask (← elabTerm e expectedType?)
+  | _ => throwUnsupportedSyntax
+
 @[builtin_macro Lean.Parser.Term.show] def expandShow : Macro := fun stx =>
   match stx with
   | `(show $type by%$b $tac) => `(show $type from by%$b $tac)
