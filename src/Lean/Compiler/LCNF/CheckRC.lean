@@ -23,6 +23,7 @@ structure VarRCInfo where
   borrowed : Bool := false
   parents : Array FVarId := #[]
   children : Array FVarId := #[]
+deriving Repr
 
 def deadInfo : VarRCInfo where
   rc := 0
@@ -42,7 +43,8 @@ def isDead (v : FVarId) : M Bool := do
 
 partial def maybeKill (v : FVarId) : M Unit := do
   let some info := (← get).rc.get? v | pure ()
-  if ← pure info.borrowed <&&> info.parents.anyM isDead then
+  if info.rc > 0 then return
+  if ← pure (!info.borrowed) <||> info.parents.anyM isDead then
     modify fun state => { state with rc := state.rc.insert v deadInfo }
     for child in info.children do
       maybeKill child
@@ -64,36 +66,43 @@ def makeScalar (v : FVarId) : M Unit := do
 
 def consume (v : FVarId) (n : Nat := 1) : M Unit := do
   let .fvar v := (← get).subst.getD v (.fvar v) | pure ()
+  let nm ← getBinderName v
   let some info := (← get).rc.get? v | pure ()
   if info.rc < n then
     if !info.borrowed && info.rc = 0 then
-      throwError "Failed to consume {← getBinderName v} {n} times, potential use after free"
-    throwError "Failed to consume {← getBinderName v} {n} times, only {info.rc} reference count available"
+      throwError "Failed to consume {nm} {n} times, potential use after free"
+    throwError "Failed to consume {nm} {n} times, only {info.rc} reference count available"
+  let mayFree := info.rc == n && !info.borrowed
   modify fun state => { state with
     rc := state.rc.modify v fun entry => { entry with rc := entry.rc - n } }
-  maybeKill v
+  if mayFree then
+    for child in info.children do
+      maybeKill child
 
 def useVar (v : FVarId) : M Unit := do
   let .fvar v := (← get).subst.getD v (.fvar v) | pure ()
+  let nm ← getBinderName v
   if ← isDead v then
-    throwError "Can't use {← getBinderName v}, potential use after free"
+    throwError "Can't use {nm}, potential use after free"
 
 def checkShared (v : FVarId) : M Unit := do
   let .fvar v := (← get).subst.getD v (.fvar v) | pure ()
+  let nm ← getBinderName v
   let some info := (← get).rc.get? v | pure ()
   if info.borrowed then
-    throwError "Can't write into borrowed value {← getBinderName v}"
+    throwError "Can't write into borrowed value {nm}"
   if info.rc = 0 then
-    throwError "Can't write into {← getBinderName v}, potential use after free"
+    throwError "Can't write into {nm}, potential use after free"
   if info.rc > 1 then
-    throwError "Can't write into {← getBinderName v}, variable has a reference count of at least \
+    throwError "Can't write into {nm}, variable has a reference count of at least \
       {info.rc}"
 
 def inc (v : FVarId) (n : Nat := 1) : M Unit := do
   let .fvar v := (← get).subst.getD v (.fvar v) | pure ()
+  let nm ← getBinderName v
   let some info := (← get).rc.get? v | pure ()
   if !info.borrowed && info.rc == 0 then
-    throwError "Can't increment {← getBinderName v}, potential use after free"
+    throwError "Can't increment {nm}, potential use after free"
   modify fun state => { state with
     rc := state.rc.modify v fun entry => { entry with rc := entry.rc + n } }
 
@@ -204,10 +213,24 @@ partial def check (c : Code .impure) : M Unit := do
       modify fun state => { state with subst := state.subst.insert param.fvarId substArg }
     check decl.value
 
+def addParam (param : Param .impure) : M Unit := do
+  modifyLCtx fun lctx => lctx.addParam param
+  if param.borrow then
+    addBorrowed param.fvarId #[]
+  else
+    addOwned param.fvarId
+
+deriving instance Repr for Param
+
+def checkDecl (decl : Decl .impure) : M Unit := do
+  decl.value.forCodeM fun code => do
+    decl.params.forM addParam
+    check code
+
 end Impure
 end Check
 
 def Decl.checkRC (decl : Decl .impure) : CompilerM Unit :=
-  decl.value.forCodeM fun code => (Check.Impure.check code).run' {}
+  (Check.Impure.checkDecl decl).run' {}
 
 end Lean.Compiler.LCNF
