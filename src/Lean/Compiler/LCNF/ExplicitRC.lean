@@ -459,8 +459,7 @@ def addIncBeforeAux (args : Array (Arg .impure)) (consumeParamPred : Nat → Boo
         continue
       let numConsumptions := getNumConsumptions fvarId args consumeParamPred
       let numIncs ←
-        if (← isLive fvarId) -- `fvarId` is live after executing the instruction
-            || (← isBorrowed fvarId)
+        if (← isAccessible fvarId) -- `fvarId` is live after executing the instruction
             || isBorrowParamAux fvarId args consumeParamPred then -- `fvarId` is used in a position that is passed as a borrow reference
           pure (numConsumptions)
         else
@@ -515,10 +514,14 @@ Add `dec` for `fvarId` if `fvarId` is a reference, not alive in `k` and not borr
 -/
 def addDecIfNeeded (fvarId : FVarId) (k : Code .impure) : RcM (Code .impure) := do
   let info ← getVarInfo fvarId
-  if info.isPossibleRef && !(← isBorrowed fvarId) && !(← isLive fvarId) then
+  if info.isPossibleRef && !(← isAccessible fvarId) then
     addDec fvarId k
   else
     return k
+
+def ensureNoBorrow (decl : LetDecl .impure) : RcM Unit := do
+  if (← isBorrowed decl.fvarId) then
+    logError m!"failed{indentD (← PP.run (PP.ppLetDecl decl))}\nis borrowed but shouldn't be"
 
 /--
 Add `dec` instructions for parameters that are references, are not alive in `k`, and are not borrow.
@@ -527,6 +530,8 @@ That is, we must make sure these parameters are consumed.
 def addDecForDeadParams (ps : Array (Param .impure)) (k : Code .impure) : RcM (Code .impure) :=
   ps.foldlM (init := k) fun k p => do
     let k ← addDecIfNeeded p.fvarId k
+    if (p.borrow && p.type.isPossibleRef) != (← isBorrowed p.fvarId) then
+      logError m!"failed: {p.binderName} has {← isBorrowed p.fvarId}"
     bindVar p.fvarId
     return k
 
@@ -541,6 +546,7 @@ def LetDecl.explicitRc (code : Code .impure) (decl : LetDecl .impure) (k : Code 
   let k ←
     match decl.value with
     | .ctor (args := args) .. | .reuse (args := args) .. | .pap (args := args) .. =>
+      ensureNoBorrow decl
       addIncBeforeConsumeAll args (code.updateLet! decl k)
     | .oproj (var := fvarId) .. =>
       let k ← addDecIfNeeded fvarId k
@@ -548,6 +554,7 @@ def LetDecl.explicitRc (code : Code .impure) (decl : LetDecl .impure) (k : Code 
       pure <| code.updateLet! decl k
     | .uproj (var := fvarId) .. | .sproj (var := fvarId) .. | .unbox (fvarId := fvarId) .. =>
       let k ← addDecIfNeeded fvarId k
+      ensureNoBorrow decl
       pure <| code.updateLet! decl k
     | .fap f args =>
       let ps := (← getImpureSignature? f).get!.params
@@ -560,6 +567,7 @@ def LetDecl.explicitRc (code : Code .impure) (decl : LetDecl .impure) (k : Code 
         else if f == ``Array.uget && (← isBorrowed decl.fvarId) then
           pure <| .fap ``Array.ugetBorrowed args
         else
+          ensureNoBorrow decl
           pure <| decl.value
       let decl ← decl.updateValue value
       let k := code.updateLet! decl k
@@ -568,6 +576,7 @@ def LetDecl.explicitRc (code : Code .impure) (decl : LetDecl .impure) (k : Code 
       let allArgs := args.push <| .fvar fvarId
       addIncBeforeConsumeAll allArgs (code.updateLet! decl k)
     | .lit .. | .box .. | .reset .. | .erased .. =>
+      ensureNoBorrow decl
       pure <| code.updateLet! decl k
     | .isShared .. => unreachable!
   useLetValue decl.value
