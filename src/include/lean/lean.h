@@ -845,14 +845,13 @@ static inline lean_obj_res lean_array_fget_borrowed(b_lean_obj_arg a, b_lean_obj
     return lean_array_get_core(a, lean_unbox(i));
 }
 
-LEAN_EXPORT lean_obj_res lean_array_get_panic(lean_obj_arg def_val);
+LEAN_EXPORT b_lean_obj_res lean_array_get_panic(b_lean_obj_arg def_val);
 
-static inline lean_object * lean_array_get(lean_obj_arg def_val, b_lean_obj_arg a, b_lean_obj_arg i) {
+static inline lean_object * lean_array_get_borrowed(b_lean_obj_arg def_val, b_lean_obj_arg a, b_lean_obj_arg i) {
     if (lean_is_scalar(i)) {
         size_t idx = lean_unbox(i);
         if (idx < lean_array_size(a)) {
-            lean_dec(def_val);
-            return lean_array_uget(a, idx);
+            return lean_array_get_core(a, idx);
         }
     }
     /* Recall that if `i` is not a scalar, then it must be out of bounds because
@@ -862,19 +861,9 @@ static inline lean_object * lean_array_get(lean_obj_arg def_val, b_lean_obj_arg 
     return lean_array_get_panic(def_val);
 }
 
-static inline lean_object * lean_array_get_borrowed(lean_obj_arg def_val, b_lean_obj_arg a, b_lean_obj_arg i) {
-    if (lean_is_scalar(i)) {
-        size_t idx = lean_unbox(i);
-        if (idx < lean_array_size(a)) {
-            lean_dec(def_val);
-            return lean_array_get_core(a, idx);
-        }
-    }
-    /* Recall that if `i` is not a scalar, then it must be out of bounds because
-       i > LEAN_MAX_SMALL_NAT == MAX_UNSIGNED >> 1
-       but each array entry is 8 bytes in 64-bit machines and 4 in 32-bit ones.
-       In both cases, we would be out-of-memory. */
-    return lean_array_get_panic(def_val);
+static inline lean_object * lean_array_get(b_lean_obj_arg def_val, b_lean_obj_arg a, b_lean_obj_arg i) {
+    lean_object * r = lean_array_get_borrowed(def_val, a, i); lean_inc(r);
+    return r;
 }
 
 LEAN_EXPORT lean_obj_res lean_copy_expand_array(lean_obj_arg a, bool expand);

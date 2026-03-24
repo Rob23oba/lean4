@@ -3223,7 +3223,7 @@ Version of `Array.getInternal` that does not increment the reference count of it
 This is only intended for direct use by the compiler.
 -/
 @[extern "lean_array_fget_borrowed"]
-unsafe opaque Array.getInternalBorrowed {α : Type u} (a : @& Array α) (i : @& Nat) (h : LT.lt i a.size) : α :=
+unsafe opaque Array.getInternalBorrowed {α : Type u} (a : @& Array α) (i : @& Nat) (h : LT.lt i a.size) : @&[a] α :=
   a.toList.get ⟨i, h⟩
 
 /--
@@ -3237,7 +3237,7 @@ the index is in bounds. This is because the tactic itself needs to look up value
 arrays.
 -/
 @[extern "lean_array_fget"]
-def Array.getInternal {α : Type u} (a : @& Array α) (i : @& Nat) (h : LT.lt i a.size) : α :=
+def Array.getInternal {α : Type u} (a : @& Array α) (i : @& Nat) (h : LT.lt i a.size) : @&[a] α :=
   a.toList.get ⟨i, h⟩
 
 /--
@@ -3261,7 +3261,7 @@ Version of `Array.get!Internal` that does not increment the reference count of i
 This is only intended for direct use by the compiler.
 -/
 @[extern "lean_array_get_borrowed"]
-unsafe opaque Array.get!InternalBorrowed {α : Type u} [Inhabited α] (a : @& Array α) (i : @& Nat) : α
+unsafe opaque Array.get!InternalBorrowed {α : Type u} [inst : @& Inhabited α] (a : @& Array α) (i : @& Nat) : @&[inst, a] α
 
 /--
 Use the indexing notation `a[i]!` instead.
@@ -3269,7 +3269,7 @@ Use the indexing notation `a[i]!` instead.
 Access an element from an array, or panic if the index is out of bounds.
 -/
 @[extern "lean_array_get"]
-def Array.get!Internal {α : Type u} [Inhabited α] (a : @& Array α) (i : @& Nat) : α :=
+def Array.get!Internal {α : Type u} [inst : @& Inhabited α] (a : @& Array α) (i : @& Nat) : @&[inst, a] α :=
   Array.getD a i default
 
 /--
