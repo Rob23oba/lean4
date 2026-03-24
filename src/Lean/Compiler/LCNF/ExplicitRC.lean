@@ -9,6 +9,7 @@ prelude
 public import Lean.Compiler.LCNF.CompilerM
 public import Lean.Compiler.LCNF.PassManager
 import Lean.Compiler.LCNF.PhaseExt
+import Lean.Compiler.LCNF.CheckRC
 import Lean.Compiler.LCNF.PrettyPrinter
 
 /-!
@@ -103,9 +104,12 @@ partial def collectCode (code : Code .impure) : M Unit := do
       if let .fvar parent := args[1]! then
         addDerivedValue #[parent] decl.fvarId
     | .fap ``Array.get!Internal args =>
+      let mut arr := #[]
       if let .fvar default := args[1]! then
-        if let .fvar parent := args[2]! then
-          addDerivedValue #[default, parent] decl.fvarId
+        arr := arr.push default
+      if let .fvar parent := args[2]! then
+        arr := arr.push parent
+      addDerivedValue arr decl.fvarId
     | .fap ``Array.uget args =>
       if let .fvar parent := args[1]! then
         addDerivedValue #[parent] decl.fvarId
@@ -521,7 +525,7 @@ def addDecIfNeeded (fvarId : FVarId) (k : Code .impure) : RcM (Code .impure) := 
 
 def ensureNoBorrow (decl : LetDecl .impure) : RcM Unit := do
   if (← isBorrowed decl.fvarId) then
-    logError m!"failed{indentD (← PP.run (PP.ppLetDecl decl))}\nis borrowed but shouldn't be"
+    throwError m!"failed{indentD (← PP.run (PP.ppLetDecl decl))}\nis borrowed but shouldn't be"
 
 /--
 Add `dec` instructions for parameters that are references, are not alive in `k`, and are not borrow.
@@ -531,7 +535,7 @@ def addDecForDeadParams (ps : Array (Param .impure)) (k : Code .impure) : RcM (C
   ps.foldlM (init := k) fun k p => do
     let k ← addDecIfNeeded p.fvarId k
     if (p.borrow && p.type.isPossibleRef) != (← isBorrowed p.fvarId) then
-      logError m!"failed: {p.binderName} has {← isBorrowed p.fvarId}"
+      throwError m!"failed: {p.binderName} has {← isBorrowed p.fvarId}"
     bindVar p.fvarId
     return k
 
@@ -672,7 +676,9 @@ where
       addDecForDeadParams decl.params code
 
 public def runExplicitRc (decls : Array (Decl .impure)) : CompilerM (Array (Decl .impure)) := do
-  decls.mapM (·.explicitRc)
+  let res ← decls.mapM (·.explicitRc)
+  res.forM (·.checkRC)
+  return res
 
 public def explicitRc : Pass :=
   .mkPerDeclaration `explicitRc .impure Decl.explicitRc
