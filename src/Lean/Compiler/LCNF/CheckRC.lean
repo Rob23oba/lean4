@@ -215,10 +215,11 @@ partial def check (c : Code .impure) : M Unit := do
 
 def addParam (param : Param .impure) : M Unit := do
   modifyLCtx fun lctx => lctx.addParam param
-  if param.borrow then
-    addBorrowed param.fvarId #[]
-  else
-    addOwned param.fvarId
+  if param.type.isPossibleRef then
+    if param.borrow then
+      addBorrowed param.fvarId #[]
+    else
+      addOwned param.fvarId
 
 deriving instance Repr for Param
 
