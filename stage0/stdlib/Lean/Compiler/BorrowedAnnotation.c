@@ -14,6 +14,7 @@
 extern "C" {
 #endif
 lean_object* l_Lean_Name_mkStr1(lean_object*);
+lean_object* l_Lean_Expr_mdata___override(lean_object*, lean_object*);
 lean_object* l_Lean_mkAnnotation(lean_object*, lean_object*);
 lean_object* l_Lean_annotation_x3f(lean_object*, lean_object*);
 static const lean_string_object l_Lean_markBorrowed___closed__0_value = {.m_header = {.m_rc = 0, .m_cs_sz = 0, .m_other = 0, .m_tag = 249}, .m_size = 9, .m_capacity = 9, .m_length = 8, .m_data = "borrowed"};
@@ -23,6 +24,11 @@ static const lean_object* l_Lean_markBorrowed___closed__1 = (const lean_object*)
 LEAN_EXPORT lean_object* l_Lean_markBorrowed(lean_object*);
 LEAN_EXPORT uint8_t l_Lean_isMarkedBorrowed(lean_object*);
 LEAN_EXPORT lean_object* l_Lean_isMarkedBorrowed___boxed(lean_object*);
+static const lean_string_object l_Lean_markBorrowedReturn___closed__0_value = {.m_header = {.m_rc = 0, .m_cs_sz = 0, .m_other = 0, .m_tag = 249}, .m_size = 15, .m_capacity = 15, .m_length = 14, .m_data = "borrowedReturn"};
+static const lean_object* l_Lean_markBorrowedReturn___closed__0 = (const lean_object*)&l_Lean_markBorrowedReturn___closed__0_value;
+static const lean_ctor_object l_Lean_markBorrowedReturn___closed__1_value = {.m_header = {.m_rc = 0, .m_cs_sz = sizeof(lean_ctor_object) + sizeof(void*)*2 + 8, .m_other = 2, .m_tag = 1}, .m_objs = {((lean_object*)(((size_t)(0) << 1) | 1)),((lean_object*)&l_Lean_markBorrowedReturn___closed__0_value),LEAN_SCALAR_PTR_LITERAL(37, 119, 152, 57, 133, 179, 85, 110)}};
+static const lean_object* l_Lean_markBorrowedReturn___closed__1 = (const lean_object*)&l_Lean_markBorrowedReturn___closed__1_value;
+LEAN_EXPORT lean_object* l_Lean_markBorrowedReturn(lean_object*, lean_object*);
 LEAN_EXPORT lean_object* l_Lean_markBorrowed(lean_object* v_e_4_){
 _start:
 {
@@ -61,6 +67,24 @@ v_res_13_ = l_Lean_isMarkedBorrowed(v_e_12_);
 lean_dec_ref(v_e_12_);
 v_r_14_ = lean_box(v_res_13_);
 return v_r_14_;
+}
+}
+LEAN_EXPORT lean_object* l_Lean_markBorrowedReturn(lean_object* v_mask_18_, lean_object* v_e_19_){
+_start:
+{
+lean_object* v___x_20_; lean_object* v___x_21_; lean_object* v___x_22_; lean_object* v___x_23_; lean_object* v___x_24_; lean_object* v___x_25_; 
+v___x_20_ = ((lean_object*)(l_Lean_markBorrowedReturn___closed__1));
+v___x_21_ = lean_alloc_ctor(3, 1, 0);
+lean_ctor_set(v___x_21_, 0, v_mask_18_);
+v___x_22_ = lean_alloc_ctor(0, 2, 0);
+lean_ctor_set(v___x_22_, 0, v___x_20_);
+lean_ctor_set(v___x_22_, 1, v___x_21_);
+v___x_23_ = lean_box(0);
+v___x_24_ = lean_alloc_ctor(1, 2, 0);
+lean_ctor_set(v___x_24_, 0, v___x_22_);
+lean_ctor_set(v___x_24_, 1, v___x_23_);
+v___x_25_ = l_Lean_Expr_mdata___override(v___x_24_, v_e_19_);
+return v___x_25_;
 }
 }
 lean_object* runtime_initialize_Lean_Expr(uint8_t builtin);
