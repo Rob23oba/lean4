@@ -580,13 +580,13 @@ and simplifies these to the function directly taking the value.
   simp [Array.unattach_reverse]
 
 
-@[simp] theorem unattach_append {p : α → Prop} {xs ys : Vector { x // p x } n} :
+@[simp] theorem unattach_append {p : α → Prop} {xs : Vector { x // p x } n} {ys : Vector { x // p x } m} :
     (xs ++ ys).unattach = xs.unattach ++ ys.unattach := by
   rcases xs
   rcases ys
   simp
 
-@[simp] theorem unattach_flatten {p : α → Prop} {xss : Vector (Vector { x // p x } n) n} :
+@[simp] theorem unattach_flatten {p : α → Prop} {xss : Vector (Vector { x // p x } n) m} :
     xss.flatten.unattach = (xss.map unattach).flatten := by
   unfold unattach
   cases xss using vector₂_induction

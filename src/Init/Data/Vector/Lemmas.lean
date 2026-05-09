@@ -2090,7 +2090,7 @@ theorem flatMap_singleton {f : α → Vector β m} {x : α} : #v[x].flatMap f = 
   rcases xs with ⟨xs, rfl⟩
   simp
 
-@[simp] theorem flatMap_append {xs ys : Vector α n} {f : α → Vector β m} :
+@[simp] theorem flatMap_append {xs : Vector α n} {ys : Vector α m} {f : α → Vector β k} :
     (xs ++ ys).flatMap f = (xs.flatMap f ++ ys.flatMap f).cast (by simp [Nat.add_mul]) := by
   rcases xs with ⟨xs⟩
   rcases ys with ⟨ys⟩
@@ -3117,8 +3117,8 @@ theorem sum_eq_foldr [Add α] [Zero α] {xs : Vector α n} :
 
 @[simp, grind =]
 theorem sum_append [Zero α] [Add α] [Std.Associative (α := α) (· + ·)]
-    [Std.LeftIdentity (α := α) (· + ·) 0] [Std.LawfulLeftIdentity (α := α) (· + ·) 0]
-    {as₁ as₂ : Vector α n} : (as₁ ++ as₂).sum = as₁.sum + as₂.sum := by
+    [Std.LawfulLeftIdentity (α := α) (· + ·) 0]
+    {xs : Vector α n} {ys : Vector α m} : (xs ++ ys).sum = xs.sum + ys.sum := by
   simp [← sum_toList, List.sum_append]
 
 @[simp, grind =]
@@ -3153,8 +3153,8 @@ theorem prod_eq_foldr [Mul α] [One α] {xs : Vector α n} :
 
 @[simp, grind =]
 theorem prod_append [One α] [Mul α] [Std.Associative (α := α) (· * ·)]
-    [Std.LeftIdentity (α := α) (· * ·) 1] [Std.LawfulLeftIdentity (α := α) (· * ·) 1]
-    {as₁ as₂ : Vector α n} : (as₁ ++ as₂).prod = as₁.prod * as₂.prod := by
+    [Std.LawfulLeftIdentity (α := α) (· * ·) 1]
+    {xs : Vector α n} {ys : Vector α m} : (xs ++ ys).prod = xs.prod * ys.prod := by
   simp [← prod_toList, List.prod_append]
 
 @[simp, grind =]
