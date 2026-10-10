@@ -44,13 +44,13 @@ theorem div_eq_ite (x y : Nat) : x / y = if 0 < y ∧ y ≤ x then (x - y) / y +
     rw [Nat.div.go]
     split
     next =>
-      simp only [and_self, ↓reduceIte, *]
+      rw [ite_eq_left ⟨‹_›, ‹_›⟩]
       congr 1
       apply div.go.fuel_congr
     next =>
-      simp only [and_false, ↓reduceIte, *]
+      rw [ite_eq_right fun ⟨h₁, h₂⟩ => absurd h₂ ‹_›]
   next =>
-    simp only [false_and, ↓reduceIte, *]
+    rw [ite_eq_right fun ⟨h₁, h₂⟩ => absurd h₁ ‹_›]
 
 @[deprecated div_eq_ite (since := "2026-07-20")]
 theorem div_eq (x y : Nat) : x / y = if 0 < y ∧ y ≤ x then (x - y) / y + 1 else 0 :=
@@ -78,9 +78,9 @@ theorem div_le_self (n k : Nat) : n / k ≤ n := by
     rw [div_eq_ite]
     -- Note: manual split to avoid Classical.em which is not yet defined
     cases (inferInstance : Decidable (0 < k ∧ k ≤ n)) with
-    | isFalse h => simp [h]
+    | isFalse h => rw [ite_eq_right ‹_›]; exact n.zero_le
     | isTrue h =>
-      suffices (n - k) / k + 1 ≤ n by simp [h, this]
+      suffices (n - k) / k + 1 ≤ n by rwa [ite_eq_left h]
       have ⟨hK, hKN⟩ := h
       have hSub : n - k < n := sub_lt (Nat.lt_of_lt_of_le hK hKN) hK
       have : (n - k) / k ≤ n - k := ih (n - k) hSub
@@ -89,9 +89,9 @@ theorem div_le_self (n k : Nat) : n / k ≤ n := by
 theorem div_lt_self {n k : Nat} (hLtN : 0 < n) (hLtK : 1 < k) : n / k < n := by
   rw [div_eq_ite]
   cases (inferInstance : Decidable (0 < k ∧ k ≤ n)) with
-  | isFalse h => simp [hLtN, h]
+  | isFalse h => rwa [ite_eq_right h]
   | isTrue h =>
-    suffices (n - k) / k + 1 < n by simp [h, this]
+    suffices (n - k) / k + 1 < n by rwa [ite_eq_left h]
     have ⟨_, hKN⟩ := h
     have : (n - k) / k ≤ n - k := div_le_self (n - k) k
     have := Nat.add_le_of_le_sub hKN this

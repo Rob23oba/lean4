@@ -172,8 +172,8 @@ protected theorem add_right_comm (n m k : Nat) : (n + m) + k = (n + k) + m := by
 
 protected theorem add_left_cancel {n m k : Nat} : n + m = n + k → m = k := by
   induction n with
-  | zero => simp
-  | succ n ih => simp [succ_add, succ.injEq]; intro h; apply ih h
+  | zero => intro h; simpa using h
+  | succ n ih => simp [succ_add]; intro h; injection h with h; apply ih h
 
 protected theorem add_right_cancel {n m k : Nat} (h : n + m = k + m) : n = k := by
   rw [Nat.add_comm n m, Nat.add_comm k m] at h
@@ -969,13 +969,13 @@ theorem sub_succ_lt_self (a i : Nat) (h : i < a) : a - (i + 1) < a - i := by
 
 theorem sub_ne_zero_of_lt : {a b : Nat} → a < b → b - a ≠ 0
   | 0, 0, h      => absurd h (Nat.lt_irrefl 0)
-  | 0, succ b, _ => by simp only [Nat.sub_zero, ne_eq, not_false_eq_true, Nat.succ_ne_zero]
+  | 0, succ b, _ => nofun
   | succ a, 0, h => absurd h (Nat.not_lt_zero a.succ)
   | succ a, succ b, h => by rw [Nat.succ_sub_succ]; exact sub_ne_zero_of_lt (Nat.lt_of_succ_lt_succ h)
 
 theorem add_sub_of_le {a b : Nat} (h : a ≤ b) : a + (b - a) = b := by
   induction a with
-  | zero => simp
+  | zero => exact b.zero_add
   | succ a ih =>
     have hne : b - a ≠ 0 := Nat.sub_ne_zero_of_lt h
     have : a ≤ b := Nat.le_of_succ_le h
@@ -1069,8 +1069,7 @@ theorem add_le_of_le_sub {a b c : Nat} (hle : b ≤ c) (h : a ≤ c - b) : a + b
   match le.dest h with
   | ⟨d, hd⟩ =>
     apply @le.intro _ _ d
-    rw [Nat.eq_add_of_sub_eq hle hd.symm]
-    simp [Nat.add_comm, Nat.add_left_comm]
+    rw [Nat.eq_add_of_sub_eq hle hd.symm, Nat.add_right_comm]
 
 theorem le_sub_of_add_le {a b c : Nat} (h : a + b ≤ c) : a ≤ c - b := by
   match le.dest h with
